@@ -1,0 +1,84 @@
+# -------------------------
+# Python / build artifacts
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# -------------------------
+# Test / tooling caches
+# -------------------------
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
+
+# -------------------------
+# Virtual environments
+# -------------------------
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# -------------------------
+# OS / editor junk
+# -------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# -------------------------
+# WaveLock / CurvaChain runtime state
+# (do NOT commit local ledgers or ψ* snapshots)
+# -------------------------
+
+# On-disk blockchain & hash locks
+ledger/
+.ledger/
+archive/
+.archive/
+
+# Published ψ* snapshots (runtime, per-node)
+commitments/*.npz
+
+# Local user/keys/peers (node-specific, not shared)
+keypair.json
+psi_keypair.json
+users.json
+users.json.bak
+peers.json
+trusted_commitments.json
+
+# Optional local chain snapshots
+curva_chain.json
+
+# Signed messages / test payloads (runtime only)
+signed_message.json
+signed_gossip.json
+signed_strict*.json
+signed2.json
+strict_ok.json
+strict_bad.json
+s3.json
+
+# -------------------------
+# Misc local config
+# -------------------------
+*.log
+*.tmp
+*.bak
+
+
+chain/verify_payload*.json

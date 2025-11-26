@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wavelock"
+version = "0.1.0"
+description = "Curvature-locked ledger (WaveLock/CurvaChain) prototype"
+authors = [{name="Ricky Reyes"}]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+wavelockd = "network.server:main"
+wavelock-cli = "chain.cli:main"
+wavelock-miner = "chain.cli:main"
