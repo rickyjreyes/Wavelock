@@ -1,6 +1,7 @@
 import hashlib
 import time
 from typing import List, Optional, Dict, Any
+import json
 
 class Block:
     def __init__(
@@ -9,7 +10,7 @@ class Block:
         messages: List[str],
         previous_hash: str,
         difficulty: int = 4,
-        timestamp: Optional[float] = None,
+        timestamp: Optional[str] = None,      # 🔥 FIXED: always store as string
         nonce: Optional[int] = None,
         block_hash: Optional[str] = None,
         merkle_root: Optional[str] = None,
@@ -17,12 +18,21 @@ class Block:
         meta: Optional[Dict[str, Any]] = None,
     ):
         self.index = index
-        self.timestamp = timestamp or time.time()
+
+        # 🔥 FIX #1 — timestamp must never change; never use "or" fallback
+        if timestamp is None:
+            self.timestamp = str(time.time())
+        else:
+            self.timestamp = str(timestamp)
+
         self.messages = messages
         self.previous_hash = previous_hash
         self.difficulty = difficulty
         self.block_type = block_type
-        self.meta = meta or {}
+
+        # 🔥 FIX #2 — meta must be JSON-stable
+        self.meta = meta if meta is not None else {}
+        self.meta = json.loads(json.dumps(self.meta, sort_keys=True))
 
         self.merkle_root = merkle_root or self.calculate_merkle_root()
 
@@ -48,7 +58,10 @@ class Block:
         return hashes[0]
 
     def calculate_hash(self, nonce: int) -> str:
-        # Include block_type and meta in the consensus hash
+
+        # 🔥 FIX #3 — JSON stable meta
+        stable_meta = json.dumps(self.meta, sort_keys=True)
+
         block_content = (
             f"{self.index}"
             f"{self.timestamp}"
@@ -56,7 +69,7 @@ class Block:
             f"{self.merkle_root}"
             f"{self.difficulty}"
             f"{self.block_type}"
-            f"{self.meta}"
+            f"{stable_meta}"
             f"{nonce}"
         )
         return hashlib.sha256(block_content.encode()).hexdigest()
@@ -75,22 +88,22 @@ class Block:
             "messages": self.messages,
             "previous_hash": self.previous_hash,
             "difficulty": self.difficulty,
-            "timestamp": self.timestamp,
+            "timestamp": self.timestamp,               # stored as string
             "nonce": self.nonce,
             "hash": self.hash,
             "merkle_root": self.merkle_root,
             "block_type": self.block_type,
             "meta": self.meta,
         }
-    
+
     @staticmethod
     def from_dict(data):
         return Block(
             index=data["index"],
             messages=data["messages"],
             previous_hash=data["previous_hash"],
-            difficulty=data["difficulty"],
-            timestamp=data["timestamp"],
+            difficulty=data.get("difficulty", 4),
+            timestamp=data["timestamp"],               # always string
             nonce=data["nonce"],
             block_hash=data["hash"],
             merkle_root=data.get("merkle_root"),

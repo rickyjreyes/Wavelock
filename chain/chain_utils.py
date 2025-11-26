@@ -1,20 +1,30 @@
-import os, time
-import json
+import os, time, json, hashlib, sys
+from pathlib import Path
 import cupy as cp
 import matplotlib.pyplot as plt
+
 from chain.CurvaChain import CurvaChain
 from chain.WaveLock import CurvatureKeyPair, symbolic_verifier, load_quantum_keys
 from chain.Block import Block
 
+# ============================================================
+# 0. Ledger Path (GLOBAL, ABSOLUTE, CANONICAL)
+# ============================================================
+
+# project root = folder ABOVE /chain
+ROOT = Path(__file__).resolve().parents[1]
+
+# The real global ledger directory used by ALL nodes, tests, etc.
+LEDGER_DIR = ROOT / "ledger"
+LEDGER_DIR.mkdir(exist_ok=True)
+
+# Main rotating ledger file
+LEDGER_FILE = LEDGER_DIR / "blk00000.jsonl"
 
 
-LEDGER_DIR = "ledger"
-LEDGER_FILE = os.path.join(LEDGER_DIR, "blk00000.jsonl")
-
-
-# --- add near the top ---
-from pathlib import Path
-import hashlib, sys
+# ============================================================
+# 1. Internal helpers
+# ============================================================
 
 def _write_lock(path: Path) -> Path:
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -29,21 +39,24 @@ def _is_writable(p: Path) -> bool:
     except Exception:
         return False
 
+
 def _next_ledger_path() -> Path:
-    led = Path("ledger")
-    led.mkdir(exist_ok=True)
-    files = sorted(led.glob("blk*.jsonl"))
+    """Return next blkNNNNN.jsonl path inside canonical ledger dir."""
+    LEDGER_DIR.mkdir(exist_ok=True)
+    files = sorted(LEDGER_DIR.glob("blk*.jsonl"))
     if not files:
-        return led / "blk00000.jsonl"
-    # assume contiguous numbering; pick max+1
-    last_idx = max(int(f.stem.replace("blk","")) for f in files)
-    return led / f"blk{last_idx+1:05d}.jsonl"
+        return LEDGER_DIR / "blk00000.jsonl"
+
+    last_idx = max(int(f.stem.replace("blk", "")) for f in files)
+    return LEDGER_DIR / f"blk{last_idx+1:05d}.jsonl"
+
 
 def _set_readonly(p: Path):
+    """Windows + POSIX compatible read-only helper."""
     try:
         if os.name == "nt":
             import ctypes
-            ctypes.windll.kernel32.SetFileAttributesW(str(p), 0x1)  # READONLY
+            ctypes.windll.kernel32.SetFileAttributesW(str(p), 0x1)
         else:
             os.chmod(p, 0o444)
     except Exception:
@@ -51,8 +64,9 @@ def _set_readonly(p: Path):
 
 
 
-
-# --- 1. Save / Load Chain ---
+# ============================================================
+# 2. Save / Load Full Chains (chain.json)
+# ============================================================
 
 def save_chain(chain: CurvaChain, filename="chain.json"):
     serializable = []
@@ -66,10 +80,13 @@ def save_chain(chain: CurvaChain, filename="chain.json"):
             "hash": block.hash,
             "difficulty": block.difficulty,
             "merkle_root": block.merkle_root,
+            "block_type": block.block_type,
+            "meta": block.meta,
         })
     with open(filename, "w") as f:
         json.dump(serializable, f)
     print(f"💾 Chain saved to {filename}")
+
 
 def load_chain(filename="chain.json") -> CurvaChain:
     with open(filename, "r") as f:
@@ -83,11 +100,16 @@ def load_chain(filename="chain.json") -> CurvaChain:
     print(f"📂 Chain loaded from {filename}")
     return chain
 
-# --- 2. Visualize ψ* + Entropy ---
+
+
+# ============================================================
+# 3. Visualization Helpers
+# ============================================================
 
 def visualize_psi(psi_star):
     psi_np = cp.asnumpy(psi_star)
-    entropy = -cp.sum((psi_star**2 / cp.sum(psi_star**2)) * cp.log(psi_star**2 / cp.sum(psi_star**2) + 1e-12)).get()
+    entropy = -cp.sum((psi_star**2 / cp.sum(psi_star**2))
+                      * cp.log(psi_star**2 / cp.sum(psi_star**2) + 1e-12)).get()
 
     plt.figure(figsize=(6, 5))
     plt.imshow(psi_np, cmap="viridis")
@@ -96,11 +118,15 @@ def visualize_psi(psi_star):
     plt.tight_layout()
     plt.show()
 
-# --- 3. Tamper Test (1-bit Perturbation) ---
+
+
+# ============================================================
+# 4. Tamper Test
+# ============================================================
 
 def tamper_and_test(keypair: CurvatureKeyPair):
     tampered = keypair.psi_star.copy()
-    tampered[0, 0] += 0.5  # or even try 1.0 for clear failure
+    tampered[0, 0] += 0.5
     reference = keypair.evolve(cp.asarray(keypair.psi_0.copy()), keypair.n)
     result = symbolic_verifier(tampered, reference)
     print("🧪 Tamper test:")
@@ -108,55 +134,70 @@ def tamper_and_test(keypair: CurvatureKeyPair):
     return result
 
 
-def save_block_to_disk(block):
-    target = Path(LEDGER_FILE)
+
+# ============================================================
+# 5. Ledger I/O (block-level)
+# ============================================================
+
+def save_block_to_disk(block: Block):
+    """Append block JSON to canonical rotating ledger file."""
+    target = LEDGER_FILE
     target.parent.mkdir(exist_ok=True)
 
     try:
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
     except PermissionError:
-        # read-only or locked → rotate
+        # target is read-only, rotate ledger
         target = _next_ledger_path()
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
 
     lock_path = _write_lock(target)
     if os.getenv("WL_LOCK_AFTER_WRITE") == "1":
-        _set_readonly(target); _set_readonly(lock_path)
+        _set_readonly(target)
+        _set_readonly(lock_path)
 
 
 def load_all_blocks() -> list[Block]:
-    """Load blocks from ALL rotated files: blk00000.jsonl, blk00001.jsonl, …"""
+    """Load ALL blocks from ALL blkNNNNN.jsonl files."""
     blocks: list[Block] = []
-    led = Path(LEDGER_DIR)
+    led = LEDGER_DIR
+
     if not led.exists():
         return blocks
+
     for p in sorted(led.glob("blk*.jsonl")):
         with p.open("r", encoding="utf-8") as f:
             for line in f:
                 data = json.loads(line)
-                blocks.append(Block(
+                block = Block(
                     index=data["index"],
                     messages=data["messages"],
                     previous_hash=data["previous_hash"],
                     difficulty=data.get("difficulty", 4),
-                    timestamp=data["timestamp"],
+                    timestamp=float(data["timestamp"]),
                     nonce=data["nonce"],
                     block_hash=data["hash"],
-                    merkle_root=data["merkle_root"],
-                ))
+                    merkle_root=data.get("merkle_root"),
+                    block_type=data.get("block_type", "GENERIC"),
+                    meta=data.get("meta", {}),
+                )
+                block.hash = data["hash"]   # ⭐ REQUIRED ⭐
+                blocks.append(block)
+
     return blocks
 
 
 def reset_ledger(force: bool = False):
-    """Delete all ledger files and sidecars in ./ledger."""
-    led = Path(LEDGER_DIR)
+    """Delete all ledger files inside canonical ledger directory."""
+    led = LEDGER_DIR
     if not force:
-        ans = input("⚠️  This will delete your entire blockchain ledger. Type 'yes' to confirm: ").strip().lower()
+        ans = input("⚠️  Delete entire blockchain ledger? Type 'yes' to confirm: ").strip().lower()
         if ans != "yes":
             print("❌ Ledger reset cancelled.")
             return
+
     if led.exists():
         for p in led.glob("blk*.jsonl"):
             p.unlink(missing_ok=True)
@@ -164,41 +205,58 @@ def reset_ledger(force: bool = False):
             p.unlink(missing_ok=True)
         for p in led.glob("*.sha256"):
             p.unlink(missing_ok=True)
+
     print("✅ Ledger reset complete.")
 
+
+
+# ============================================================
+# 6. Verification + Integrity Checks
+# ============================================================
+
+def verify_merkle_root(block: Block) -> bool:
+    return block.merkle_root == block.calculate_merkle_root()
 
 
 def verify_chain(blocks=None, keypair=None):
     if blocks is None:
         blocks = load_all_blocks()
+
     if not blocks:
         print("⚠️ No blocks found.")
         return False
 
+    # Keypair loading fallback
     if keypair is None:
         try:
-            keypair = load_quantum_keys()  # expects psi_keypair.json
+            keypair = load_quantum_keys()
         except Exception:
-            with open("keypair.json","r") as f:
+            with open("keypair.json", "r") as f:
                 data = json.load(f)
             kp = CurvatureKeyPair(n=data["n"])
-            kp.psi_0   = cp.asarray(data["psi_0"])
-            kp.psi_star= cp.asarray(data["psi_star"])
+            kp.psi_0 = cp.asarray(data["psi_0"])
+            kp.psi_star = cp.asarray(data["psi_star"])
             kp.commitment = data["commitment"]
             keypair = kp
 
-
     for i, block in enumerate(blocks):
+
+        # Hash check
         if block.hash != block.calculate_hash(block.nonce):
             print(f"❌ Block #{block.index} hash mismatch.")
             return False
+
+        # Difficulty check
         if not block.hash.startswith("0" * block.difficulty):
             print(f"❌ Block #{block.index} does not meet difficulty.")
             return False
+
+        # Previous hash linkage
         if i > 0 and block.previous_hash != blocks[i - 1].hash:
             print(f"❌ Block #{block.index} previous_hash mismatch.")
             return False
 
+        # Extract message/signature/commitment
         msg_line = next((m for m in block.messages if m.startswith("message: ")), None)
         sig_line = next((m for m in block.messages if m.startswith("signature: ")), None)
         commit_line = next((m for m in block.messages if m.startswith("commitment: ")), None)
@@ -214,6 +272,7 @@ def verify_chain(blocks=None, keypair=None):
         if commit != keypair.commitment:
             print(f"❌ Block #{block.index} commitment mismatch.")
             return False
+
         if not keypair.verify(msg, sig):
             print(f"❌ Block #{block.index} signature invalid.")
             return False
@@ -225,65 +284,56 @@ def verify_chain(blocks=None, keypair=None):
     print(f"✅ Verified {len(blocks)} blocks: curvature, linkage, hash, Merkle.")
     return True
 
-    
-def get_last_signature(blocks):
-    for block in reversed(blocks):
-        for line in block.messages:
-            if line.startswith("signature: "):
-                return line[len("signature: "):]
-    return None
-
-def verify_merkle_root(block: Block) -> bool:
-    return block.merkle_root == block.calculate_merkle_root()
 
 
-
-
+# ============================================================
+# 7. Ledger Auditing
+# ============================================================
 
 def compute_sha256(filepath):
     with open(filepath, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
-    
+
+
 def _is_readonly(path: str) -> bool:
-    """True if file is read-only (Windows RO bit or POSIX no-write)."""
     try:
         import ctypes
         attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
-        return bool(attrs & 0x1)  # FILE_ATTRIBUTE_READONLY
+        return bool(attrs & 0x1)
     except Exception:
         return not os.access(path, os.W_OK)
+
 
 def audit_ledger() -> bool:
     print("🔎 Ledger Audit Report")
     print("------------------------")
-    led_dir = "ledger"
-    if not os.path.isdir(led_dir):
+
+    led = LEDGER_DIR
+    if not led.exists():
         print("❌ No ledger directory found.")
         return False
 
-    ledgers = [f for f in os.listdir(led_dir) if f.startswith("blk") and f.endswith(".jsonl")]
+    ledgers = list(sorted(led.glob("blk*.jsonl")))
     if not ledgers:
         print("❌ No ledger files found.")
         return False
 
     overall_ok = True
 
-    for ledger_file in sorted(ledgers):
-        path = os.path.join(led_dir, ledger_file)
-        print(f"\n📄 Auditing {ledger_file}...")
-        sha = compute_sha256(path)  # reuse your existing helper
+    for ledger_path in ledgers:
+        print(f"\n📄 Auditing {ledger_path.name}...")
+        sha = compute_sha256(ledger_path)
         print(f"📏 SHA256: {sha}")
-        ts = time.ctime(os.path.getmtime(path))
+        ts = time.ctime(os.path.getmtime(ledger_path))
         print(f"⏱ Last modified: {ts}")
 
-        # per-file lock check (blk000NN.jsonl → blk000NN.hash)
-        lock = os.path.splitext(path)[0] + ".hash"
+        # hash lock check
+        lock = ledger_path.with_suffix(".hash")
         print("🔍 Verifying hash lock...")
-        if os.path.exists(lock):
-            stored = open(lock, "r", encoding="utf-8").read().strip().lower()
+        if lock.exists():
+            stored = lock.read_text().strip().lower()
             if stored == sha:
                 print("🔐 Hash lock verified.")
-                print("✅ Hash matches stored lock.")
             else:
                 print("❌ Hash lock mismatch.")
                 overall_ok = False
@@ -292,9 +342,9 @@ def audit_ledger() -> bool:
             overall_ok = False
 
         print("🔐 Checking file permissions...")
-        print("✅ File is read-only." if _is_readonly(path) else "⚠️ File is writable.")
+        print("⚠️ File is writable." if not _is_readonly(str(ledger_path)) else "✅ File is read-only.")
 
-    # commitment + curvature signature audit (your existing block checks)
+    # curvature signature audit
     try:
         with open("keypair.json", "r") as f:
             key_data = json.load(f)
@@ -309,6 +359,7 @@ def audit_ledger() -> bool:
 
     blocks = load_all_blocks()
     print(f"📦 Total blocks in ledger: {len(blocks)}")
+
     last_ts = 0
     for block in blocks:
         if block.timestamp < last_ts:
@@ -320,7 +371,7 @@ def audit_ledger() -> bool:
         com = next((m for m in block.messages if m.startswith("commitment: ")), None)
 
         if not msg or not sig or not com:
-            print(f"❌ Block #{block.index} is missing curvature metadata.")
+            print(f"❌ Block #{block.index} missing curvature metadata.")
             overall_ok = False
             continue
 
