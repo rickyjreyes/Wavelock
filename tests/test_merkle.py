@@ -6,7 +6,7 @@ CHAIN_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, CHAIN_PATH)
 
 # Now safely import modules
-from chain.chain_utils import load_all_blocks, verify_merkle_root
+from wavelock.chain.chain_utils import load_all_blocks, verify_merkle_root
 
 blocks = load_all_blocks()
 for b in blocks:

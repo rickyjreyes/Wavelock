@@ -1,7 +1,7 @@
 import cupy as cp
 import pytest
 
-from chain.WaveLock import (
+from wavelock.chain.WaveLock import (
     CurvatureKeyPair,
     enforce_dimensional_lock,
     classify_wcc_run,

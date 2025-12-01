@@ -1,9 +1,9 @@
 import os
 import tempfile
 
-from chain.CurvaChain import CurvaChain
-from chain.kernel_decl import add_kernel_decl_block, spec_hash
-from chain.WaveLock import _kernel_hash, KERNEL_VERSION
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.kernel_decl import add_kernel_decl_block, spec_hash
+from wavelock.chain.WaveLock import _kernel_hash, KERNEL_VERSION
 
 
 def test_spec_hash_changes_with_content():

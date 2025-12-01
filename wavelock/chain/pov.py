@@ -4,9 +4,9 @@ from typing import List
 
 import hashlib
 
-from chain.CurvaChain import CurvaChain
-from chain.Block import Block
-from chain.WaveLock import (
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.Block import Block
+from wavelock.chain.WaveLock import (
     classify_wcc_run,
     wcc_avg_curvature_budget,
     _steps,

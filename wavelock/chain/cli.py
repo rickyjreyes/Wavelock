@@ -3,12 +3,12 @@ import json, argparse, socket, sys, os, time, shutil, hashlib
 import cupy as cp
 
 # at top of chain/cli.py
-from .WaveLock import CurvatureKeyPair
-from .UserRegistry import UserRegistry, sign_message_with_user, verify_signed_message
-from .CurvaChain import CurvaChain
-from .chain_utils import load_all_blocks, audit_ledger, save_block_to_disk, reset_ledger
-from .chain_utils import verify_chain as verify_chain_canonical
-from .Block import Block
+from wavelock.chain.WaveLock import CurvatureKeyPair
+from wavelock.chain.UserRegistry import UserRegistry, sign_message_with_user, verify_signed_message
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.chain_utils import load_all_blocks, audit_ledger, save_block_to_disk, reset_ledger
+from wavelock.chain.chain_utils import verify_chain as verify_chain_canonical
+from wavelock.chain.Block import Block
 # from .network.protocol import (
 #     encode_message, decode_message, GET_CHAIN, SEND_BLOCK, GET_HASH, SEND_HASH,
 #     GET_PEERS, SEND_PEERS, VERIFY_SIGNATURE, SEND_VERIFICATION
@@ -18,7 +18,7 @@ from .Block import Block
 # network
 network_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "network")
 sys.path.append(network_path)
-from network.protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK, GET_HASH, SEND_HASH, GET_PEERS, SEND_PEERS, VERIFY_SIGNATURE, SEND_VERIFICATION
+from wavelock.network.protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK, GET_HASH, SEND_HASH, GET_PEERS, SEND_PEERS, VERIFY_SIGNATURE, SEND_VERIFICATION
 
 # Global chain instance
 chain = CurvaChain(difficulty=3)
@@ -248,9 +248,9 @@ def verify_chain():
 
 def sync_chain_from_peer(host="localhost", port=9001):
     import socket
-    from protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK
-    from Block import Block
-    from chain_utils import save_block_to_disk
+    from wavelock.network.protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK
+    from wavelock.chain.Block import Block
+    from wavelock.chain.chain_utils import save_block_to_disk
 
     try:
         print(f"🌐 Connecting to {host}:{port} for chain sync...")
@@ -557,7 +557,7 @@ def precheck_peer_hash(host, port):
 
 def sync_if_trusted(host="localhost", port=9001):
     if precheck_peer_hash(host, port):
-        from cli import sync_chain_from_peer
+        from wavelock.chain.cli import sync_chain_from_peer
         sync_chain_from_peer(host, port)
     else:
         print("❌ Sync skipped due to hash mismatch.")
@@ -567,7 +567,7 @@ def broadcast_block_to_peers(block):
     live_peers = []
     for peer in load_peers():
         try:
-            from network.peer_utils import _parse_peer
+            from wavelock.network.peer_utils import _parse_peer
             host, port = _parse_peer(peer)
             port = int(port)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -586,7 +586,7 @@ def discover_peers():
     discovered = set()
     for peer in known_peers:
         try:
-            from network.peer_utils import _parse_peer
+            from wavelock.network.peer_utils import _parse_peer
             host, port = _parse_peer(peer)
             port = int(port)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -695,7 +695,7 @@ def remote_verify_signature(host, port, message, signature, commitment):
 
 def mine_daemon(args):
     import time, os
-    from chain.UserRegistry import sign_message_with_user, verify_signed_message
+    from wavelock.chain.UserRegistry import sign_message_with_user, verify_signed_message
     host, port = args.peer.split(":")
     port = int(port)
     print(f"⛏️  Miner daemon -> peer {host}:{port}")

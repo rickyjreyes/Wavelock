@@ -2,7 +2,7 @@ import json, os
 import cupy as cp
 try:
     # when used as package (recommended: python -m chain.cli ...)
-    from chain.WaveLock import CurvatureKeyPair
+    from wavelock.chain.WaveLock import CurvatureKeyPair
 except Exception:
     # fallback when importing top-level
     from WaveLock import CurvatureKeyPair

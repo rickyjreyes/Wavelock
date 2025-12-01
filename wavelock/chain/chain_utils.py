@@ -3,9 +3,9 @@ from pathlib import Path
 import cupy as cp
 import matplotlib.pyplot as plt
 
-from chain.CurvaChain import CurvaChain
-from chain.WaveLock import CurvatureKeyPair, symbolic_verifier, load_quantum_keys
-from chain.Block import Block
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.WaveLock import CurvatureKeyPair, symbolic_verifier, load_quantum_keys
+from wavelock.chain.Block import Block
 
 # ============================================================
 # 0. Ledger Path (GLOBAL, ABSOLUTE, CANONICAL)

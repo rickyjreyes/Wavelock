@@ -1,4 +1,4 @@
-from chain.Block import Block
+from wavelock.chain.Block import Block
 from typing import List, Optional, Dict, Any
 
 class CurvaChain:

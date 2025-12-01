@@ -4,13 +4,41 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelock"
-version = "0.1.0"
-description = "Curvature-locked ledger (WaveLock/CurvaChain) prototype"
-authors = [{name="Ricky Reyes"}]
+version = "0.1.2"
+description = "WaveLock: Curvature-locked cryptographic kernel, chain, and PDE identity system"
+readme = {file = "README.md", content-type = "text/markdown"}
+authors = [
+    {name="Ricky Reyes", email="reyes.ricky30@gmail.com"}
+]
 requires-python = ">=3.9"
-dependencies = []
+
+dependencies = [
+    "numpy>=1.20",
+    "matplotlib>=3.5",
+    "requests>=2.0",
+    "fastapi>=0.100",
+    "uvicorn>=0.22",
+]
+
+[project.optional-dependencies]
+cpu = ["numpy", "matplotlib"]
+gpu = ["cupy>=11.0"]   # optional GPU-only
+
+[project.urls]
+Homepage = "https://github.com/rickyjreyes/Wavelock"
+Source = "https://github.com/rickyjreyes/Wavelock"
+Issues = "https://github.com/rickyjreyes/Wavelock/issues"
 
 [project.scripts]
-wavelockd = "network.server:main"
-wavelock-cli = "chain.cli:main"
-wavelock-miner = "chain.cli:main"
+wavelockd = "wavelock.network.server:main"
+wavelock-cli = "wavelock.chain.cli:main"
+wavelock-miner = "wavelock.chain.cli:miner_main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wavelock*"]
+exclude = ["tests*", "scripts*", "tools*"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.json", "*.jsonl", "*.npz", "*.hash"]
+"wavelock" = ["ledger/*", "commitments/*", "archive/*"]

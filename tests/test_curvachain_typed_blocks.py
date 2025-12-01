@@ -1,5 +1,5 @@
-from chain.CurvaChain import CurvaChain
-from chain.Block import Block
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.Block import Block
 
 
 def test_typed_blocks_and_roundtrip():

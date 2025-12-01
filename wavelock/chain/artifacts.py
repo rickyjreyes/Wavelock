@@ -5,8 +5,8 @@ import hashlib
 import json
 import os
 
-from chain.CurvaChain import CurvaChain
-from chain.Block import Block
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.Block import Block
 
 
 ARTIFACT_PREFIX = "ARTIFACT:"

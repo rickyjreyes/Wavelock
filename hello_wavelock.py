@@ -17,9 +17,9 @@ import cupy as cp
 # Ensure project root on path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from chain.WaveLock import CurvatureKeyPair, symbolic_verifier
-from chain.chain_utils import save_block_to_disk, verify_chain
-from chain.Block import Block
+from wavelock.chain.WaveLock import CurvatureKeyPair, symbolic_verifier
+from wavelock.chain.chain_utils import save_block_to_disk, verify_chain
+from wavelock.chain.Block import Block
 
 print("\n====================================")
 print(" 🌊  WaveLock — Hello World Demo")

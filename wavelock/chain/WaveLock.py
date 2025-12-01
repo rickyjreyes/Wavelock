@@ -308,3 +308,56 @@ __all__ = [
     "check_quantum_classical_bound",
     "_steps",
 ]
+
+# ===========================================================
+#  Legacy API required by psi-core (compatibility only)
+# ===========================================================
+
+def generate_quantum_keys(n: int = 4, seed: int | None = None, path: str = "psi_keypair.json"):
+    """
+    Compatibility: older ψ-Core Stage-3 agents expect on-disk ψ-keypairs.
+
+    Publicly harmless:
+    • Just saves the ψ_0, ψ_star, and commitment already generated.
+    • No new cryptography.
+    • No privileged data.
+    """
+    kp = CurvatureKeyPair(n=n, seed=seed)
+
+    data = {
+        "n": n,
+        "psi_0": cp.asnumpy(kp.psi_0).tolist(),
+        "psi_star": cp.asnumpy(kp.psi_star).tolist(),
+        "commitment": kp.commitment,
+    }
+
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+    return data
+
+
+def save_quantum_keys(path: str, data: dict):
+    """Compatibility shim."""
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def load_quantum_keys(path: str = "psi_keypair.json") -> CurvatureKeyPair:
+    """
+    Compatibility loader:
+    Reconstruct CurvatureKeyPair from a saved JSON file.
+    """
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    n = int(data.get("n", 4))
+
+    kp = CurvatureKeyPair(n=n, seed=None)
+    kp.psi_0 = cp.asarray(data["psi_0"], dtype=cp.float64)
+    kp.psi_star = cp.asarray(data["psi_star"], dtype=cp.float64)
+
+    if "commitment" in data:
+        kp.commitment = data["commitment"]
+
+    return kp

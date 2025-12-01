@@ -3,9 +3,9 @@ from typing import Optional
 import hashlib
 import os
 
-from chain.CurvaChain import CurvaChain
-from chain.Block import Block
-from chain.WaveLock import KERNEL_VERSION, _kernel_hash
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.Block import Block
+from wavelock.chain.WaveLock import KERNEL_VERSION, _kernel_hash
 
 
 def spec_hash(path: str) -> str:

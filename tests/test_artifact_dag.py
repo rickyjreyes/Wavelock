@@ -1,7 +1,7 @@
 import json
 
-from chain.CurvaChain import CurvaChain
-from chain.artifacts import (
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.artifacts import (
     make_artifact_node,
     encode_artifact_message,
     decode_artifact_message,

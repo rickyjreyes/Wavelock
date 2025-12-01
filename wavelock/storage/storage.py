@@ -1,8 +1,8 @@
 import os
 import json
 from typing import List
-from Block import Block
-from CurvaChain import CurvaChain
+from wavelock.chain.Block import Block
+from wavelock.chain.CurvaChain import CurvaChain
 
 
 LEDGER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ledger")

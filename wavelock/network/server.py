@@ -4,11 +4,11 @@ import os, socket, threading, time, json, traceback
 from typing import List, Tuple, Dict, Optional
 
 # --- repo imports (existing) ---
-from chain.config import load_config
-from .peer_utils import load_peers, save_peers, add_peer, random_peers
-from network.protocol import encode_message, decode_message, INV, GET_BLOCK, SEND_BLOCKS, GET_PEERS, SEND_PEERS, GET_CHAIN, SEND_BLOCK
-from chain.chain_utils import load_all_blocks, save_block_to_disk
-from chain.Block import Block  # your Block class (index, prev_hash, hash, nonce, messages, ...)
+from wavelock.chain.config import load_config
+from wavelock.network.peer_utils import load_peers, save_peers, add_peer, random_peers
+from wavelock.network.protocol import encode_message, decode_message, INV, GET_BLOCK, SEND_BLOCKS, GET_PEERS, SEND_PEERS, GET_CHAIN, SEND_BLOCK
+from wavelock.chain.chain_utils import load_all_blocks, save_block_to_disk
+from wavelock.chain.Block import Block  # your Block class (index, prev_hash, hash, nonce, messages, ...)
 
 # --- curvature / trust imports ---
 import numpy as np
@@ -17,7 +17,7 @@ try:
 except Exception:
     cp = None  # if GPU not available, strict verify will be disabled gracefully
 
-from chain.WaveLock import CurvatureKeyPair, SCHEMA_V2, _serialize_commitment_v2, _commit_header, _canonical_json
+from wavelock.chain.WaveLock import CurvatureKeyPair, SCHEMA_V2, _serialize_commitment_v2, _commit_header, _canonical_json
 
 HOST = "0.0.0.0"
 

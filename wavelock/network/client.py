@@ -9,7 +9,7 @@ if ROOT not in sys.path:
 
 try:
     # when run as a module: python -m network.client
-    from .protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK
+    from wavelock.network.protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK
 except Exception:
     # when run as a script: python network/client.py
     from protocol import encode_message, decode_message, GET_CHAIN, SEND_BLOCK

@@ -1,6 +1,6 @@
-from chain.WaveLock import CurvatureKeyPair
-from chain.CurvaChain import CurvaChain
-from chain.chain_utils import save_chain, load_chain, visualize_psi, tamper_and_test
+from wavelock.chain.WaveLock import CurvatureKeyPair
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.chain_utils import save_chain, load_chain, visualize_psi, tamper_and_test
 
 # ✅ Generate a keypair and visualize
 keypair = CurvatureKeyPair(n=4, seed=123)

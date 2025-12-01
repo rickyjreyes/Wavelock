@@ -1,5 +1,5 @@
 import cupy as cp
-from chain.WaveLock import CurvatureKeyPair
+from wavelock.chain.WaveLock import CurvatureKeyPair
 
 def test_curvature_hash_sensitivity():
     print("🔬 Testing curvature hash sensitivity...")

@@ -1,8 +1,8 @@
 import cupy as cp
 
-from chain.CurvaChain import CurvaChain
-from chain.WaveLock import CurvatureKeyPair
-from chain.pov import (
+from wavelock.chain.CurvaChain import CurvaChain
+from wavelock.chain.WaveLock import CurvatureKeyPair
+from wavelock.chain.pov import (
     make_pov_record,
     add_pov_block,
     recompute_reward_from_meta,

@@ -8,7 +8,7 @@ try:
 except Exception:
     pytest.skip("CuPy not available for this environment", allow_module_level=True)
 
-import chain.WaveLock as WL
+import wavelock.chain.WaveLock as WL
 
 
 def make_kp(n=4, seed=123):
