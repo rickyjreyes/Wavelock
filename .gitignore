@@ -82,3 +82,8 @@ s3.json
 
 
 chain/verify_payload*.json
+
+pdfs/
+.pdfs/
+
+FUTURE.md
