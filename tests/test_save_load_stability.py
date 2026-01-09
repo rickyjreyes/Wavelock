@@ -1,13 +1,17 @@
 import pytest
-import os
-from wavelock.chain.WaveLock import CurvatureKeyPair
-from wavelock.chain.WaveLock import save_quantum_keys, load_quantum_keys
+from wavelock.chain.WaveLock import (
+    CurvatureKeyPair,
+    save_quantum_keys,
+    load_quantum_keys,
+)
 
 def test_save_load_roundtrip(tmp_path):
-    kp = CurvatureKeyPair(n=8)
+    # Explicit test-only access to ψ★ for serialization
+    kp = CurvatureKeyPair(n=8, test_mode=True)
+
     file = tmp_path / "keys.json"
 
-    save_quantum_keys(str(file), { "kp": kp })
+    save_quantum_keys(str(file), {"kp": kp})
     data = load_quantum_keys(str(file))
 
     kp2 = data["kp"]

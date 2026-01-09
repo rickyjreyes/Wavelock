@@ -87,3 +87,5 @@ pdfs/
 .pdfs/
 
 FUTURE.md
+tests/scientific/dataset_pro
+.tests/scientific/dataset_pro

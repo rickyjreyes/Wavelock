@@ -30,7 +30,8 @@ def test_dimensional_lock_rejects_wrong_dimensionality():
 
 
 def test_wcc_classification_for_evolved_state():
-    kp = CurvatureKeyPair(n=4, seed=123)
+    # 🔐 Explicitly unlock ψ★ for testing
+    kp = CurvatureKeyPair(n=4, seed=123, test_mode=True)
     psi = kp.psi_star
 
     wcc_class = classify_wcc_run(_steps, psi)
@@ -41,9 +42,9 @@ def test_wcc_classification_for_evolved_state():
 
 
 def test_quantum_classical_bound_returns_boolean():
-    kp = CurvatureKeyPair(n=4, seed=456)
+    # 🔐 Explicitly unlock ψ★ for testing
+    kp = CurvatureKeyPair(n=4, seed=456, test_mode=True)
     psi = kp.psi_star
 
     qc_flag = check_quantum_classical_bound(psi)
-    # numpy.bool_ or Python bool both satisfy this
-    assert qc_flag is True or qc_flag is False
+    assert isinstance(qc_flag, (bool, cp.bool_))

@@ -7,6 +7,13 @@ import cupy as cp
 import numpy as np
 from dataclasses import dataclass
 
+import hmac
+def _secure_compare(a: str, b: str) -> bool:
+        return hmac.compare_digest(
+        a.encode("utf-8"),
+        b.encode("utf-8"),
+    )
+
 # === WLv3 Survivability Layer ===
 from .hash_families import (
     HashFamily,
@@ -363,7 +370,6 @@ def _serialize_commitment_v7(psi) -> bytes:
 # ===========================================================
 #               CurvatureKeyPair
 # ===========================================================
-
 class CurvatureKeyPair:
     def __init__(
         self,
@@ -375,7 +381,19 @@ class CurvatureKeyPair:
         use_v5: bool = False,
         use_v6: bool = False,
         use_v7: bool = False,
+        test_mode: bool = False,
     ):
+        # ---------------------------------------------------------
+        # Auto-enable test_mode when running under pytest
+        # (works even during import & test collection)
+        # ---------------------------------------------------------
+        # import sys
+        # if "pytest" in sys.modules:
+        #     test_mode = True
+
+        self.test_mode = bool(test_mode)
+
+
 
         # version flags
         self.use_v3 = bool(use_v3)
@@ -397,31 +415,46 @@ class CurvatureKeyPair:
         self.psi_history: List[cp.ndarray] = []
 
         # initial field
-        self.psi_0 = cp.random.rand(side, side)
-        enforce_dimensional_lock(self.psi_0)
-
+        self._psi_0 = cp.random.rand(side, side)
+        enforce_dimensional_lock(self._psi_0)
         # evolve while storing all frames (safe for all schemas)
-        self.psi_star = self._evolve_capture(self.psi_0, n)
-        enforce_dimensional_lock(self.psi_star)
+        self.__psi_star = self._evolve_capture(self._psi_0, n)
+        enforce_dimensional_lock(self.__psi_star)
+
+        # ---------------------------------------------------------
+        # CONSENSUS GUARD
+        # ---------------------------------------------------------
+        # GPU / CuPy backend is NON-CONSENSUS.
+        # Commitments must be generated via the NumPy reference
+        # implementation unless explicitly in test_mode.
+        if (not self.test_mode) and (
+            self.use_v3 or self.use_v4 or self.use_v5 or self.use_v6 or self.use_v7
+        ):
+            raise RuntimeError(
+                "GPU backend is non-consensus. "
+                "Only NumPy reference backend may emit consensus commitments."
+            )
+
+
 
         # choose commitment version once
         if self.use_v7:
-            raw = _serialize_commitment_v7(self.psi_star)
+            raw = _serialize_commitment_v7(self.__psi_star)
             schema = SCHEMA_V7
         elif self.use_v6:
             raw = _serialize_commitment_v6(self.psi_history)
             schema = SCHEMA_V6
         elif self.use_v5:
-            raw = _serialize_commitment_v5(self.psi_star)
+            raw = _serialize_commitment_v5(self.__psi_star)
             schema = SCHEMA_V5
         elif self.use_v4:
-            raw = _serialize_commitment_v4(self.psi_star)
+            raw = _serialize_commitment_v4(self.__psi_star)
             schema = SCHEMA_V4
         elif self.use_v3:
-            raw = _serialize_commitment_v3(self.psi_star)
+            raw = _serialize_commitment_v3(self.__psi_star)
             schema = SCHEMA_V3
         else:
-            raw = _serialize_commitment_v2(self.psi_star)
+            raw = _serialize_commitment_v2(self.__psi_star)
             schema = SCHEMA_V2
 
         self.schema = schema
@@ -447,12 +480,45 @@ class CurvatureKeyPair:
 
         # Full WLv3 commitment string
         self.commitment = format_commitment_v3(schema, primary_hex, secondary_hex)
+    
+    # ============================
+    # Protected Access to ψ★ / ψ₀
+    # ============================
+    @property
+    def psi_star(self):
+        if not self.test_mode:
+            raise PermissionError("ψ★ access is prohibited. Enable test_mode=True explicitly.")
+        return self.__psi_star
+    
+    @psi_star.setter
+    def psi_star(self, value):
+        """
+        Allow ψ★ mutation ONLY in test_mode.
+        Production mode remains immutable.
+        """
+        if not self.test_mode:
+            raise PermissionError("Cannot modify ψ★ outside of test_mode.")
+        self.__psi_star = cp.asarray(value, dtype=cp.float64)
+
+
+    @property
+    def psi_0(self):
+        if not self.test_mode:
+            raise PermissionError("ψ₀ access is prohibited. Enable test_mode=True explicitly.")
+        return self._psi_0
+    
+    @psi_0.setter
+    def psi_0(self, value):
+        if not self.test_mode:
+            raise PermissionError("Cannot modify ψ₀ outside of test_mode.")
+        self._psi_0 = cp.asarray(value, dtype=cp.float64)
+
 
     @classmethod
     def from_loaded(cls, psi_star, commitment, primary, secondary, schema=None):
         obj = cls.__new__(cls)
 
-        # Restore correct schema (default = parsed schema from commitment)
+        # schema restore
         if schema is None:
             try:
                 parsed_schema, _, _ = parse_commitment(commitment)
@@ -462,7 +528,10 @@ class CurvatureKeyPair:
         else:
             obj.schema = schema
 
-        obj.psi_star = psi_star
+        # IMPORTANT: bypass protection
+        obj.__psi_star = cp.asarray(psi_star, dtype=cp.float64)
+
+        # assignment
         obj.commitment = commitment
 
         # Convert strings → enums
@@ -479,7 +548,12 @@ class CurvatureKeyPair:
             s_hex = hash_hex(raw, HashFamily.SHA3_256)
 
         obj.dual_hash = DualHash.from_hex(p_hex, s_hex)
+
+        # ensure loaded keys are test-only
+        obj.test_mode = True
+
         return obj
+
 
 
     # PDE evolution capturing full history (for v6)
@@ -521,7 +595,8 @@ class CurvatureKeyPair:
             "schema": SCHEMA_V2,
             "dtype": "float64",
             "ord": "C",
-            "shape": [int(x) for x in self.psi_star.shape],
+            # "shape": [int(x) for x in self.psi_star.shape],
+            "shape": [int(x) for x in self.__psi_star.shape],
             "alpha": float(alpha),
             "beta":  float(beta),
             "theta": float(theta),
@@ -540,7 +615,7 @@ class CurvatureKeyPair:
             b"SIGv2\0"
             + msg_bytes + b"\0"
             + header + b"\0"
-            + _float64_bytes(self.psi_star)
+            + _float64_bytes(self.__psi_star)
         )
 
         # return (
@@ -638,19 +713,22 @@ class CurvatureKeyPair:
         schema = self.schema
 
         if schema == SCHEMA_V7:
-            return _serialize_commitment_v7(self.psi_star)
+            return _serialize_commitment_v7(self.__psi_star)
         elif schema == SCHEMA_V6:
             return _serialize_commitment_v6(self.psi_history)
         elif schema == SCHEMA_V5:
-            return _serialize_commitment_v5(self.psi_star)
+            return _serialize_commitment_v5(self.__psi_star)
         elif schema == SCHEMA_V4:
-            return _serialize_commitment_v4(self.psi_star)
+            return _serialize_commitment_v4(self.__psi_star)
         elif schema == SCHEMA_V3:
-            return _serialize_commitment_v3(self.psi_star)
+            # return _serialize_commitment_v3(self.psi_star)
+            return _serialize_commitment_v3(self.__psi_star)
+
         elif schema == SCHEMA_V2:
-            return _serialize_commitment_v2(self.psi_star)
+            return _serialize_commitment_v2(self.__psi_star)
+            # return _serialize_commitment_v2(self.psi_star)
         else:
-            return _serialize_commitment_v1(self.psi_star)
+            return _serialize_commitment_v1(self.__psi_star)
 
 
     def verify_commitment(self) -> tuple[bool, bool]:
@@ -684,28 +762,32 @@ class CurvatureKeyPair:
     #     # 2. Verify signature
     #     expected = self.sign(message)
     #     return expected == signature
-
+    
     def verify(self, message: str, signature: str) -> bool:
         """
         Survivability mode:
         Accept signature if it matches EITHER hash family.
+        Timing-safe comparison.
         """
-
         payload = self._sig_payload(message)
 
-        # primary
-        if signature == hash_hex(payload, self.primary_family):
-            return True
+        primary_sig   = hash_hex(payload, self.primary_family)
+        secondary_sig = hash_hex(payload, self.secondary_family)
 
-        # secondary (WLv3 survivability mode)
-        if signature == hash_hex(payload, self.secondary_family):
-            return True
+        return (
+            _secure_compare(signature, primary_sig)
+            or _secure_compare(signature, secondary_sig)
+        )
 
-        return False
 
     def verify_strict(self, message: str, sig_primary: str, sig_secondary: str) -> bool:
         expected_p, expected_s = self.sign_dual(message)
-        return (sig_primary == expected_p) and (sig_secondary == expected_s)
+
+        return (
+            _secure_compare(sig_primary, expected_p)
+            and _secure_compare(sig_secondary, expected_s)
+        )
+
 
 # ===========================================================
 # Symbolic Verifier — All Versions
@@ -742,12 +824,13 @@ def generate_quantum_keys(
     """
     Legacy helper: generate ψ₀, ψ★ and commitment, write to JSON on disk.
     """
-    kp = CurvatureKeyPair(n=n, seed=seed)
+    kp = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
     
     data = {
         "n": n,
         "psi_0": cp.asnumpy(kp.psi_0).tolist(),
-        "psi_star": cp.asnumpy(kp.psi_star).tolist(),
+        # "psi_star": cp.asnumpy(kp.psi_star).tolist(),
+        "psi_star": (kp.__psi_star.tolist() if kp.test_mode else None),
         "commitment": kp.commitment,
     }
     with open(path, "w") as f:
@@ -800,6 +883,13 @@ def load_quantum_keys(path):
             #     secondary=v["secondary_family"],
             # )
                     
+            # kp = CurvatureKeyPair.from_loaded(
+            #     psi_star=np.array(v["psi_star"], dtype=np.float64),
+            #     commitment=v["commitment"],
+            #     primary=v["primary_family"],
+            #     secondary=v["secondary_family"],
+            #     schema=v.get("schema", None),
+            # )
             kp = CurvatureKeyPair.from_loaded(
                 psi_star=np.array(v["psi_star"], dtype=np.float64),
                 commitment=v["commitment"],
@@ -807,6 +897,9 @@ def load_quantum_keys(path):
                 secondary=v["secondary_family"],
                 schema=v.get("schema", None),
             )
+
+            # enforce test-mode ONLY
+            kp.test_mode = True
 
             out[k] = kp
         else:

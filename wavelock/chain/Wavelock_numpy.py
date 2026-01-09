@@ -14,7 +14,7 @@ import numpy as np
 from dataclasses import dataclass
 
 # Import hash families module
-from hash_families import (
+from wavelock.chain.hash_families import (
     HashFamily,
     DualHash,
     hash_data,

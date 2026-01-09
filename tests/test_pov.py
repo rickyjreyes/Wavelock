@@ -12,7 +12,9 @@ from wavelock.chain.pov import (
 
 def test_pov_record_and_block_roundtrip():
     chain = CurvaChain(difficulty=2)
-    kp = CurvatureKeyPair(n=4, seed=123)
+
+    # Explicit ψ★ access for test-only inspection
+    kp = CurvatureKeyPair(n=4, seed=123, test_mode=True)
 
     record = make_pov_record(
         validator_id="validator-1",
@@ -24,6 +26,7 @@ def test_pov_record_and_block_roundtrip():
     blk = add_pov_block(chain, record)
 
     assert blk.block_type == "VERIFICATION_TX"
+
     meta = blk.meta
     assert meta["validator_id"] == "validator-1"
     assert meta["target_block_index"] == 0
