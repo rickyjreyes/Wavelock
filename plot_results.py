@@ -47,7 +47,7 @@ sine_data = [np.sin(i * 0.1) for i in range(1000)]
 python_data = [np.random.random() for _ in range(1000)]
 
 # C. Strong Target (Wavelock - Mock or Real)
-wavelock_path = os.path.join("data", "soliton_n12.csv")
+wavelock_path = os.path.join("./data/wavelock_data", "soliton_n12.csv")
 if os.path.exists(wavelock_path):
     print("Loading Real Wavelock Data...")
     wavelock_data = np.loadtxt(wavelock_path)[:1000]

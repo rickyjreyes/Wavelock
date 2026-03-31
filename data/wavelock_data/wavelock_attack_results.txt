@@ -1,0 +1,12 @@
+WaveLock Comprehensive Inversion Attack Results
+==================================================
+PDE Parameters: alpha=1.50, beta=2.6e-3, theta=1.0e-5
+Grid: 32x32, Iterations: 50, dt=0.1, seed=12
+
+1_MLP_sequential: 0.7165871858596802
+2_CNN_spatial: 1.708133578300476
+3_Adjoint_PDE: 727.389084325078
+4_Gradient_optimization: 1.42072457498783
+5_Fourier_inversion: 0.9998821457566762
+6_Moment_correlation: 0.060107506736697965
+7_Max_amplification: 8.129218068423792e+16
