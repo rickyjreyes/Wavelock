@@ -1,4 +1,8 @@
-import cupy as cp
+import numpy as np
+try:
+    import cupy as cp
+except ImportError:
+    cp = np
 import pytest
 
 from wavelock.chain.WaveLock import (

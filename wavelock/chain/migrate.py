@@ -120,7 +120,15 @@ def _serialize_commitment_v2(psi) -> bytes:
 # ===========================================================================
 #  Upgrade Functions
 # ===========================================================================
-def upgrade_commitment_with_psi(old_commit, raw_bytes: bytes) -> str:
+def upgrade_commitment_with_psi(old_commit, raw_bytes_or_psi) -> str:
+    """Upgrade a single-hash commitment to dual-hash.
+
+    raw_bytes_or_psi can be:
+      - bytes: the already-serialized commitment payload
+      - np.ndarray: a psi_star array, which will be serialized via _serialize_commitment_v2
+    """
+    if isinstance(raw_bytes_or_psi, np.ndarray):
+        raw_bytes_or_psi = _serialize_commitment_v2(raw_bytes_or_psi)
     parts = old_commit.split(":")
 
     # Case 1 — Already WLv3
@@ -134,12 +142,12 @@ def upgrade_commitment_with_psi(old_commit, raw_bytes: bytes) -> str:
     schema, primary_hex = parts
 
     # ❗ REQUIRED BY TEST: Verify old_raw matches primary hash
-    computed_primary = hash_hex(raw_bytes, HashFamily.SHA256)
+    computed_primary = hash_hex(raw_bytes_or_psi, HashFamily.SHA256)
     if computed_primary != primary_hex:
         raise ValueError("Primary hash mismatch during upgrade")
 
     # Compute secondary hash (WLv3)
-    secondary_hex = hash_hex(raw_bytes, HashFamily.SHA3_256)
+    secondary_hex = hash_hex(raw_bytes_or_psi, HashFamily.SHA3_256)
 
     return f"{schema}:{primary_hex}:{secondary_hex}"
 

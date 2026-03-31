@@ -1,5 +1,8 @@
 import numpy as np
-import cupy as cp
+try:
+    import cupy as cp
+except ImportError:
+    cp = np
 import hashlib
 import sys, os, time
 

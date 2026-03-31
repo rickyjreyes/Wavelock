@@ -3,11 +3,27 @@ from typing import Optional, Tuple, List
 import hashlib
 import json
 import struct
-import cupy as cp
 import numpy as np
+
+# --- backend shim: prefer CuPy (GPU) but fall back to NumPy (CPU) ---
+try:
+    import cupy as cp
+    _BACKEND = "cupy"
+except ImportError:
+    cp = np  # numpy exposes a compatible API for the ops used here
+    _BACKEND = "numpy"
 from dataclasses import dataclass
 
 import hmac
+
+
+def _to_numpy(x):
+    """Convert array to numpy regardless of backend."""
+    if _BACKEND == "cupy":
+        return _to_numpy(cp.asarray(x))
+    return np.asarray(x)
+
+
 def _secure_compare(a: str, b: str) -> bool:
         return hmac.compare_digest(
         a.encode("utf-8"),
@@ -105,7 +121,7 @@ MAX_WCC_SPATIAL_DIM = 2
 REQUIRE_POWER_OF_TWO_SIDE = True
 
 def _float64_bytes(x_cp) -> bytes:
-    arr = cp.asnumpy(cp.asarray(x_cp, dtype=cp.float64))
+    arr = _to_numpy(cp.asarray(x_cp, dtype=cp.float64))
     return arr.ravel(order="C").tobytes()
 
 def laplacian(x):
@@ -217,7 +233,7 @@ def _serialize_commitment_v2(psi) -> bytes:
 # v3: float64 canonical ψ
 # ------------------
 def _serialize_commitment_v3(psi):
-    psi_arr = cp.asnumpy(cp.asarray(psi, dtype=cp.float64))
+    psi_arr = _to_numpy(cp.asarray(psi, dtype=cp.float64))
     psi_be = psi_arr.astype(">f8", copy=False)
     return psi_be.tobytes(order="C")
 
@@ -226,7 +242,7 @@ def _serialize_commitment_v3(psi):
 # ------------------
 def _serialize_commitment_v4(psi):
     psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = _to_numpy(psi_cp)
 
     # curvature invariants
     E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
@@ -272,7 +288,7 @@ def _serialize_commitment_v4(psi):
 # ------------------
 def _serialize_commitment_v5(psi):
     psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = _to_numpy(psi_cp)
 
     E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
 
@@ -324,7 +340,7 @@ def _serialize_commitment_v6(psi_history: List[cp.ndarray]) -> bytes:
     sketches: List[bytes] = []
 
     for psi in psi_history:
-        psi_np = cp.asnumpy(cp.asarray(psi, dtype=cp.float64))
+        psi_np = _to_numpy(cp.asarray(psi, dtype=cp.float64))
         F = np.fft.rfft2(psi_np)
 
         sel = np.concatenate(
@@ -346,7 +362,7 @@ def _serialize_commitment_v6(psi_history: List[cp.ndarray]) -> bytes:
 # ------------------
 def _serialize_commitment_v7(psi) -> bytes:
     psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = _to_numpy(psi_cp)
 
     # base curvature
     E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
@@ -405,17 +421,19 @@ class CurvatureKeyPair:
         self.n = n
         self.invariants = invariants or DEFAULT_INVARIANTS
 
-        # RNG seed
-        cp.random.seed(seed)
+        # RNG seed — use numpy RNG for reproducibility across backends
+        if _BACKEND == "cupy":
+            cp.random.seed(seed)
+        np.random.seed(seed)
 
         # side length is always power-of-two
         side = 2 ** max(1, n // 2)
 
         # history for v6, and general introspection
-        self.psi_history: List[cp.ndarray] = []
+        self.psi_history: List = []
 
-        # initial field
-        self._psi_0 = cp.random.rand(side, side)
+        # initial field — use numpy for deterministic seeding, then convert
+        self._psi_0 = cp.asarray(np.random.rand(side, side))
         enforce_dimensional_lock(self._psi_0)
         # evolve while storing all frames (safe for all schemas)
         self.__psi_star = self._evolve_capture(self._psi_0, n)
@@ -653,7 +671,7 @@ class CurvatureKeyPair:
     #     elif schema == SCHEMA_V2:
     #         raw = self._sig_payload_v2(message)
     #     else:  # SCHEMA_V1
-    #         psi_bytes = cp.asnumpy(self.psi_star.ravel()).tobytes()
+    #         psi_bytes = _to_numpy(self.psi_star.ravel()).tobytes()
     #         raw = message.encode() + psi_bytes
 
     #     return hashlib.sha256(raw).hexdigest()
@@ -828,9 +846,8 @@ def generate_quantum_keys(
     
     data = {
         "n": n,
-        "psi_0": cp.asnumpy(kp.psi_0).tolist(),
-        # "psi_star": cp.asnumpy(kp.psi_star).tolist(),
-        "psi_star": (kp.__psi_star.tolist() if kp.test_mode else None),
+        "psi_0": _to_numpy(kp.psi_0).tolist(),
+        "psi_star": _to_numpy(kp.psi_star).tolist(),
         "commitment": kp.commitment,
     }
     with open(path, "w") as f:
@@ -847,7 +864,7 @@ def _serialize_keypair(kp):
         "primary_family": kp.primary_family.value,
         "secondary_family": kp.secondary_family.value,
 
-        "psi_star": kp.psi_star.tolist(),   # safe fp64
+        "psi_star": _to_numpy(kp.psi_star).tolist(),   # safe fp64
         "params": {
             "alpha": float(alpha),
             "beta": float(beta),

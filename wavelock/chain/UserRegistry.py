@@ -1,11 +1,16 @@
 import json, os
-import cupy as cp
+import numpy as np
+try:
+    import cupy as cp
+except ImportError:
+    cp = np
+
 try:
     # when used as package (recommended: python -m chain.cli ...)
-    from wavelock.chain.WaveLock import CurvatureKeyPair
+    from wavelock.chain.WaveLock import CurvatureKeyPair, _to_numpy
 except Exception:
     # fallback when importing top-level
-    from WaveLock import CurvatureKeyPair
+    from WaveLock import CurvatureKeyPair, _to_numpy
 
 HERE = os.path.dirname(__file__)
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
@@ -28,12 +33,12 @@ class UserRegistry:
     def add_user(self, user_id: str, n: int = 4, seed: int | None = None):
         if user_id in self.reg:
             raise ValueError(f"user '{user_id}' already exists")
-        kp = CurvatureKeyPair(n=n, seed=seed)
+        kp = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
         self.reg[user_id] = {
             "n": n,
             "commitment": kp.commitment,
-            "psi_0": cp.asnumpy(kp.psi_0).tolist(),
-            "psi_star": cp.asnumpy(kp.psi_star).tolist(),
+            "psi_0": _to_numpy(kp.psi_0).tolist(),
+            "psi_star": _to_numpy(kp.psi_star).tolist(),
         }
         _save(self.reg)
         return kp.commitment
@@ -43,7 +48,7 @@ class UserRegistry:
             raise ValueError(f"User '{user_id}' not found")
         meta = self.reg[user_id]
         n = int(meta.get("n", 4))
-        kp = CurvatureKeyPair(n=n, seed=None)  # overwritten by restored state
+        kp = CurvatureKeyPair(n=n, seed=None, test_mode=True)
         kp.psi_0 = cp.asarray(meta["psi_0"], dtype=cp.float64)
         kp.psi_star = cp.asarray(meta["psi_star"], dtype=cp.float64)
         kp.commitment = str(meta["commitment"])
