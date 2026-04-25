@@ -24,6 +24,7 @@ from wavelock.chain.hash_families import (
     DEFAULT_PRIMARY_FAMILY,
     DEFAULT_SECONDARY_FAMILY,
 )
+from wavelock.chain.xof_init import derive_psi_zero
 
 
 # ===========================================================================
@@ -130,20 +131,30 @@ class CurvatureKeyPairV3:
         seed: Optional[int] = None,
         primary_family: HashFamily = DEFAULT_PRIMARY_FAMILY,
         secondary_family: HashFamily = DEFAULT_SECONDARY_FAMILY,
+        use_xof_init: bool = False,
     ):
         self.n = n
         self.primary_family = primary_family
         self.secondary_family = secondary_family
         self.schema = SCHEMA_V2
-        
-        # RNG seed
-        np.random.seed(seed)
-        
+        self.use_xof_init = bool(use_xof_init)
+
         # Side length is always power-of-two
         side = 2 ** max(1, n // 2)
-        
+
         # Initial field
-        self.psi_0 = np.random.rand(side, side)
+        if self.use_xof_init:
+            # Consensus-grade derivation: SHAKE-256 XOF, byte-stable across
+            # backends and library versions. Required for any commitment
+            # that must be reproducible by an independent verifier.
+            if seed is None:
+                raise ValueError("use_xof_init=True requires an explicit seed")
+            self.psi_0 = derive_psi_zero(seed, (side, side))
+        else:
+            # Legacy backend RNG path. Reproducible only within numpy
+            # versions that share the same Mersenne-Twister implementation.
+            np.random.seed(seed)
+            self.psi_0 = np.random.rand(side, side)
         
         # Evolve to fixed point
         self.psi_star = self._evolve(self.psi_0, n)

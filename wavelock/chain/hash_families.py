@@ -52,18 +52,46 @@ def _sha3_256_impl(data: bytes) -> bytes:
     return hashlib.sha3_256(data).digest()
 
 
+_BLAKE3_AVAILABLE: Optional[bool] = None
+_BLAKE3_MODULE = None
+
+
+def _load_blake3():
+    global _BLAKE3_AVAILABLE, _BLAKE3_MODULE
+    if _BLAKE3_AVAILABLE is None:
+        try:
+            import blake3 as _blake3_pkg
+            _BLAKE3_MODULE = _blake3_pkg
+            _BLAKE3_AVAILABLE = True
+        except ImportError:
+            _BLAKE3_AVAILABLE = False
+    return _BLAKE3_AVAILABLE, _BLAKE3_MODULE
+
+
+def is_blake3_available() -> bool:
+    """Returns True iff the official BLAKE3 implementation is importable."""
+    available, _ = _load_blake3()
+    return available
+
+
 def _blake3_impl(data: bytes) -> bytes:
     """
-    BLAKE3 implementation.
-    Falls back to hashlib.blake2b if blake3 not installed.
+    BLAKE3 implementation backed by the official blake3 package.
+
+    Raises RuntimeError if the blake3 package is not installed. We intentionally
+    do NOT fall back to BLAKE2 — a silent fallback would produce digests that
+    masquerade as BLAKE3 but are cryptographically distinct, which is both a
+    correctness hazard and a §112 enablement gap for any patent claim that
+    names BLAKE3 specifically.
     """
-    try:
-        import blake3
-        return blake3.blake3(data).digest()
-    except ImportError:
-        # Fallback: BLAKE2b truncated to 256 bits
-        # This is NOT BLAKE3, but provides a working fallback
-        return hashlib.blake2b(data, digest_size=32).digest()
+    available, module = _load_blake3()
+    if not available:
+        raise RuntimeError(
+            "BLAKE3 hash family requested, but the 'blake3' package is not "
+            "installed. Install it via `pip install blake3` to enable BLAKE3 "
+            "commitments. Use HashFamily.SHA3_256 if BLAKE3 is unavailable."
+        )
+    return module.blake3(data).digest()
 
 
 _HASH_IMPLEMENTATIONS: dict[HashFamily, Callable[[bytes], bytes]] = {
