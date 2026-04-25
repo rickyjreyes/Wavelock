@@ -42,9 +42,11 @@ Tier-0 does **not** depend on cryptographic hardness.
 
 Its core guarantees are:
 
-### ✔ 2.1 Physical Irreversibility  
-The PDE-based evolution `ψ₀ → ψ★` is contractive, dissipative, and cannot be inverted.  
-This provides a **physics-anchored identity** for any agent.
+### ✔ 2.1 Empirical Physical Irreversibility  
+The PDE-based evolution `ψ₀ → ψ★` is contractive and dissipative. Under all tested
+adversaries (adjoint PDE, gradient optimization, neural inversion, Fourier deconvolution),
+the forward map has not been inverted. This provides a **physics-anchored identity** for
+any agent. Note: this is an empirical observation, not a formal proof of irreversibility.
 
 ### ✔ 2.2 Curvature-Budget Enforcement  
 WaveLock enforces global curvature ceilings:
@@ -258,8 +260,8 @@ AI generates fake ψ★ states.
 - kernel-locked evolution fails  
 - evolution history fails  
 
-Forgeries cannot reproduce the physical PDE fixed point.  
-This is independent of cryptography.
+Under tested adversaries, forgeries have not been able to reproduce a valid PDE fixed point.  
+This defense layer is independent of cryptography, but its strength is empirical.
 
 ---
 
@@ -329,8 +331,11 @@ Tier-0 survivability is guaranteed by:
 - **canonical WLv2 reproducibility**  
 - **upgradeable cryptographic binding**  
 
-WaveLock remains functional and secure  
-**even if cryptography collapses**.
+WaveLock is designed to remain functional  
+**even if specific cryptographic primitives are deprecated**,
+by relying on physics-grounded identity (ψ★) and upgradeable hash bindings.
+Full security guarantees depend on both the PDE's empirical non-invertibility
+and the integrity of the binding hash families.
 
 ---
 
@@ -346,6 +351,7 @@ WaveLock remains functional and secure
 
 ---
 
-> **WaveLock Tier-0 transforms cryptographic catastrophe  
-> from existential threat → routine maintenance.**
+> **WaveLock Tier-0 is designed so that cryptographic primitive deprecation
+> becomes a migration task rather than an existential threat,
+> provided the PDE's non-invertibility continues to hold under future adversaries.**
 

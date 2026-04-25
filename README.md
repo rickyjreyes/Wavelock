@@ -8,15 +8,20 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
 
 ## 0) Requirements
 
-- **Python** 3.9–3.11
-- **CUDA + CuPy** (GPU optional; CPU fallback for some paths may not exist in all files)
-  - Suggested: `conda create -n cupy-env python=3.10 && conda activate cupy-env`
-  - Install CuPy (per your CUDA): `conda install -c conda-forge cupy`
-- **matplotlib** (for simple visualizations used by tests)
-- Windows PowerShell examples below; macOS/Linux are analogous.
+- **Python** 3.9+
+- **numpy** (required)
+- **matplotlib** (for visualizations and attack battery plots)
+- **pytest** (for running test suite)
 
-Optional but helpful:
-- `pytest` if you want to wrap tests, though the repo ships runnable test scripts already.
+Optional:
+- **CuPy** (GPU acceleration; falls back to NumPy automatically if unavailable)
+  - Install CuPy per your CUDA version: `pip install cupy-cuda12x`
+
+```bash
+pip install numpy matplotlib pytest
+# Or install the package:
+pip install -e .
+```
 
 ---
 
@@ -78,16 +83,22 @@ All of these are normally ignored via `.gitignore`.
 
 From the `WaveLock` folder:
 
-```powershell
-conda create -n cupy-env python=3.10 -y
-conda activate cupy-env
-python -m pip install matplotlib
+```bash
+pip install numpy matplotlib pytest
+# Or install as editable package:
+pip install -e .
 ```
 
-Install CuPy appropriate for your CUDA:
+Run the demo:
 
-```powershell
-conda install -c conda-forge cupy
+```bash
+python hello_wavelock.py
+```
+
+Run the test suite:
+
+```bash
+python -m pytest tests/ -v
 ```
 
 ---
@@ -97,8 +108,8 @@ conda install -c conda-forge cupy
 ### 3.1 Generate a curvature keypair and trust it
 
 ```powershell
-python -m chain.cli keygen
-python -m chain.cli add ricky --n 4 --seed 42
+python -m wavelock.chain.cli keygen
+python -m wavelock.chain.cli add ricky --n 4 --seed 42
 ```
 
 This adds user `ricky` with a deterministic ψ* commitment to `users.json`.
@@ -117,7 +128,7 @@ This ensures ricky’s commitment is in `trusted_commitments.json` and publishes
 
 ```powershell
 $env:WAVELOCK_REQUIRE_FULL_VERIFY="1"
-python -m network.server --port 9001
+python -m wavelock.network.server --port 9001
 ```
 
 Strict mode ON means blocks must:
@@ -129,8 +140,8 @@ Strict mode ON means blocks must:
 ### 3.3 Create and mine a block
 
 ```powershell
-python -m chain.cli sign ricky --message "hello wlv2" --output signed.json
-python -m chain.cli mine --signed_path signed.json
+python -m wavelock.chain.cli sign ricky --message "hello wlv2" --output signed.json
+python -m wavelock.chain.cli mine --signed_path signed.json
 ```
 
 The mined block is broadcast to peers and saved on disk.
@@ -140,8 +151,8 @@ The mined block is broadcast to peers and saved on disk.
 ### 3.4 Verify and audit
 
 ```powershell
-python -m chain.cli view        # show ledger
-python -m chain.cli audit       # baseline audit (single commitment)
+python -m wavelock.chain.cli view        # show ledger
+python -m wavelock.chain.cli audit       # baseline audit (single commitment)
 python tools/audit_multi_trust.py   # multi-trust audit with full ψ* verification
 ```
 
@@ -169,14 +180,14 @@ This script:
 ### Clean ledger + single user
 
 ```powershell
-python -m chain.cli reset
-python -m chain.cli keygen
-python -m chain.cli add ricky --n 4 --seed 42
+python -m wavelock.chain.cli reset
+python -m wavelock.chain.cli keygen
+python -m wavelock.chain.cli add ricky --n 4 --seed 42
 python tools/publish_trusted.py
 $env:WAVELOCK_REQUIRE_FULL_VERIFY="1"
-python -m network.server --port 9001
-python -m chain.cli sign ricky --message "strict test" --output signed.json
-python -m chain.cli mine --signed_path signed.json
+python -m wavelock.network.server --port 9001
+python -m wavelock.chain.cli sign ricky --message "strict test" --output signed.json
+python -m wavelock.chain.cli mine --signed_path signed.json
 python tools/audit_multi_trust.py
 ```
 

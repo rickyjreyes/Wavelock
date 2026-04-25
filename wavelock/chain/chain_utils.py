@@ -1,10 +1,15 @@
 import os, time, json, hashlib, sys
 from pathlib import Path
-import cupy as cp
-import matplotlib.pyplot as plt
+import numpy as np
+try:
+    import cupy as cp
+    _BACKEND = "cupy"
+except ImportError:
+    cp = np
+    _BACKEND = "numpy"
 
 from wavelock.chain.CurvaChain import CurvaChain
-from wavelock.chain.WaveLock import CurvatureKeyPair, symbolic_verifier, load_quantum_keys
+from wavelock.chain.WaveLock import CurvatureKeyPair, symbolic_verifier, load_quantum_keys, _to_numpy
 from wavelock.chain.Block import Block
 
 # ============================================================
@@ -94,8 +99,7 @@ def load_chain(filename="chain.json") -> CurvaChain:
     chain = CurvaChain(difficulty=data[0]["difficulty"])
     chain.chain = []
     for block_data in data:
-        block = type("Block", (), {})()
-        block.__dict__.update(block_data)
+        block = Block.from_dict(block_data)
         chain.chain.append(block)
     print(f"📂 Chain loaded from {filename}")
     return chain
@@ -107,9 +111,11 @@ def load_chain(filename="chain.json") -> CurvaChain:
 # ============================================================
 
 def visualize_psi(psi_star):
-    psi_np = cp.asnumpy(psi_star)
-    entropy = -cp.sum((psi_star**2 / cp.sum(psi_star**2))
-                      * cp.log(psi_star**2 / cp.sum(psi_star**2) + 1e-12)).get()
+    import matplotlib.pyplot as plt
+    psi_np = _to_numpy(psi_star)
+    psi_arr = cp.asarray(psi_star)
+    entropy = -float(cp.sum((psi_arr**2 / cp.sum(psi_arr**2))
+                      * cp.log(psi_arr**2 / cp.sum(psi_arr**2) + 1e-12)))
 
     plt.figure(figsize=(6, 5))
     plt.imshow(psi_np, cmap="viridis")
@@ -233,9 +239,9 @@ def verify_chain(blocks=None, keypair=None):
         except Exception:
             with open("keypair.json", "r") as f:
                 data = json.load(f)
-            kp = CurvatureKeyPair(n=data["n"])
-            kp.psi_0 = cp.asarray(data["psi_0"])
-            kp.psi_star = cp.asarray(data["psi_star"])
+            kp = CurvatureKeyPair(n=data["n"], test_mode=True)
+            kp.psi_0 = cp.asarray(data["psi_0"], dtype=cp.float64)
+            kp.psi_star = cp.asarray(data["psi_star"], dtype=cp.float64)
             kp.commitment = data["commitment"]
             keypair = kp
 
@@ -348,9 +354,9 @@ def audit_ledger() -> bool:
     try:
         with open("keypair.json", "r") as f:
             key_data = json.load(f)
-        keypair = CurvatureKeyPair(n=key_data["n"])
-        keypair.psi_0 = cp.asarray(key_data["psi_0"])
-        keypair.psi_star = cp.asarray(key_data["psi_star"])
+        keypair = CurvatureKeyPair(n=key_data["n"], test_mode=True)
+        keypair.psi_0 = cp.asarray(key_data["psi_0"], dtype=cp.float64)
+        keypair.psi_star = cp.asarray(key_data["psi_star"], dtype=cp.float64)
         keypair.commitment = key_data["commitment"]
         print(f"\n🔗 Commitment: {keypair.commitment}")
     except Exception as e:

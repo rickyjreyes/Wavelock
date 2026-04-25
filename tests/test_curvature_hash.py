@@ -1,4 +1,8 @@
-import cupy as cp
+import numpy as np
+try:
+    import cupy as cp
+except ImportError:
+    cp = np
 from wavelock.chain.WaveLock import CurvatureKeyPair
 
 # def test_curvature_hash_sensitivity():

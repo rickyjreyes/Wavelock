@@ -3,21 +3,25 @@ from __future__ import annotations
 import os, socket, threading, time, json, traceback
 from typing import List, Tuple, Dict, Optional
 
-# --- repo imports (existing) ---
-from wavelock.chain.config import load_config
-from wavelock.network.peer_utils import load_peers, save_peers, add_peer, random_peers
-from wavelock.network.protocol import encode_message, decode_message, INV, GET_BLOCK, SEND_BLOCKS, GET_PEERS, SEND_PEERS, GET_CHAIN, SEND_BLOCK
-from wavelock.chain.chain_utils import load_all_blocks, save_block_to_disk
-from wavelock.chain.Block import Block  # your Block class (index, prev_hash, hash, nonce, messages, ...)
-
-# --- curvature / trust imports ---
 import numpy as np
 try:
     import cupy as cp
-except Exception:
-    cp = None  # if GPU not available, strict verify will be disabled gracefully
+except ImportError:
+    cp = np
 
-from wavelock.chain.WaveLock import CurvatureKeyPair, SCHEMA_V2, _serialize_commitment_v2, _commit_header, _canonical_json
+# --- repo imports ---
+from wavelock.chain.config import load_config
+from wavelock.network.peer_utils import load_peers, save_peers, add_peer, random_peers
+from wavelock.network.protocol import (
+    encode_message, decode_message,
+    INV, GET_BLOCK, SEND_BLOCKS, GET_PEERS, SEND_PEERS,
+    GET_CHAIN, SEND_BLOCK,
+)
+from wavelock.chain.chain_utils import load_all_blocks, save_block_to_disk
+from wavelock.chain.Block import Block
+from wavelock.chain.WaveLock import (
+    CurvatureKeyPair, SCHEMA_V2, _serialize_commitment_v2, _canonical_json,
+)
 
 HOST = "0.0.0.0"
 
@@ -50,7 +54,7 @@ class ChainState:
 
     def append(self, b: Block):
         with self._lock:
-            save_block_to_disk(b)               # persist
+            save_block_to_disk(b)
             self.blocks.append(b)
             self.by_hash[b.hash] = b
 
@@ -71,10 +75,7 @@ def _load_trusted_commitments(path: str = "trusted_commitments.json") -> List[st
 def _commitment_is_trusted(commitment: str, trusted: List[str]) -> bool:
     return str(commitment) in set(trusted)
 
-def _load_published_psi(commitment: str) -> Optional[cp.ndarray]:
-    if cp is None:
-        return None
-    # commitments/wlv2_<hex>.npz
+def _load_published_psi(commitment: str):
     key = commitment.replace(":", "_").lower()
     npz_path = os.path.join("commitments", f"{key}.npz")
     if not os.path.exists(npz_path):
@@ -84,7 +85,7 @@ def _load_published_psi(commitment: str) -> Optional[cp.ndarray]:
     return cp.asarray(psi)
 
 def _extract_curvature_fields(b: Block) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-    """Parse message/signature/commitment from b.messages[] lines"""
+    """Parse message/signature/commitment from b.messages[] lines."""
     msg = sig = com = None
     for line in getattr(b, "messages", []) or []:
         if isinstance(line, str):
@@ -97,64 +98,53 @@ def _extract_curvature_fields(b: Block) -> Tuple[Optional[str], Optional[str], O
     return msg, sig, com
 
 def _verify_pow_and_linkage(b: Block, cfg) -> bool:
-    # prev linkage
     tip = CHAIN.tip()
-    expected_prev = tip.hash if tip else "0"*64
-    if b.prev_hash != expected_prev:
-        print(f"❌ Reject: prev_hash mismatch (got {b.prev_hash[:12]}..., expected {expected_prev[:12]}...)")
+    expected_prev = tip.hash if tip else "0" * 64
+    if b.previous_hash != expected_prev:
+        print(f"Reject: prev_hash mismatch (got {b.previous_hash[:12]}..., expected {expected_prev[:12]}...)")
         return False
-    # simple PoW: numeric hash <= target
     try:
         target_hex = cfg.pow_target
         ok = int(b.hash, 16) <= int(target_hex, 16)
     except Exception:
-        # fallback: leading zero-prefix check length
         zeros = len(cfg.pow_target) - len(cfg.pow_target.lstrip("0"))
-        ok = b.hash.startswith("0"*max(1, zeros))
+        ok = b.hash.startswith("0" * max(1, zeros))
     if not ok:
-        print(f"❌ Reject: PoW target not met ({b.hash[:12]}... > target)")
+        print(f"Reject: PoW target not met ({b.hash[:12]}... > target)")
     return ok
 
 def _strict_verify_curvature(b: Block, cfg) -> bool:
     trusted = _load_trusted_commitments()
     msg, sig, com = _extract_curvature_fields(b)
 
-    # Commitment allow-list
     if not com or not _commitment_is_trusted(com, trusted):
-        print("❌ Reject: commitment missing or not trusted.")
+        print("Reject: commitment missing or not trusted.")
         return False
 
-    # If strict verify disabled, allow after trust check
     if not cfg.require_full_verify:
         return True
 
-    # Strict mode ON: must have published ψ*
     psi = _load_published_psi(com)
     if psi is None:
         if bool(int(os.getenv("WAVELOCK_REJECT_IF_UNPUBLISHED", "0"))):
-            print("❌ Reject: ψ* not published for strict mode.")
+            print("Reject: psi* not published for strict mode.")
             return False
         else:
-            print("⚠️ Strict: ψ* not published, allowing due to policy (set WAVELOCK_REJECT_IF_UNPUBLISHED=1 to force reject).")
+            print("Strict: psi* not published, allowing due to policy.")
             return True
 
-    if cp is None:
-        print("⚠️ Strict requested but CuPy unavailable; allowing block after trust check.")
-        return True
-
-    # Build a verifier key from published ψ*
-    kp = CurvatureKeyPair(n=4)  # n is irrelevant here; we overwrite fields
+    kp = CurvatureKeyPair(n=4, test_mode=True)
     kp.psi_star = psi
-    kp.psi_0 = cp.zeros_like(psi)  # not used by verify
+    kp.psi_0 = cp.zeros_like(psi)
     kp.commitment = com
 
     msg_ok = (msg is not None) and (sig is not None)
     if not msg_ok:
-        print("❌ Reject: missing curvature message/signature fields.")
+        print("Reject: missing curvature message/signature fields.")
         return False
 
     if not kp.verify(msg, sig):
-        print("❌ Reject: curvature signature invalid (WLv2/SIGv2).")
+        print("Reject: curvature signature invalid.")
         return False
 
     return True
@@ -167,7 +157,6 @@ _seen_hashes: Dict[str, float] = {}
 
 def _dedupe_seen(h: str, ttl=300) -> bool:
     now = time.time()
-    # prune
     for k, t in list(_seen_hashes.items()):
         if now - t > ttl:
             _seen_hashes.pop(k, None)
@@ -186,7 +175,6 @@ def broadcast_inv(block_hash: str):
                 s.connect((host, int(port)))
                 s.sendall(encode_message(INV, [block_hash]))
         except Exception:
-            # silent network errors
             pass
 
 ###############################################################################
@@ -200,38 +188,20 @@ def get_block_by_hash(h: str) -> Optional[Block]:
     return CHAIN.get_by_hash(h)
 
 def _block_from_dict(d: dict) -> Block:
-    # Make a Block from a dict payload (attributes map 1:1)
-    b = Block(
-        index=d.get("index"),
-        prev_hash=d.get("prev_hash"),
-        merkle=d.get("merkle"),
-        messages=d.get("messages"),
-        nonce=d.get("nonce"),
-        timestamp=d.get("timestamp"),
-    )
-    # Some Block implementations compute hash in ctor; preserve given hash if present
-    if hasattr(b, "hash") and d.get("hash"):
-        try:
-            b.hash = d["hash"]
-        except Exception:
-            pass
-    return b
+    """Reconstruct Block from a dict payload, using canonical field names."""
+    return Block.from_dict(d)
 
 def try_accept_block_dict(d: dict, cfg) -> bool:
     b = _block_from_dict(d)
     return try_accept_block(b, cfg)
 
 def try_accept_block(b: Block, cfg) -> bool:
-    # PoW + linkage
     if not _verify_pow_and_linkage(b, cfg):
         return False
-    # Curvature trust/strict checks
     if not _strict_verify_curvature(b, cfg):
         return False
-    # Accept & persist
     CHAIN.append(b)
-    print(f"✅ Accepted Block #{b.index} | {b.hash[:12]}...")
-    # Gossip
+    print(f"Accepted Block #{b.index} | {b.hash[:12]}...")
     broadcast_inv(b.hash)
     return True
 
@@ -240,12 +210,7 @@ def try_accept_block(b: Block, cfg) -> bool:
 ###############################################################################
 
 def handle_client(conn: socket.socket, addr: Tuple[str, int], cfg):
-    peer_host, peer_port = addr[0], addr[1]
     try:
-        # On connect, ask for peers (one-shot)
-        conn.sendall(encode_message(GET_PEERS, []))
-
-        # Read loop
         buf = b""
         conn.settimeout(10.0)
         while True:
@@ -253,84 +218,58 @@ def handle_client(conn: socket.socket, addr: Tuple[str, int], cfg):
             if not chunk:
                 break
             buf += chunk
-            # Try decode as many frames as present
-            while True:
-                try:
-                    opcode, data, consumed = decode_message(buf)
-                except Exception:
-                    # incomplete; read more
-                    break
-                if consumed <= 0:
-                    break
-                buf = buf[consumed:]
-                # Dispatch
-                if opcode == INV:
-                    want = []
-                    for h in data:
-                        if not has_block(h):
-                            want.append(h)
-                    if want:
-                        conn.sendall(encode_message(GET_BLOCK, want))
+            # Try to decode the buffer as a complete JSON message
+            try:
+                opcode, data = decode_message(buf)
+            except Exception:
+                continue
+            if opcode is None:
+                continue
+            # Successfully decoded — reset buffer
+            buf = b""
 
-                elif opcode == GET_BLOCK:
-                    blocks = []
-                    for h in data:
-                        b = get_block_by_hash(h)
-                        if b:
-                            blocks.append({
-                                "index": b.index,
-                                "prev_hash": b.prev_hash,
-                                "merkle": getattr(b, "merkle", None),
-                                "messages": b.messages,
-                                "nonce": b.nonce,
-                                "timestamp": getattr(b, "timestamp", None),
-                                "hash": b.hash,
-                            })
-                    if blocks:
-                        conn.sendall(encode_message(SEND_BLOCKS, blocks))
+            if opcode == INV:
+                want = [h for h in data if not has_block(h)]
+                if want:
+                    conn.sendall(encode_message(GET_BLOCK, want))
 
-                elif opcode == SEND_BLOCKS:
-                    for bd in data:
-                        try:
-                            if not has_block(bd.get("hash", "")):
-                                try_accept_block_dict(bd, cfg)
-                        except Exception as e:
-                            print("⚠️ Failed to accept remote block:", e)
+            elif opcode == GET_BLOCK:
+                blocks = []
+                for h in data:
+                    b = get_block_by_hash(h)
+                    if b:
+                        blocks.append(b.to_dict())
+                if blocks:
+                    conn.sendall(encode_message(SEND_BLOCKS, blocks))
 
-                elif opcode == GET_PEERS:
-                    plist = [f"{h}:{p}" for (h, p) in load_peers()]
-                    conn.sendall(encode_message(SEND_PEERS, plist))
+            elif opcode == SEND_BLOCKS:
+                for bd in data:
+                    try:
+                        if not has_block(bd.get("hash", "")):
+                            try_accept_block_dict(bd, cfg)
+                    except Exception as e:
+                        print("Failed to accept remote block:", e)
 
-                elif opcode == SEND_PEERS:
-                    for ent in data:
-                        try:
-                            h, p = ent.split(":")
-                            add_peer(h, int(p))
-                        except Exception:
-                            pass
-                elif opcode == GET_CHAIN:
-                    # legacy client support: dump all blocks
-                    ser = []
-                    for b in CHAIN.blocks:
-                        ser.append({
-                            "index": b.index,
-                            "prev_hash": b.prev_hash,
-                            "merkle": getattr(b, "merkle", None),
-                            "messages": b.messages,
-                            "nonce": b.nonce,
-                            "timestamp": getattr(b, "timestamp", None),
-                            "hash": b.hash,
-                        })
-                    conn.sendall(encode_message(SEND_BLOCK, ser))
+            elif opcode == GET_PEERS:
+                plist = [f"{h}:{p}" for (h, p) in load_peers()]
+                conn.sendall(encode_message(SEND_PEERS, plist))
 
-                else:
-                    # Unknown opcode -> ignore
-                    pass
+            elif opcode == SEND_PEERS:
+                for ent in data:
+                    try:
+                        h, p = ent.split(":")
+                        add_peer(h, int(p))
+                    except Exception:
+                        pass
+
+            elif opcode == GET_CHAIN:
+                ser = [b.to_dict() for b in CHAIN.blocks]
+                conn.sendall(encode_message(SEND_BLOCK, ser))
 
     except socket.timeout:
         pass
     except Exception as e:
-        print("⚠️ handler error:", e)
+        print("handler error:", e)
         traceback.print_exc()
     finally:
         try:
@@ -343,19 +282,16 @@ def handle_client(conn: socket.socket, addr: Tuple[str, int], cfg):
 ###############################################################################
 
 def main():
-    # Load chain + config
     CHAIN.load_from_disk()
     cfg = load_config(os.getenv("WAVELOCK_CONFIG"))
 
-    # Print policy banner
     trusted = _load_trusted_commitments()
-    print(f"✅ Trusted commitments loaded: {len(trusted)}")
-    print(f"🌐 WaveLock P2P server (WLv2-ready) listening on port {cfg.port}")
-    print(f"   • Strict curvature verify: {'ON' if cfg.require_full_verify else 'OFF'}")
+    print(f"Trusted commitments loaded: {len(trusted)}")
+    print(f"WaveLock P2P server listening on port {cfg.port}")
+    print(f"  Strict curvature verify: {'ON' if cfg.require_full_verify else 'OFF'}")
     reject_unpub = bool(int(os.getenv("WAVELOCK_REJECT_IF_UNPUBLISHED", "0")))
-    print(f"   • Reject if ψ* unpublished: {'ON' if reject_unpub else 'OFF'}")
+    print(f"  Reject if psi* unpublished: {'ON' if reject_unpub else 'OFF'}")
 
-    # Seed peers from config
     for seed in cfg.seeds or []:
         try:
             host, port = seed.split(":")
@@ -363,7 +299,6 @@ def main():
         except Exception:
             pass
 
-    # TCP server
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         srv.bind((HOST, cfg.port))
@@ -371,17 +306,16 @@ def main():
         while True:
             try:
                 conn, addr = srv.accept()
-                # optional: record peer
                 try:
-                    add_peer(addr[0], cfg.port)  # store by our port they reached
+                    add_peer(addr[0], cfg.port)
                 except Exception:
                     pass
                 threading.Thread(target=handle_client, args=(conn, addr, cfg), daemon=True).start()
             except KeyboardInterrupt:
-                print("\n🛑 Server shutdown requested.")
+                print("\nServer shutdown requested.")
                 break
             except Exception as e:
-                print("⚠️ accept() error:", e)
+                print("accept() error:", e)
                 time.sleep(0.2)
 
 if __name__ == "__main__":

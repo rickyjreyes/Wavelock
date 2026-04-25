@@ -3,11 +3,30 @@ from typing import Optional, Tuple, List
 import hashlib
 import json
 import struct
-import cupy as cp
 import numpy as np
+
+# --- backend shim: prefer CuPy (GPU) but fall back to NumPy (CPU) ---
+try:
+    import cupy as cp
+    _BACKEND = "cupy"
+except ImportError:
+    cp = np  # numpy exposes a compatible API for the ops used here
+    _BACKEND = "numpy"
 from dataclasses import dataclass
 
 import hmac
+
+
+def _to_numpy(x):
+    """Convert any input (NumPy, CuPy, list) -> NumPy float64 safely."""
+    if isinstance(x, np.ndarray):
+        return x
+    # CuPy array -> explicit transfer
+    if hasattr(x, "get"):
+        return x.get()
+    return np.asarray(x, dtype=np.float64)
+
+
 def _secure_compare(a: str, b: str) -> bool:
         return hmac.compare_digest(
         a.encode("utf-8"),
@@ -105,18 +124,19 @@ MAX_WCC_SPATIAL_DIM = 2
 REQUIRE_POWER_OF_TWO_SIDE = True
 
 def _float64_bytes(x_cp) -> bytes:
-    arr = cp.asnumpy(cp.asarray(x_cp, dtype=cp.float64))
+    arr = np.asarray(_to_numpy(x_cp), dtype=np.float64)
     return arr.ravel(order="C").tobytes()
 
 def laplacian(x):
+    x = np.asarray(_to_numpy(x), dtype=np.float64)
     return (
         -4.0 * x
-        + cp.roll(x, +1, 0) + cp.roll(x, -1, 0)
-        + cp.roll(x, +1, 1) + cp.roll(x, -1, 1)
+        + np.roll(x, +1, 0) + np.roll(x, -1, 0)
+        + np.roll(x, +1, 1) + np.roll(x, -1, 1)
     )
 
 def enforce_dimensional_lock(psi):
-    psi = cp.asarray(psi)
+    psi = np.asarray(_to_numpy(psi))
     if psi.ndim != 2:
         raise ValueError("ψ must be 2D.")
     nx, ny = psi.shape
@@ -131,16 +151,18 @@ def enforce_dimensional_lock(psi):
 # ===========================================================
 
 def _curvature_functional(psi) -> Tuple[float, float, float, float]:
-    gx, gy = cp.gradient(psi)
-    E_grad = float(cp.sum(gx * gx) + cp.sum(gy * gy))
+    psi = np.asarray(_to_numpy(psi), dtype=np.float64)
+
+    gx, gy = np.gradient(psi)
+    E_grad = float(np.sum(gx * gx) + np.sum(gy * gy))
 
     lap = laplacian(psi)
-    feedback = alpha * lap / (psi + epsilon * cp.exp(-beta * psi ** 2))
+    feedback = alpha * lap / (psi + epsilon * np.exp(-beta * psi ** 2))
 
-    entropy_term = theta * (psi * laplacian(cp.log(psi ** 2 + delta)))
+    entropy_term = theta * (psi * laplacian(np.log(psi ** 2 + delta)))
 
-    E_fb  = float(cp.sum(feedback * feedback))
-    E_ent = float(cp.sum(entropy_term * entropy_term))
+    E_fb  = float(np.sum(feedback * feedback))
+    E_ent = float(np.sum(entropy_term * entropy_term))
 
     E_tot = float(E_grad + E_fb + E_ent)
     return E_grad, E_fb, E_ent, E_tot
@@ -154,11 +176,11 @@ def wcc_curvature_budget(psi) -> float:
     return float(E_grad + E_fb)
 
 def wcc_avg_curvature_budget(psi) -> float:
-    psi = cp.asarray(psi, dtype=cp.float64)
+    psi = np.asarray(_to_numpy(psi), dtype=np.float64)
     return wcc_curvature_budget(psi) / float(psi.size)
 
 def classify_wcc_run(steps: int, psi) -> str:
-    psi = cp.asarray(psi)
+    psi = np.asarray(_to_numpy(psi))
     n_cells = int(psi.size)
     avg_c = wcc_avg_curvature_budget(psi)
 
@@ -186,8 +208,9 @@ def check_quantum_classical_bound(psi) -> bool:
 # v1: legacy curvature
 # ------------------
 def _serialize_commitment_v1(psi) -> bytes:
-    gx, gy = cp.gradient(psi)
-    curv = float(cp.sum(gx * gx) + cp.sum(gy * gy))
+    psi = np.asarray(_to_numpy(psi), dtype=np.float64)
+    gx, gy = np.gradient(psi)
+    curv = float(np.sum(gx * gx) + np.sum(gy * gy))
     return _float64_bytes(psi) + f"{curv:.17g}".encode("utf-8")
 
 # ------------------
@@ -217,7 +240,7 @@ def _serialize_commitment_v2(psi) -> bytes:
 # v3: float64 canonical ψ
 # ------------------
 def _serialize_commitment_v3(psi):
-    psi_arr = cp.asnumpy(cp.asarray(psi, dtype=cp.float64))
+    psi_arr = np.asarray(_to_numpy(psi), dtype=np.float64)
     psi_be = psi_arr.astype(">f8", copy=False)
     return psi_be.tobytes(order="C")
 
@@ -225,11 +248,10 @@ def _serialize_commitment_v3(psi):
 # v4: curvature-invariants + asymmetry + low-freq FFT
 # ------------------
 def _serialize_commitment_v4(psi):
-    psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = np.asarray(_to_numpy(psi), dtype=np.float64)
 
     # curvature invariants
-    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
+    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_np)
     eps = 1e-9
     scale = np.sqrt(abs(E_tot) + eps)
 
@@ -271,10 +293,9 @@ def _serialize_commitment_v4(psi):
 # v5: curvature + Laplacian spectral + winding + wavelets
 # ------------------
 def _serialize_commitment_v5(psi):
-    psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = np.asarray(_to_numpy(psi), dtype=np.float64)
 
-    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
+    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_np)
 
     eps = 1e-9
     scale = np.sqrt(abs(E_tot) + eps)
@@ -320,11 +341,11 @@ def _serialize_commitment_v5(psi):
 # ------------------
 # v6: full evolution chain spectral sketch
 # ------------------
-def _serialize_commitment_v6(psi_history: List[cp.ndarray]) -> bytes:
+def _serialize_commitment_v6(psi_history: list) -> bytes:
     sketches: List[bytes] = []
 
     for psi in psi_history:
-        psi_np = cp.asnumpy(cp.asarray(psi, dtype=cp.float64))
+        psi_np = np.asarray(_to_numpy(psi), dtype=np.float64)
         F = np.fft.rfft2(psi_np)
 
         sel = np.concatenate(
@@ -345,11 +366,10 @@ def _serialize_commitment_v6(psi_history: List[cp.ndarray]) -> bytes:
 # v7: curvature + chaotic logistic salt
 # ------------------
 def _serialize_commitment_v7(psi) -> bytes:
-    psi_cp = cp.asarray(psi, dtype=cp.float64)
-    psi_np = cp.asnumpy(psi_cp)
+    psi_np = np.asarray(_to_numpy(psi), dtype=np.float64)
 
     # base curvature
-    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_cp)
+    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi_np)
     base = np.array([E_grad, E_fb, E_ent, E_tot], dtype=np.float64)
 
     # chaotic salt
@@ -405,17 +425,19 @@ class CurvatureKeyPair:
         self.n = n
         self.invariants = invariants or DEFAULT_INVARIANTS
 
-        # RNG seed
-        cp.random.seed(seed)
+        # RNG seed — use numpy RNG for reproducibility across backends
+        if _BACKEND == "cupy":
+            cp.random.seed(seed)
+        np.random.seed(seed)
 
         # side length is always power-of-two
         side = 2 ** max(1, n // 2)
 
         # history for v6, and general introspection
-        self.psi_history: List[cp.ndarray] = []
+        self.psi_history: List = []
 
-        # initial field
-        self._psi_0 = cp.random.rand(side, side)
+        # initial field — use numpy for deterministic seeding
+        self._psi_0 = np.random.rand(side, side).astype(np.float64)
         enforce_dimensional_lock(self._psi_0)
         # evolve while storing all frames (safe for all schemas)
         self.__psi_star = self._evolve_capture(self._psi_0, n)
@@ -498,7 +520,7 @@ class CurvatureKeyPair:
         """
         if not self.test_mode:
             raise PermissionError("Cannot modify ψ★ outside of test_mode.")
-        self.__psi_star = cp.asarray(value, dtype=cp.float64)
+        self.__psi_star = np.asarray(_to_numpy(value), dtype=np.float64)
 
 
     @property
@@ -511,7 +533,7 @@ class CurvatureKeyPair:
     def psi_0(self, value):
         if not self.test_mode:
             raise PermissionError("Cannot modify ψ₀ outside of test_mode.")
-        self._psi_0 = cp.asarray(value, dtype=cp.float64)
+        self._psi_0 = np.asarray(_to_numpy(value), dtype=np.float64)
 
 
     @classmethod
@@ -528,8 +550,8 @@ class CurvatureKeyPair:
         else:
             obj.schema = schema
 
-        # IMPORTANT: bypass protection
-        obj.__psi_star = cp.asarray(psi_star, dtype=cp.float64)
+        # IMPORTANT: bypass protection (use mangled name for private attr)
+        obj._CurvatureKeyPair__psi_star = np.asarray(_to_numpy(psi_star), dtype=np.float64)
 
         # assignment
         obj.commitment = commitment
@@ -551,6 +573,7 @@ class CurvatureKeyPair:
 
         # ensure loaded keys are test-only
         obj.test_mode = True
+        obj.psi_history = []
 
         return obj
 
@@ -558,13 +581,13 @@ class CurvatureKeyPair:
 
     # PDE evolution capturing full history (for v6)
     def _evolve_capture(self, psi0, n: int):
-        psi = cp.asarray(psi0, dtype=cp.float64).copy()
+        psi = np.asarray(_to_numpy(psi0), dtype=np.float64).copy()
         self.psi_history.append(psi.copy())
 
         for _ in range(_steps):
             lap = laplacian(psi)
-            fb  = alpha * lap / (psi + epsilon * cp.exp(-beta * psi ** 2))
-            ent = theta * (psi * laplacian(cp.log(psi ** 2 + delta)))
+            fb  = alpha * lap / (psi + epsilon * np.exp(-beta * psi ** 2))
+            ent = theta * (psi * laplacian(np.log(psi ** 2 + delta)))
             dpsi = _dt * (fb - ent) - _damping * psi
             psi = psi + dpsi
             self.psi_history.append(psi.copy())
@@ -580,11 +603,11 @@ class CurvatureKeyPair:
         but without recording intermediate frames.
         The parameter n is kept for backward compatibility with older code.
         """
-        psi = cp.asarray(psi0, dtype=cp.float64).copy()
+        psi = np.asarray(_to_numpy(psi0), dtype=np.float64).copy()
         for _ in range(_steps):
             lap = laplacian(psi)
-            fb  = alpha * lap / (psi + epsilon * cp.exp(-beta * psi ** 2))
-            ent = theta * (psi * laplacian(cp.log(psi ** 2 + delta)))
+            fb  = alpha * lap / (psi + epsilon * np.exp(-beta * psi ** 2))
+            ent = theta * (psi * laplacian(np.log(psi ** 2 + delta)))
             dpsi = _dt * (fb - ent) - _damping * psi
             psi  = psi + dpsi
         return psi
@@ -653,7 +676,7 @@ class CurvatureKeyPair:
     #     elif schema == SCHEMA_V2:
     #         raw = self._sig_payload_v2(message)
     #     else:  # SCHEMA_V1
-    #         psi_bytes = cp.asnumpy(self.psi_star.ravel()).tobytes()
+    #         psi_bytes = _to_numpy(self.psi_star.ravel()).tobytes()
     #         raw = message.encode() + psi_bytes
 
     #     return hashlib.sha256(raw).hexdigest()
@@ -801,15 +824,15 @@ def symbolic_verifier(psi_candidate, reference_psi, keypair: CurvatureKeyPair | 
     if keypair is None:
         # Assume v2 for backward compatibility
         h1 = hashlib.sha256(
-            _serialize_commitment_v2(cp.asarray(psi_candidate))
+            _serialize_commitment_v2(np.asarray(_to_numpy(psi_candidate), dtype=np.float64))
         ).hexdigest()
         h2 = hashlib.sha256(
-            _serialize_commitment_v2(cp.asarray(reference_psi))
+            _serialize_commitment_v2(np.asarray(_to_numpy(reference_psi), dtype=np.float64))
         ).hexdigest()
         return h1 == h2
 
-    candidate_hash = keypair._curvature_hash(cp.asarray(psi_candidate))
-    reference_hash = keypair._curvature_hash(cp.asarray(reference_psi))
+    candidate_hash = keypair._curvature_hash(np.asarray(_to_numpy(psi_candidate), dtype=np.float64))
+    reference_hash = keypair._curvature_hash(np.asarray(_to_numpy(reference_psi), dtype=np.float64))
     return candidate_hash == reference_hash
 
 # ===========================================================
@@ -828,9 +851,8 @@ def generate_quantum_keys(
     
     data = {
         "n": n,
-        "psi_0": cp.asnumpy(kp.psi_0).tolist(),
-        # "psi_star": cp.asnumpy(kp.psi_star).tolist(),
-        "psi_star": (kp.__psi_star.tolist() if kp.test_mode else None),
+        "psi_0": _to_numpy(kp.psi_0).tolist(),
+        "psi_star": _to_numpy(kp.psi_star).tolist(),
         "commitment": kp.commitment,
     }
     with open(path, "w") as f:
@@ -847,7 +869,7 @@ def _serialize_keypair(kp):
         "primary_family": kp.primary_family.value,
         "secondary_family": kp.secondary_family.value,
 
-        "psi_star": kp.psi_star.tolist(),   # safe fp64
+        "psi_star": _to_numpy(kp.psi_star).tolist(),   # safe fp64
         "params": {
             "alpha": float(alpha),
             "beta": float(beta),

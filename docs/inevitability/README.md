@@ -49,14 +49,15 @@ The **only witness** is ψ★ produced under K.
 
 ---
 
-## 3. Inevitability Framework (Why Bypass Is Impossible)
+## 3. Inevitability Framework (Why Bypass Has Not Been Demonstrated)
 
 WaveLock inevitability rests on **three independent pillars**:
 
 ### 3.1 Attack-Bounding Arguments  
 *(Why shortcuts fail)*
 
-WaveLock structurally excludes shortcut generation via:
+WaveLock is designed to resist shortcut generation via structural properties.
+Under tested adversaries, no shortcut has been found for:
 
 - adjoint or reverse-time PDE inversion
 - gradient backpropagation or differentiable inversion
@@ -148,7 +149,7 @@ WaveLock **does** claim:
 - Invariant: **Frozen**
 - Acceptance semantics: **Frozen**
 - Attack classes: **Bounded**
-- Cost floors: **Structurally established**
+- Cost floors: **Structurally argued (empirically supported)**
 - Falsifiability: **Explicit**
 
 Further work may add:

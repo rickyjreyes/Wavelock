@@ -16,7 +16,11 @@ or:
 """
 
 import sys
-import cupy as cp
+import numpy as np
+try:
+    import cupy as cp
+except ImportError:
+    cp = np
 import pytest
 
 # import WaveLock from repo root or installed version
@@ -65,7 +69,7 @@ def test_dataset_attack_block():
     kp = CurvatureKeyPair(n=8)
 
     with pytest.raises(PermissionError):
-        _ = cp.asnumpy(kp.psi_star)
+        _ = np.asarray(kp.psi_star)
 
     print("✅ PASS: Dataset extraction blocked")
 
