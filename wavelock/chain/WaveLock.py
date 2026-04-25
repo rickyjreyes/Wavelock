@@ -25,6 +25,11 @@ from .hash_families import (
     DEFAULT_SECONDARY_FAMILY,
 )
 
+# SHAKE-256 ψ₀ derivation (Claim 9 / Best Mode). Imported here so the GPU
+# keypair can produce a byte-identical ψ₀ to the NumPy reference path when
+# operating under the consensus regime.
+from .xof_init import derive_psi_zero
+
 
 # ===========================================================
 #  WaveLock v1–v7 Unified Curvature System
@@ -382,6 +387,7 @@ class CurvatureKeyPair:
         use_v6: bool = False,
         use_v7: bool = False,
         test_mode: bool = False,
+        use_xof_init: Optional[bool] = None,
     ):
         # ---------------------------------------------------------
         # Auto-enable test_mode when running under pytest
@@ -405,8 +411,20 @@ class CurvatureKeyPair:
         self.n = n
         self.invariants = invariants or DEFAULT_INVARIANTS
 
-        # RNG seed
-        cp.random.seed(seed)
+        # ---------------------------------------------------------
+        # ψ₀ derivation regime
+        # ---------------------------------------------------------
+        # SHAKE-256 with the WL-PSI-INIT-v1 domain tag is the consensus
+        # path described by Claim 9 / Best Mode. The legacy cupy.random
+        # path is non-consensus (backend- and version-bound) and only
+        # remains for pre-v3 callers that have never produced a binding
+        # commitment.
+        any_consensus_schema = (
+            self.use_v3 or self.use_v4 or self.use_v5 or self.use_v6 or self.use_v7
+        )
+        if use_xof_init is None:
+            use_xof_init = any_consensus_schema
+        self.use_xof_init = bool(use_xof_init)
 
         # side length is always power-of-two
         side = 2 ** max(1, n // 2)
@@ -415,7 +433,17 @@ class CurvatureKeyPair:
         self.psi_history: List[cp.ndarray] = []
 
         # initial field
-        self._psi_0 = cp.random.rand(side, side)
+        if self.use_xof_init:
+            if seed is None:
+                raise ValueError(
+                    "use_xof_init=True requires an explicit seed; SHAKE-256 "
+                    "derivation is deterministic in the seed bytes alone."
+                )
+            psi0_host = derive_psi_zero(seed, (side, side))
+            self._psi_0 = cp.asarray(psi0_host, dtype=cp.float64)
+        else:
+            cp.random.seed(seed)
+            self._psi_0 = cp.random.rand(side, side)
         enforce_dimensional_lock(self._psi_0)
         # evolve while storing all frames (safe for all schemas)
         self.__psi_star = self._evolve_capture(self._psi_0, n)
