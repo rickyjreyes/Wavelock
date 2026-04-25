@@ -79,28 +79,28 @@ def commitment_primary(kp: CurvatureKeyPairV3) -> str:
 
 GOLDEN_VECTORS = {
     (4, 42): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME", 
+        "psi_star_hash": "91d9e34e9eb25005e924e3606bfb46ae8a198b5d55ac7e1bf56804c7bfa220bc",
+        "commitment_primary": "4d34fef529b5f7cd71da2cf0ca06b7bbe0a55d8b8000118389207cc0fe000185",
         "schema": "WLv2",
     },
     (6, 99): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "f5eb4d5a474e6653b49e60284aed4194f9cf0951adcc3927fb83c8eb4c6ae64f",
+        "commitment_primary": "c51b7122c644e07e595f8ce35ef45c8e6d41a1ffe0c38b9a9dcb5f3b0b42cffb",
         "schema": "WLv2",
     },
     (8, 1234): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "bb4d8ef23f9ce20adcb8155f31cb11a67070a94c316517cbfad42bc0d341d3a3",
+        "commitment_primary": "10c0adcc701df3ebbcbc3f63b0fc38b3eff8cd5aafb1c5cf04a286ec989f5bd0",
         "schema": "WLv2",
     },
     (4, 0): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "63631cb458cf56fb28e2308b177729abc68f22959576cb09486bf9656c1bd133",
+        "commitment_primary": "1129fd799ccfc4054925dfa7cb304c012338a40944667a92b3feac7edaaf2bf1",
         "schema": "WLv2",
     },
     (6, 12345): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "8116f52ef6e9e14209241fb28dd8e83a51f5abe48a44b97d0925ed8b12dae51a",
+        "commitment_primary": "ee3a48770e218b2382abf3d347998b1a21779b542f2e6d9d3c74a999f300bb36",
         "schema": "WLv2",
     },
 }
