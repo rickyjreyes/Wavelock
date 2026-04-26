@@ -94,29 +94,29 @@ def commitment_primary(kp: CurvatureKeyPairV3) -> str:
 #
 GOLDEN_VECTORS = {
     (4, 42): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "b44b00da4b6b88da95123246353a9d19e056dc9f5085dc229e4de1ae750cbcd1",
+        "commitment_primary": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+        "schema": "WLv3.1",
     },
     (6, 99): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "6554b9268413aa67014647ac7911ad4fe800db3975f6393cc13ad6ded4ba062b",
+        "commitment_primary": "94e714ee4464a70801377339fd191abb69188f3c7c60e9e5f023fe0d4ea21e20",
+        "schema": "WLv3.1",
     },
     (8, 1234): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "f9a42c591728771ec60a2fb3242881be9972159ce23eca16ecc25aefdad6171c",
+        "commitment_primary": "8cc79dac1105055bb198634b620535762c18e34d82fa8cc949f4fbc87aab88f6",
+        "schema": "WLv3.1",
     },
     (4, 0): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "a86bef13f2d4357ad6706474d22da8bc2fbe885e7b8ccdde9b5c225002f5667b",
+        "commitment_primary": "a2ff85eef7892ecafd843b730b035c315c99b3dcd7b8c96d83256291ceda165a",
+        "schema": "WLv3.1",
     },
     (6, 12345): {
-        "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "PLACEHOLDER_GENERATE_ME",
+        "psi_star_hash": "23eb47c961263a2a14734b39a079bae6b2e093ad52c74c01fe542c2d43ece26c",
+        "commitment_primary": "5b0263dc1170e082e106dd3d062cd3931bc73f4ac03e129e5c376fa98a3e80ee",
+        "schema": "WLv3.1",
     },
 }
 

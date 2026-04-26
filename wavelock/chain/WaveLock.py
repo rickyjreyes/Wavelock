@@ -134,6 +134,10 @@ def _float64_bytes(x_cp) -> bytes:
     return arr.ravel(order="C").tobytes()
 
 def laplacian(x):
+    # Coerce to the active backend so that callers passing a numpy array
+    # (e.g. from a test) don't trip cupy's "non-scalar numpy.ndarray
+    # cannot be used for fill" when cp.roll tries to scatter-assign.
+    x = cp.asarray(x)
     return (
         -4.0 * x
         + cp.roll(x, +1, 0) + cp.roll(x, -1, 0)
@@ -156,6 +160,8 @@ def enforce_dimensional_lock(psi):
 # ===========================================================
 
 def _curvature_functional(psi) -> Tuple[float, float, float, float]:
+    # Coerce input to active backend; same rationale as in laplacian().
+    psi = cp.asarray(psi, dtype=cp.float64)
     gx, gy = cp.gradient(psi)
     E_grad = float(cp.sum(gx * gx) + cp.sum(gy * gy))
 
