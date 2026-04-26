@@ -8,6 +8,17 @@ import numpy as np
 from dataclasses import dataclass
 
 import hmac
+
+
+def _to_numpy(x):
+    """Convert any input (NumPy, CuPy, list) -> NumPy float64 safely."""
+    if isinstance(x, np.ndarray):
+        return x
+    if hasattr(x, "get"):
+        return x.get()
+    return np.asarray(x, dtype=np.float64)
+
+
 def _secure_compare(a: str, b: str) -> bool:
         return hmac.compare_digest(
         a.encode("utf-8"),
