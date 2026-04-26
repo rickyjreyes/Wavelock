@@ -6,24 +6,28 @@ import struct
 import numpy as np
 
 # --- backend shim: prefer CuPy (GPU) but fall back to NumPy (CPU) ---
+# CuPy mirrors NumPy's API for every operation this file uses, so a NumPy
+# fallback lets the module import and run on CPU-only environments while
+# keeping the same call sites. The _BACKEND constant is checked in spots
+# where the two libraries genuinely diverge (e.g. cp.asnumpy is a no-op
+# on numpy arrays — we route through _to_numpy for that).
 try:
     import cupy as cp
     _BACKEND = "cupy"
 except ImportError:
-    cp = np  # numpy exposes a compatible API for the ops used here
+    cp = np
     _BACKEND = "numpy"
 from dataclasses import dataclass
 
-import hmac
 
-
-def _to_numpy(x):
-    """Convert array to numpy regardless of backend."""
-    if _BACKEND == "cupy":
-        return _to_numpy(cp.asarray(x))
+def _to_numpy(x) -> np.ndarray:
+    """Return a NumPy array regardless of backend (no-op on numpy inputs)."""
+    if _BACKEND == "cupy" and isinstance(x, cp.ndarray):
+        return cp.asnumpy(x)
     return np.asarray(x)
 
 
+import hmac
 def _secure_compare(a: str, b: str) -> bool:
         return hmac.compare_digest(
         a.encode("utf-8"),
@@ -40,6 +44,11 @@ from .hash_families import (
     DEFAULT_PRIMARY_FAMILY,
     DEFAULT_SECONDARY_FAMILY,
 )
+
+# SHAKE-256 ψ₀ derivation (Claim 9 / Best Mode). Imported here so the GPU
+# keypair can produce a byte-identical ψ₀ to the NumPy reference path when
+# operating under the consensus regime.
+from .xof_init import derive_psi_zero
 
 
 # ===========================================================
@@ -398,6 +407,7 @@ class CurvatureKeyPair:
         use_v6: bool = False,
         use_v7: bool = False,
         test_mode: bool = False,
+        use_xof_init: Optional[bool] = None,
     ):
         # ---------------------------------------------------------
         # Auto-enable test_mode when running under pytest
@@ -421,19 +431,44 @@ class CurvatureKeyPair:
         self.n = n
         self.invariants = invariants or DEFAULT_INVARIANTS
 
-        # RNG seed — use numpy RNG for reproducibility across backends
-        if _BACKEND == "cupy":
-            cp.random.seed(seed)
-        np.random.seed(seed)
+        # ---------------------------------------------------------
+        # ψ₀ derivation regime
+        # ---------------------------------------------------------
+        # SHAKE-256 with the WL-PSI-INIT-v1 domain tag is the consensus
+        # path described by Claim 9 / Best Mode. The legacy cupy.random
+        # path is non-consensus (backend- and version-bound) and only
+        # remains for pre-v3 callers that have never produced a binding
+        # commitment.
+        any_consensus_schema = (
+            self.use_v3 or self.use_v4 or self.use_v5 or self.use_v6 or self.use_v7
+        )
+        if use_xof_init is None:
+            use_xof_init = any_consensus_schema
+        self.use_xof_init = bool(use_xof_init)
 
         # side length is always power-of-two
         side = 2 ** max(1, n // 2)
 
         # history for v6, and general introspection
-        self.psi_history: List = []
+        self.psi_history: List[cp.ndarray] = []
 
-        # initial field — use numpy for deterministic seeding, then convert
-        self._psi_0 = cp.asarray(np.random.rand(side, side))
+        # initial field
+        if self.use_xof_init:
+            if seed is None:
+                raise ValueError(
+                    "use_xof_init=True requires an explicit seed; SHAKE-256 "
+                    "derivation is deterministic in the seed bytes alone."
+                )
+            psi0_host = derive_psi_zero(seed, (side, side))
+            self._psi_0 = cp.asarray(psi0_host, dtype=cp.float64)
+        else:
+            # Legacy MT path. Use numpy for cross-backend reproducibility:
+            # numpy.random is identical whether _BACKEND is "cupy" or "numpy",
+            # whereas cupy.random is implemented separately and not
+            # byte-stable against numpy.random.
+            np.random.seed(seed)
+            psi0_host = np.random.rand(side, side)
+            self._psi_0 = cp.asarray(psi0_host, dtype=cp.float64)
         enforce_dimensional_lock(self._psi_0)
         # evolve while storing all frames (safe for all schemas)
         self.__psi_star = self._evolve_capture(self._psi_0, n)
@@ -671,7 +706,7 @@ class CurvatureKeyPair:
     #     elif schema == SCHEMA_V2:
     #         raw = self._sig_payload_v2(message)
     #     else:  # SCHEMA_V1
-    #         psi_bytes = _to_numpy(self.psi_star.ravel()).tobytes()
+    #         psi_bytes = cp.asnumpy(self.psi_star.ravel()).tobytes()
     #         raw = message.encode() + psi_bytes
 
     #     return hashlib.sha256(raw).hexdigest()

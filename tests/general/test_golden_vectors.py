@@ -77,31 +77,46 @@ def commitment_primary(kp: CurvatureKeyPairV3) -> str:
 #
 # =============================================================================
 
+#
+# NOTE: WLv3.1 protocol upgrade (SHAKE-256 ψ₀ derivation) is a deliberate
+# consensus break — every value below was reset to a sentinel so the
+# parametrized tests pytest.skip rather than silently asserting against
+# stale Mersenne-Twister hashes. To repopulate after the upgrade lands:
+#
+#   python tests/general/test_golden_vectors.py generate
+#
+# Then paste the printed dict over this one. The schema field will read
+# "WLv3.1" for every entry; that is the loud signal that the canonical
+# commitment format has flipped from numpy.random to SHAKE-256.
+#
+# DO NOT mix WLv2 and WLv3.1 entries in this dict — that would make the
+# regression suite ambiguous about which seed-derivation regime is canonical.
+#
 GOLDEN_VECTORS = {
     (4, 42): {
         "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
-        "commitment_primary": "PLACEHOLDER_GENERATE_ME", 
-        "schema": "WLv2",
+        "commitment_primary": "PLACEHOLDER_GENERATE_ME",
+        "schema": "PLACEHOLDER_GENERATE_ME",
     },
     (6, 99): {
         "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
         "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "WLv2",
+        "schema": "PLACEHOLDER_GENERATE_ME",
     },
     (8, 1234): {
         "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
         "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "WLv2",
+        "schema": "PLACEHOLDER_GENERATE_ME",
     },
     (4, 0): {
         "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
         "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "WLv2",
+        "schema": "PLACEHOLDER_GENERATE_ME",
     },
     (6, 12345): {
         "psi_star_hash": "PLACEHOLDER_GENERATE_ME",
         "commitment_primary": "PLACEHOLDER_GENERATE_ME",
-        "schema": "WLv2",
+        "schema": "PLACEHOLDER_GENERATE_ME",
     },
 }
 

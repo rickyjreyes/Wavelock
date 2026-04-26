@@ -24,6 +24,7 @@ from wavelock.chain.hash_families import (
     DEFAULT_PRIMARY_FAMILY,
     DEFAULT_SECONDARY_FAMILY,
 )
+from wavelock.chain.xof_init import derive_psi_zero
 
 
 # ===========================================================================
@@ -42,6 +43,12 @@ _damping = 0.00002
 
 KERNEL_VERSION = "WL-psi-001"
 SCHEMA_V2 = "WLv2"
+# WLv3.1 marks the canonical commitment schema after the seed-derivation
+# upgrade from numpy.random (Mersenne Twister) to SHAKE-256 with the
+# WL-PSI-INIT-v1 domain tag. Commitments labeled WLv3.1 are byte-stable
+# across implementations; commitments labeled WLv2 are NumPy-version-bound
+# and historical-format-only after the upgrade.
+SCHEMA_V3_SHAKE = "WLv3.1"
 
 
 # ===========================================================================
@@ -96,9 +103,9 @@ def _curvature_functional(psi) -> Tuple[float, float, float, float]:
     return E_grad, E_fb, E_ent, E_tot
 
 
-def _serialize_commitment_v2(psi) -> bytes:
+def _serialize_commitment(psi, schema: str = SCHEMA_V2) -> bytes:
     header_bytes = _canonical_json({
-        "schema": SCHEMA_V2,
+        "schema": schema,
         "dtype": "float64",
         "ord": "C",
         "shape": [int(x) for x in psi.shape],
@@ -114,7 +121,11 @@ def _serialize_commitment_v2(psi) -> bytes:
     E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi)
     packed_E = struct.pack("<4d", E_grad, E_fb, E_ent, E_tot)
 
-    return b"WLv2\0" + header_bytes + _float64_bytes(psi) + packed_E
+    return schema.encode("ascii") + b"\0" + header_bytes + _float64_bytes(psi) + packed_E
+
+
+def _serialize_commitment_v2(psi) -> bytes:
+    return _serialize_commitment(psi, SCHEMA_V2)
 
 
 # ===========================================================================
@@ -130,26 +141,39 @@ class CurvatureKeyPairV3:
         seed: Optional[int] = None,
         primary_family: HashFamily = DEFAULT_PRIMARY_FAMILY,
         secondary_family: HashFamily = DEFAULT_SECONDARY_FAMILY,
+        use_xof_init: bool = True,
     ):
         self.n = n
         self.primary_family = primary_family
         self.secondary_family = secondary_family
-        self.schema = SCHEMA_V2
-        
-        # RNG seed
-        np.random.seed(seed)
-        
+        self.use_xof_init = bool(use_xof_init)
+        # Schema labels which seed-derivation regime produced this keypair:
+        #   WLv3.1 = SHAKE-256 (canonical, byte-stable, patent Best Mode)
+        #   WLv2   = numpy.random Mersenne Twister (legacy / historical)
+        self.schema = SCHEMA_V3_SHAKE if self.use_xof_init else SCHEMA_V2
+
         # Side length is always power-of-two
         side = 2 ** max(1, n // 2)
-        
+
         # Initial field
-        self.psi_0 = np.random.rand(side, side)
-        
+        if self.use_xof_init:
+            # Consensus-grade derivation: SHAKE-256 XOF, byte-stable across
+            # backends and library versions. Required for any commitment
+            # that must be reproducible by an independent verifier.
+            if seed is None:
+                raise ValueError("use_xof_init=True requires an explicit seed")
+            self.psi_0 = derive_psi_zero(seed, (side, side))
+        else:
+            # Legacy backend RNG path. Reproducible only within numpy
+            # versions that share the same Mersenne-Twister implementation.
+            np.random.seed(seed)
+            self.psi_0 = np.random.rand(side, side)
+
         # Evolve to fixed point
         self.psi_star = self._evolve(self.psi_0, n)
-        
+
         # Serialize for commitment
-        self._serialized = _serialize_commitment_v2(self.psi_star)
+        self._serialized = _serialize_commitment(self.psi_star, self.schema)
         
         # Compute dual-hash commitment
         self.dual_hash = DualHash.from_data(

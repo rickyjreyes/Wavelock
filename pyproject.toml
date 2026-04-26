@@ -23,6 +23,7 @@ dependencies = [
 [project.optional-dependencies]
 cpu = ["numpy", "matplotlib"]
 gpu = ["cupy>=11.0"]   # optional GPU-only
+blake3 = ["blake3>=0.4"]   # required when HashFamily.BLAKE3 is selected
 
 [project.urls]
 Homepage = "https://github.com/rickyjreyes/Wavelock"
