@@ -235,12 +235,39 @@ def _serialize_commitment_v1(psi) -> bytes:
 # ------------------
 # v2: header + ψ + curvature
 # ------------------
+def _curvature_functional_np(psi_np) -> Tuple[float, float, float, float]:
+    # Backend-stable curvature functional. Cupy and numpy reductions
+    # diverge in the last ULP, which would propagate into packed_E and
+    # break byte-equality of WLv2 commitments across backends. Mirrors
+    # Wavelock_numpy._curvature_functional exactly.
+    def _np_lap(x):
+        return (
+            -4.0 * x
+            + np.roll(x, +1, 0) + np.roll(x, -1, 0)
+            + np.roll(x, +1, 1) + np.roll(x, -1, 1)
+        )
+
+    gx, gy = np.gradient(psi_np)
+    E_grad = float(np.sum(gx * gx) + np.sum(gy * gy))
+
+    lap = _np_lap(psi_np)
+    feedback = alpha * lap / (psi_np + epsilon * np.exp(-beta * psi_np ** 2))
+    entropy_term = theta * (psi_np * _np_lap(np.log(psi_np ** 2 + delta)))
+
+    E_fb  = float(np.sum(feedback * feedback))
+    E_ent = float(np.sum(entropy_term * entropy_term))
+    E_tot = float(E_grad + E_fb + E_ent)
+    return E_grad, E_fb, E_ent, E_tot
+
+
 def _serialize_commitment_v2(psi) -> bytes:
+    psi_np = _to_numpy(cp.asarray(psi, dtype=cp.float64))
+
     header_bytes = _canonical_json({
         "schema": SCHEMA_V2,
         "dtype": "float64",
         "ord": "C",
-        "shape": [int(x) for x in psi.shape],
+        "shape": [int(x) for x in psi_np.shape],
         "alpha": float(alpha),
         "beta":  float(beta),
         "theta": float(theta),
@@ -250,10 +277,10 @@ def _serialize_commitment_v2(psi) -> bytes:
         "kernel_hash": _kernel_hash(),
     })
 
-    E_grad, E_fb, E_ent, E_tot = _curvature_functional(psi)
+    E_grad, E_fb, E_ent, E_tot = _curvature_functional_np(psi_np)
     packed_E = struct.pack("<4d", E_grad, E_fb, E_ent, E_tot)
 
-    return b"WLv2\0" + header_bytes + _float64_bytes(psi) + packed_E
+    return b"WLv2\0" + header_bytes + psi_np.ravel(order="C").tobytes() + packed_E
 
 # ------------------
 # v3: float64 canonical ψ
