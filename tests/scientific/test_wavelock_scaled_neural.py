@@ -64,7 +64,8 @@ def run_scaled_neural_inversion():
         if i % 200 == 0:
             print(f"  - Sample {i}/{samples}")
 
-        kp = CurvatureKeyPair(n=n, test_mode=True)
+        # kp = CurvatureKeyPair(n=n, test_mode=True)
+        kp = CurvatureKeyPair(n=n, seed=i, test_mode=True)
 
 
         psi_star_flat = cp.asnumpy(kp.psi_star).astype(np.float32).flatten()

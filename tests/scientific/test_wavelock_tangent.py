@@ -86,7 +86,8 @@ def jtj_power_iteration(psi0, iters=30):
 
 def run_tangent_space_analysis(n=4):
     # Small n=4 (16x16) to keep J manageable
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi0_np = cp.asnumpy(kp.psi_0)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -187,7 +188,8 @@ def jtj_power_iteration(psi0, iters=30):
 
 def run_tangent_space_analysis(n=4):
     # Small n=4 (16x16) to keep J manageable
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi0_np = cp.asnumpy(kp.psi_0)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

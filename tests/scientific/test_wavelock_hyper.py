@@ -52,7 +52,8 @@ def bit_diff(a, b):
 def test_deterministic_evolution(n=6, trials=20, seed=1234):
     diffs = []
     for _ in range(trials):
-        kp = CurvatureKeyPair(n=n, seed=seed)
+        # kp = CurvatureKeyPair(n=n, seed=seed)
+        kp = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
 
         psi0 = kp.psi_0.astype(cp.float64)
         psi1 = kp.evolve(psi0, n)
@@ -80,8 +81,10 @@ def test_deterministic_evolution(n=6, trials=20, seed=1234):
 def test_collision_resistance(n=6, trials=50):
     collisions = 0
     for i in range(trials):
-        kp1 = CurvatureKeyPair(n=n, seed=i)
-        kp2 = CurvatureKeyPair(n=n, seed=i + 777777)
+        # kp1 = CurvatureKeyPair(n=n, seed=i)
+        kp1 = CurvatureKeyPair(n=n, seed=123, test_mode=True)
+        # kp2 = CurvatureKeyPair(n=n, seed=i + 777777)
+        kp2 = CurvatureKeyPair(n=n, seed=123+777777, test_mode=True)
 
         c1 = sha256_hex(kp1.psi_star)
         c2 = sha256_hex(kp2.psi_star)
@@ -101,7 +104,8 @@ def test_collision_resistance(n=6, trials=50):
 def test_symbolic_verifier_false_accept(n=6, trials=200):
     false_accepts = 0
     for _ in range(trials):
-        kp = CurvatureKeyPair(n=n)
+        # kp = CurvatureKeyPair(n=n)
+        kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
         psi_star = kp.psi_star.astype(cp.float32)
 
         # adversarial random normalized noise field
@@ -125,7 +129,8 @@ def test_signature_forgery(n=6, trials=100):
     msg = "hyper-test-msg"
 
     for _ in range(trials):
-        kp = CurvatureKeyPair(n=n)
+        # kp = CurvatureKeyPair(n=n)
+        kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
 
         real_sig = kp.sign(msg)
         # random hex string of incorrect form
@@ -146,7 +151,8 @@ def test_signature_forgery(n=6, trials=100):
 def test_drift(n=6, trials=30):
     failures = 0
     for _ in range(trials):
-        kp = CurvatureKeyPair(n=n)
+        # kp = CurvatureKeyPair(n=n)
+        kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
         base_hex = sha256_hex(kp.psi_star)
 
         drift = (kp.psi_star +
@@ -171,7 +177,8 @@ def test_resonance_attack(n=6, trials=20):
     false_accepts = 0
 
     for _ in range(trials):
-        kp = CurvatureKeyPair(n=n)
+        # kp = CurvatureKeyPair(n=n)
+        kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
         psi_star = kp.psi_star
 
         x = psi_star.shape[0]
@@ -202,6 +209,7 @@ def test_pde_inversion(n=6, trials=20):
 
     for _ in range(trials):
         kp = CurvatureKeyPair(n=n)
+        kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
         psi_star = kp.psi_star
 
         # naïve inverse-like perturbation

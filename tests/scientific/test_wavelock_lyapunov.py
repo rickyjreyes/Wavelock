@@ -25,7 +25,8 @@ def evolve_step(psi, dt=0.01, alpha=1.0, beta=1.0, gamma=0.3, eps=1e-12):
     return psi + dt * Fterm
 
 def run_lyapunov_perron_attack(n=6, T=50, outer_steps=1500, lr=1e-3):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star_np = cp.asnumpy(kp.psi_star)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

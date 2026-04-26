@@ -44,7 +44,9 @@ def generate_psi_star(*args, **kwargs):
             )
 
     # Explicit test-mode opt-in (required by WaveLock)
-    kp = CurvatureKeyPair(*args, test_mode=True, **kwargs)
+    kwargs.setdefault("test_mode", True)
+    kp = CurvatureKeyPair(*args, **kwargs)
+    # kp = CurvatureKeyPair(*args, test_mode=True, **kwargs)
     return kp.psi_star
 
 
@@ -71,14 +73,12 @@ def domain_separation_test():
 def seed_sensitivity_test(n=12, seeds=(0, 1)):
     print("\n[SEED SENSITIVITY TEST]")
 
-    np.random.seed(seeds[0])
-    psi_a = generate_psi_star(n)
-
-    np.random.seed(seeds[1])
-    psi_b = generate_psi_star(n)
+    psi_a = generate_psi_star(n, seed=seeds[0])
+    psi_b = generate_psi_star(n, seed=seeds[1])
 
     a = psi_a.flatten()
-    b = psi_b.flatten()
+    b = psi_b.flatten()    
+
 
     a -= a.mean()
     b -= b.mean()

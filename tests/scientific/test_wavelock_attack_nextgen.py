@@ -46,7 +46,8 @@ def gradient_attack_v2(n=6, iterations=3000, lr=4e-5):
     White-box gradient surrogate attack.
     Uses Laplacian (curvature proxy) and bi-Laplacian as surrogate gradient.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     target_hash = commit(target)
 
@@ -76,7 +77,8 @@ def energy_proxy(psi):
     return float(cp.sum(L*L) + cp.sum(psi*psi))
 
 def monte_carlo_attack(n=6, steps=5000, T_start=1.0, T_end=0.01):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     target_hash = commit(target)
 
@@ -103,7 +105,8 @@ def monte_carlo_attack(n=6, steps=5000, T_start=1.0, T_end=0.01):
 # =====================================================================
 
 def fourier_shell_attack(n=6, depth=40):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     target_hash = commit(target)
 
@@ -129,7 +132,8 @@ def fourier_shell_attack(n=6, depth=40):
 # =====================================================================
 
 def zeta_phase_attack(n=6, layers=50):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     target_hash = commit(target)
 
@@ -156,7 +160,8 @@ def zeta_phase_attack(n=6, layers=50):
 # =====================================================================
 
 def curvehash_v3_attack(n=6, rounds=12):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     target_hash = commit(target)
 

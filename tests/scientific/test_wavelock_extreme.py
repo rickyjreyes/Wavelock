@@ -29,7 +29,8 @@ def verify_exact(a, b):
 # ============================================================
 
 def extreme_avalanche_test(n=6, flips=10000):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     base = cp.asarray(kp.psi_star, dtype=cp.float64)
     base_hash = commit(base)
 
@@ -56,7 +57,8 @@ def extreme_avalanche_test(n=6, flips=10000):
 # ============================================================
 
 def extreme_drift_test(n=6, steps=1000):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     base = cp.asarray(kp.psi_star, dtype=cp.float64)
     c0 = commit(base)
 
@@ -76,7 +78,8 @@ def extreme_drift_test(n=6, steps=1000):
 # ============================================================
 
 def precision_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     base = cp.asarray(kp.psi_star, dtype=cp.float64)
     c0 = commit(base)
 
@@ -93,7 +96,8 @@ def precision_attack(n=6):
 # ============================================================
 
 def fourier_attack(n=6, attempts=200):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(target)
 
@@ -123,7 +127,8 @@ def fourier_attack(n=6, attempts=200):
 # ============================================================
 
 def random_projection_attack(n=6, attempts=500):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     base = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(base)
 
@@ -150,11 +155,13 @@ def multi_gpu_test(n=6):
         return {"skip": True}
 
     cp.cuda.Device(0).use()
-    kp0 = CurvatureKeyPair(n=n)
+    # kp0 = CurvatureKeyPair(n=n)
+    kp0 = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     h0 = commit(kp0.psi_star)
 
     cp.cuda.Device(1).use()
-    kp1 = CurvatureKeyPair(n=n)
+    # kp1 = CurvatureKeyPair(n=n)
+    kp1 = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     h1 = commit(kp1.psi_star)
 
     return {
@@ -167,7 +174,8 @@ def multi_gpu_test(n=6):
 # ============================================================
 
 def quantization_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(psi)
 
@@ -181,7 +189,8 @@ def quantization_attack(n=6):
 # ============================================================
 
 def thermal_attack(n=6, T=0.1):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(psi)
 
@@ -193,7 +202,8 @@ def thermal_attack(n=6, T=0.1):
 # ============================================================
 
 def recombination_attack(n=6, attempts=200):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(psi)
 
@@ -215,7 +225,8 @@ def recombination_attack(n=6, attempts=200):
 # ============================================================
 
 def gradient_surrogate_attack(n=6, steps=300, lr=1e-4):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asarray(kp.psi_star, dtype=cp.float64)
     h0 = commit(target)
 

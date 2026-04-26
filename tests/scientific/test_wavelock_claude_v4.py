@@ -208,7 +208,8 @@ def claude4_inversion_v4(kp, iters=150, latent_dim=256):
 if __name__ == "__main__":
     print("\n=== WAVELOCK CLAUDE-4 ATTACK SUITE (WLv4) ===\n")
 
-    kp = CurvatureKeyPair(n=6, use_v4=True)
+    # kp = CurvatureKeyPair(n=6, use_v4=True)
+    kp = CurvatureKeyPair(n=6, seed=123, use_v4=True, test_mode=True)
 
     print("1) Surrogate Probe Attack:")
     print(surrogate_probe_v4(kp))

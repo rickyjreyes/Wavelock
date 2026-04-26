@@ -39,7 +39,8 @@ def rotational_attack(n=6):
     Test if commitment is invariant under rotations.
     If ψ and rotate(ψ) produce same hash, collision found.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit(psi)
     
@@ -83,7 +84,8 @@ def meet_in_middle_attack(n=6, forward_steps=25, samples=5000):
     Backward: ψ* → ψ_mid
     Look for collisions.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     
@@ -132,7 +134,8 @@ def linear_approximation_attack(n=6, iterations=500, lr=1e-4):
     Solve linear system: ψ_{t+1} = ψ_t + dt*α*Δψ
     Use solution as starting point for refinement.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     
@@ -179,7 +182,8 @@ def lowrank_attack(n=6, max_rank=10):
     Reconstruct at progressively higher ranks.
     Check if low-rank version collides.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     
@@ -215,7 +219,8 @@ def symmetry_attack(n=6):
     Test various symmetries: rotation, reflection, transpose.
     If any symmetry preserves commitment, collision found.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit(psi)
     
@@ -262,7 +267,8 @@ def differential_attack(n=6, trials=1000, delta=1e-6):
     Track how small input differences propagate through evolution.
     Look for differential characteristics that collapse.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     

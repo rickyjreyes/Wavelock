@@ -26,7 +26,8 @@ class WaveLockInverseDataset(Dataset):
 
     def _generate(self):
         for i in range(self.num_samples):
-            kp = CurvatureKeyPair(n=self.n, seed=self.seed_offset + i)
+            # kp = CurvatureKeyPair(n=self.n, seed=self.seed_offset + i)
+            kp = CurvatureKeyPair(n=self.n, seed=self.seed_offset + i, test_mode=True)
             psi0 = cp.asnumpy(kp.psi_0).astype(np.float32)
             psi_star = cp.asnumpy(kp.psi_star).astype(np.float32)
             self.data.append((psi_star, psi0))

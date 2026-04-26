@@ -100,7 +100,8 @@ def tbja_worker(rank, world_size, psi_target_np, target_hash, steps=2000, lr=5e-
 # ----------------- Entry point -----------------
 
 def run_tbja_cluster(n=6, steps=2000, lr=5e-3):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = cp.asnumpy(kp.psi_star)
     target_hash = commit_np(psi_star)
 

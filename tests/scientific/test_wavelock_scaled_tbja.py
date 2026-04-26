@@ -85,7 +85,8 @@ def run_tbja_scaled_pro():
     print("====================================================\n")
 
     # Use realistic dimensionality for a serious test
-    kp = CurvatureKeyPair(n=8, seed=42)
+    # kp = CurvatureKeyPair(n=8, seed=42)
+    kp = CurvatureKeyPair(n=8, seed=42, test_mode=True)
     print(f"[INFO] ψ★ shape = {kp.psi_star.shape}")
     print(f"[INFO] Commitment = {kp.commitment}\n")
 

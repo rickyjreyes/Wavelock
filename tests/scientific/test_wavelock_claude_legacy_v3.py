@@ -44,7 +44,8 @@ def svd_lowrank_attack_v3(n=6, max_rank=20):
     Test whether rank-k SVD approximations collide under v3 commit.
     EXPECTED FOR V3: No collision until full rank.
     """
-    kp = CurvatureKeyPair(n=n, use_v3=True)
+    # kp = CurvatureKeyPair(n=n, use_v3=True)
+    kp = CurvatureKeyPair(n=n, seed=123, use_v3=True, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit_v3(psi)
 
@@ -78,7 +79,8 @@ def laplacian_eig_attack_v3(n=6, max_eigs=20):
     Test whether ψ lies in low-dimensional Δ-eigenspace under v3.
     EXPECTED FOR V3: No collisions except full eigenbasis.
     """
-    kp = CurvatureKeyPair(n=n, use_v3=True)
+    # kp = CurvatureKeyPair(n=n, use_v3=True)
+    kp = CurvatureKeyPair(n=n, seed=123, use_v3=True, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit_v3(psi)
 
@@ -135,7 +137,8 @@ def precision_attack_v3(n=6):
     Tests float64→float32→float16 collisions under v3.
     EXPECTED FOR V3: No match except float64.
     """
-    kp = CurvatureKeyPair(n=n, use_v3=True)
+    # kp = CurvatureKeyPair(n=n, use_v3=True)
+    kp = CurvatureKeyPair(n=n, seed=123, use_v3=True, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
 
     h64 = commit_v3(psi)
@@ -192,7 +195,8 @@ def symmetry_attack_v3(n=6):
     Test invariance under rotations & flips.
     EXPECTED FOR V3: No symmetries preserved.
     """
-    kp = CurvatureKeyPair(n=n, use_v3=True)
+    # kp = CurvatureKeyPair(n=n, use_v3=True)
+    kp = CurvatureKeyPair(n=n, seed=123, use_v3=True, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit_v3(psi)
 

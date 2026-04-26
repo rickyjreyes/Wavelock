@@ -43,7 +43,8 @@ def serialization_collision_attack(n=6, trials=10000):
     Find two different ψ-fields that serialize to identical bytes.
     This would explain the rank-8 match.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_bytes = commit_raw_bytes(target)
     target_hash = hashlib.sha256(target_bytes).hexdigest()
@@ -103,7 +104,8 @@ def pde_inverse_attack(n=6, iterations=500, lr=1e-3):
     Given ψ_final, solve backward for ψ0.
     Uses gradient descent on Laplacian-based loss.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     
@@ -173,7 +175,8 @@ def eigendecomposition_attack(n=6, max_eigenvecs=15):
     If ψ* has low-rank structure in eigenspace of Δ, reconstruct it.
     Similar to SVD attack but uses problem-specific structure.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
     
@@ -245,7 +248,8 @@ def precision_cascade_attack(n=6):
     Test serialization at different precisions.
     Look for precision boundaries where commitment collapses.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     h_target = commit(target)
     

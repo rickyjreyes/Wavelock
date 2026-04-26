@@ -25,7 +25,8 @@ def worker(seed_start, seed_end, n, result_queue, progress_every=1000):
     collisions = []
 
     for seed in range(seed_start, seed_end):
-        kp = CurvatureKeyPair(n=n, seed=seed)
+        # kp = CurvatureKeyPair(n=n, seed=seed)
+        kp = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
         psi_star = kp.psi_star
         h = commit_cp(psi_star)
 

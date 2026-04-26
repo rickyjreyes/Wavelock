@@ -25,7 +25,8 @@ def commit(psi):
 # No curvature functional used.
 
 def qpe_sim_attack(n=6, steps=50):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 
@@ -46,7 +47,8 @@ def qpe_sim_attack(n=6, steps=50):
 # No curvature functional used.
 
 def hhl_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 
@@ -71,7 +73,8 @@ def hhl_attack(n=6):
 # No curvature functional used.
 
 def wavelet_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 
@@ -101,7 +104,8 @@ def wavelet_attack(n=6):
 # No curvature functional used.
 
 def manifold_attack(n=6, dim=4):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 
@@ -122,7 +126,8 @@ def manifold_attack(n=6, dim=4):
 # No curvature functional used.
 
 def adjoint_attack(n=6, steps=200, lr=1e-4):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 
@@ -144,7 +149,8 @@ def adjoint_attack(n=6, steps=200, lr=1e-4):
 # No curvature functional used.
 
 def dual_space_attack(n=6, steps=800):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi_star = kp.psi_star
     h0 = commit(psi_star)
 

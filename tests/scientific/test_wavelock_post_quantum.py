@@ -22,7 +22,8 @@ def commit(psi):
 # ============================================================
 
 def grover_sim_attack(n=6, iterations=2000):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     h0 = commit(target)
 
@@ -44,7 +45,8 @@ def grover_sim_attack(n=6, iterations=2000):
 # ============================================================
 
 def qaoa_sim_attack(n=6, layers=2000, step=1e-4):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     h0 = commit(target)
 
@@ -64,7 +66,8 @@ def qaoa_sim_attack(n=6, layers=2000, step=1e-4):
 # ============================================================
 
 def qft_reconstruction_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     h0 = commit(target)
     side = target.shape[0]
@@ -89,7 +92,8 @@ def qft_reconstruction_attack(n=6):
 # ============================================================
 
 def gibbs_qsim_attack(n=6, samples=5000, T=0.01):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     h0 = commit(target)
 
@@ -109,7 +113,8 @@ def gibbs_qsim_attack(n=6, samples=5000, T=0.01):
 # ============================================================
 
 def qrw_collision_attack(n=6, steps=10000):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = kp.psi_star
     h0 = commit(target)
 

@@ -43,7 +43,8 @@ def evolve_real(kp, psi0, T=20):
 # =====================================================================
 
 def rotational_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit(psi)
 
@@ -63,7 +64,8 @@ def rotational_attack(n=6):
 # =====================================================================
 
 def symmetry_attack(n=6):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit(psi)
 
@@ -96,7 +98,8 @@ def symmetry_attack(n=6):
 # =====================================================================
 
 def lowrank_attack(n=6, max_rank=10):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     psi = cp.asnumpy(kp.psi_star)
     h0 = commit(psi)
 
@@ -123,7 +126,8 @@ def differential_attack(n=6, trials=500, delta=1e-6, T=20):
     Tests avalanche behavior under real WaveLock PDE.
     v4 commitment is highly sensitive — collisions should be zero.
     """
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     collisions = 0
 
     for trial in range(trials):

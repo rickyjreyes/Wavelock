@@ -47,10 +47,11 @@ def generate_psi_star(*, n, seed, **kwargs):
     """
     Generate ψ★ using the real WaveLock kernel.
     """
+    kwargs.setdefault("test_mode", True)
+
     kp = CurvatureKeyPair(
         n=n,
         seed=seed,
-        test_mode=True,
         **kwargs
     )
     return kp.psi_star

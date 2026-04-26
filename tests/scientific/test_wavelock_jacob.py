@@ -56,7 +56,8 @@ def evolve_torch(psi, T=50, dt=0.01, alpha=1.0, beta=1.0, gamma=0.3, eps=1e-12):
 # ============================================================
 
 def true_backprop_attack(n=6, steps=3000, lr=5e-3):
-    kp = CurvatureKeyPair(n=n)
+    # kp = CurvatureKeyPair(n=n)
+    kp = CurvatureKeyPair(n=n, seed=123, test_mode=True)
     target = cp.asnumpy(kp.psi_star)
     target_hash = commit(target)
 
