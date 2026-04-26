@@ -8,9 +8,9 @@ Tests:
   - Ledger verification
   - PDE determinism for fixed seed
   - Attack battery reproducibility (soliton seed=12 data match)
+  - Cross-implementation consistency (WaveLock.py vs Wavelock_numpy.py)
 """
 
-import json
 import os
 import tempfile
 import numpy as np
@@ -191,7 +191,6 @@ class TestBlockRoundtrip:
 
     def test_ledger_roundtrip(self):
         """Block saved to ledger and loaded back must be identical."""
-        # Use a temp directory for the ledger
         with tempfile.TemporaryDirectory() as tmpdir:
             import wavelock.chain.chain_utils as cu
             old_dir = cu.LEDGER_DIR
@@ -235,7 +234,7 @@ class TestLedgerVerification:
         """Tampering a block's hash must invalidate the chain."""
         chain = CurvaChain(difficulty=2)
         chain.add_block(["test"])
-        chain.chain[1].hash = "0" * 64  # tamper hash
+        chain.chain[1].hash = "0" * 64
         assert not chain.is_chain_valid()
 
     def test_curvachain_tamper_linkage_detection(self):
@@ -243,7 +242,7 @@ class TestLedgerVerification:
         chain = CurvaChain(difficulty=2)
         chain.add_block(["block 1"])
         chain.add_block(["block 2"])
-        chain.chain[2].previous_hash = "f" * 64  # break linkage
+        chain.chain[2].previous_hash = "f" * 64
         assert not chain.is_chain_valid()
 
     def test_merkle_root_detects_message_tamper(self):
@@ -365,6 +364,13 @@ class TestSolitonReproducibility:
 # ============================================================
 # 7. Cross-implementation consistency
 # ============================================================
+#
+# CurvatureKeyPairV3 defaults to use_xof_init=True, which produces
+# WLv3.1 commitments derived from SHAKE-256. CurvatureKeyPair (the
+# GPU/cupy reference) emits WLv2 commitments by default and uses
+# numpy MT for ψ₀ generation. To test cross-implementation byte
+# parity we pin V3 to its legacy WLv2 + numpy-MT path so both
+# implementations evaluate the same canonical serialization.
 
 class TestCrossImplementation:
     """Verify WaveLock.py (cupy shim) and Wavelock_numpy.py produce consistent results."""
@@ -372,7 +378,7 @@ class TestCrossImplementation:
     def test_same_commitment_for_same_seed(self):
         """Both implementations with same seed must produce same commitment."""
         kp_main = CurvatureKeyPair(n=4, seed=77, test_mode=True)
-        kp_np = CurvatureKeyPairV3(n=4, seed=77)
+        kp_np = CurvatureKeyPairV3(n=4, seed=77, use_xof_init=False)
         assert kp_main.commitment == kp_np.commitment, (
             "Main and numpy implementations produce different commitments for same seed"
         )
@@ -380,14 +386,14 @@ class TestCrossImplementation:
     def test_same_signature(self):
         """Both implementations must produce same signature for same message."""
         kp_main = CurvatureKeyPair(n=4, seed=77, test_mode=True)
-        kp_np = CurvatureKeyPairV3(n=4, seed=77)
+        kp_np = CurvatureKeyPairV3(n=4, seed=77, use_xof_init=False)
         msg = "cross-impl test"
         assert kp_main.sign(msg) == kp_np.sign(msg)
 
     def test_cross_verify(self):
         """Signature from one implementation must verify with the other."""
         kp_main = CurvatureKeyPair(n=4, seed=77, test_mode=True)
-        kp_np = CurvatureKeyPairV3(n=4, seed=77)
+        kp_np = CurvatureKeyPairV3(n=4, seed=77, use_xof_init=False)
         msg = "cross verify"
 
         sig_main = kp_main.sign(msg)
