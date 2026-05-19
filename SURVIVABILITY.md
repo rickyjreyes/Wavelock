@@ -307,17 +307,23 @@ or the state is rejected.
 
 # 8. Long-Term Governance
 
-WaveLock Tier-0 will adhere to:
+WaveLock Tier-0 may expose a public verification specification to support independent review, reproducibility, cryptographic migration, and long-term survivability.
 
-- open-source kernels  
-- public hash families  
-- transparent version changes  
-- deterministic PDE laws  
-- global auditability  
-- decentralized governance of safety parameters  
+Recommended governance principles include:
 
-WaveLock cannot be proprietary  
-and remain survivable.
+- public Tier-0 verification rules
+- documented hash-family transitions
+- transparent version changes
+- deterministic reference vectors
+- reproducible verifier behavior
+- public cryptanalysis and adversarial review
+- controlled safety-parameter governance
+
+Public disclosure of Tier-0 verification concepts does **not** grant any license to commercialize, host, sell, modify, or deploy WaveLock-derived systems.
+
+Patent-pending applications, production implementations, runtime monitoring systems, CurvaChain ledger deployments, AI telemetry firewalls, hardware embodiments, WaveMem systems, photodiode/resonator fingerprinting, and derivative commercial uses remain reserved unless expressly licensed.
+
+WaveLock Tier-0 can be publicly reviewable while commercial embodiments remain proprietary, licensed, or otherwise controlled by the rights holder.
 
 ---
 
