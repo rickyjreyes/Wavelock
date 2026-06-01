@@ -5,6 +5,39 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS consensus replay protection (Finding D wired in)
+
+OTS verification is now wired into the real block-acceptance path with a durable
+replay ledger. **WaveLock-OTS remains experimental and is NOT production- or
+bounty-ready** (Finding C is inherent; full Finding-D closure needs every node to
+run this rejection against agreed chain state).
+
+- **Durable replay ledger (NEW).** `wavelock/crypto/ots_ledger.py` adds
+  `PersistentOTSReplayLedger`: an append-only, fsync'd JSONL ledger of consumed
+  `one_time_key_id` + OTS leaf ids (`public_key_fingerprint`). Fail-closed:
+  verification, parsing, hash, fingerprint, Merkle, replay, and durable-write
+  errors all reject and consume nothing. The consumed set is reconstructable from
+  accepted blocks (`index_signature`), so it is canonical per node.
+- **Block acceptance integration (Finding D — FIXED at the ledger layer).**
+  `server.try_accept_block` routes OTS-required blocks (`block_type == "OTS"`,
+  `meta.auth_scheme == WaveLock-OTS-v1`, or `cfg.require_ots`) to
+  `_verify_ots_block`: pure `verify_ots` + durable replay rejection. Rejects a
+  replayed signature, a copied key signing a different message, and a
+  cold-copy/second-host duplicate after the first acceptance.
+- **Legacy SIGv2 refused on the OTS path.** An OTS-required block never falls
+  back to the legacy curvature path; a non-WaveLock-OTS scheme is rejected.
+- **Ledger reconstructed on load.** `ChainState.load_from_disk` folds accepted
+  OTS blocks' identifiers into the ledger so it survives a lost JSONL cache.
+- Tests: `tests/test_ots_consensus.py` (valid first block; replay; copied-key
+  second-sign; cold-copy/second-host; malformed/missing auth; legacy SIGv2
+  refused; durability across reopen; corrupt-ledger fail-closed).
+- Docs: report/roadmap/README updated — A/B fixed, C inherent, D fixed only when
+  global ledger/consensus replay rejection is active; host-local signing
+  registry is defense-in-depth only.
+
+Consensus-affecting: OTS-required blocks are now enforced on the acceptance path
+(the legacy curvature path is unchanged for non-OTS blocks).
+
 ## [Unreleased] — WaveLock-OTS red-team remediation (A/B fixed; C/D documented)
 
 Hardening of the experimental WaveLock-OTS construction

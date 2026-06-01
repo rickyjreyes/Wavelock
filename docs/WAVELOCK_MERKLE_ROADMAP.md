@@ -1,11 +1,13 @@
 # WaveLock-Merkle Roadmap (many-signature support)
 
-> **Status: DESIGN / NOT IMPLEMENTED.** This document describes the construction
-> required to lift WaveLock-OTS from a strictly *one-time* primitive to a
-> many-signature scheme, and the deployment-layer duplicate-use rejection that
-> any production verifier/server/ledger MUST provide. None of this is wired into
-> consensus yet. Do not treat WaveLock-OTS as safe for repeated signing or for
-> value transfer.
+> **Status: PARTIAL.** The *many-signature* (Merkle tree of OTS keys) design in
+> this document is still DESIGN / NOT IMPLEMENTED. The deployment-layer
+> duplicate-use rejection it calls for **is now implemented and wired into block
+> acceptance** for the single-key case: a durable replay ledger
+> (`PersistentOTSReplayLedger`) rejects a reused `one_time_key_id`/leaf at
+> `server.try_accept_block` (see `tests/test_ots_consensus.py`). What remains is
+> cross-node consensus replication of that ledger and the multi-signature tree.
+> Do not treat WaveLock-OTS as safe for repeated signing or value transfer.
 
 ## Why this is needed
 
@@ -68,14 +70,22 @@ WaveLock-OTS is plain Lamport-style OTS. Two security facts drive this roadmap:
 | Tree of many OTS keys (root → leaves) | **NOT implemented** |
 | Leaf index + authentication path in signatures | **NOT implemented** |
 | Stateful signer that never reuses a leaf | **NOT implemented** |
-| Durable, consensus-replicated consumed-leaf/key ledger | **NOT implemented** (only the in-memory `OTSReplayLedger` model + host-local registry exist) |
-| OTS verification wired into block acceptance | **NOT implemented** (consensus still verifies legacy SIGv2) |
+| Durable, reconstructable consumed-key/leaf ledger | **implemented** (`wavelock/crypto/ots_ledger.py`, `PersistentOTSReplayLedger`: append-only + fsync, rebuildable from accepted blocks; the in-memory `OTSReplayLedger` model is retained for the standalone entry point) |
+| OTS verification wired into block acceptance | **implemented** (`server.try_accept_block` → `_verify_ots_block`; durable replay rejection; legacy SIGv2 refused on the OTS path) |
+| Multi-node consensus replication of the ledger | **NOT implemented** (the ledger is canonical *per node*; cross-node agreement is the remaining gap) |
 
 ## Deployment requirement (restate, loudly)
 
-Until the consumed-leaf/key ledger is durable and consensus-replicated:
+The durable replay ledger now rejects a duplicate `one_time_key_id`/leaf at
+block acceptance on a node, so a copied secret key cannot get a second OTS block
+accepted there — Finding D is **fixed at the ledger/consensus layer** for that
+node. The honest caveats that remain:
 
-- A copied secret key **can** sign twice on a different host.
-- WaveLock-OTS is **not** safe for value transfer or repeated signing.
-- `OTSReplayLedger` and the host-local registry are *models / partial
-  mitigations*, not production controls.
+- Finding D is only *fully* closed when **every** accepting node runs this
+  rejection against a ledger derived from agreed chain state. A single isolated
+  node with no shared chain state still only protects itself.
+- The host-local signing registry (`_claim_one_time_key`) is **defense-in-depth
+  only** — never the primary control.
+- WaveLock-OTS is still single-time Lamport (Finding C is inherent) and is
+  **not** safe for value transfer or repeated signing. Do not treat it as
+  production-ready.
