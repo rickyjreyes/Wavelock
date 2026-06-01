@@ -118,7 +118,19 @@ def add_peer(host, port):
 # Core operations
 # ============================================================
 
+def _warn_legacy_sigv2():
+    print(
+        "\n*** DEPRECATED / INSECURE: legacy WaveLock SIGv2 ***\n"
+        "This path writes ψ★ in cleartext and produces signatures whose "
+        "verification REQUIRES ψ★ — i.e. anyone who can verify can forge.\n"
+        "See attacks/forge_from_snapshot.py and docs/MIGRATION_FROM_SIGV2.md.\n"
+        "Use WaveLock-OTS instead: `wavelock-ots ots-keygen`.\n",
+        file=sys.stderr,
+    )
+
+
 def generate_key(n, seed):
+    _warn_legacy_sigv2()
     keypair = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
     with open("keypair.json", "w") as f:
         json.dump({
@@ -550,6 +562,13 @@ def mine_daemon(args):
 # ============================================================
 
 def main():
+    # WaveLock-OTS (experimental asymmetric one-time signatures) lives in its
+    # own CLI module. Delegate any `ots-*` / `ots` subcommand straight to it so
+    # `wavelock-cli ots-keygen ...` works alongside the standalone `wavelock-ots`.
+    if len(sys.argv) > 1 and (sys.argv[1] == "ots" or sys.argv[1].startswith("ots-")):
+        from wavelock.crypto.ots_cli import main as ots_main
+        sys.exit(ots_main(sys.argv[1:]))
+
     parser = argparse.ArgumentParser(description="WaveLock CLI")
     subparsers = parser.add_subparsers(dest="command")
 

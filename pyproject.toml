@@ -34,6 +34,7 @@ Issues = "https://github.com/rickyjreyes/Wavelock/issues"
 wavelockd = "wavelock.network.server:main"
 wavelock-cli = "wavelock.chain.cli:main"
 wavelock-miner = "wavelock.chain.cli:miner_main"
+wavelock-ots = "wavelock.crypto.ots_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

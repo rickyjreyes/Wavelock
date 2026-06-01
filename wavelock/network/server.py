@@ -113,41 +113,66 @@ def _verify_pow_and_linkage(b: Block, cfg) -> bool:
         print(f"Reject: PoW target not met ({b.hash[:12]}... > target)")
     return ok
 
-def _strict_verify_curvature(b: Block, cfg) -> bool:
+def _verify_curvature(b: Block, cfg) -> bool:
+    """Fail-closed curvature verification for incoming blocks.
+
+    Security invariants (see WAVELOCK_THEORY_BREAK_AUDIT.md):
+
+    * There is NO non-strict / trust-only acceptance path. Trust-list
+      membership is necessary but NEVER sufficient — a valid signature is
+      always required.
+    * Missing commitment, missing message/signature, or unpublished proof
+      material all REJECT. There is no "allow due to policy" branch.
+    * Any exception during verification REJECTS.
+
+    NOTE: this path still verifies the *legacy* WaveLock SIGv2 signature, which
+    is itself a deprecated/insecure construction (its verification requires
+    ψ★). It is retained only so existing legacy ledgers fail closed rather than
+    fail open. New deployments should verify WaveLock-OTS signatures
+    (wavelock.crypto.wavelock_ots) instead; see docs/MIGRATION_FROM_SIGV2.md.
+    """
     trusted = _load_trusted_commitments()
     msg, sig, com = _extract_curvature_fields(b)
 
+    # 1. Commitment must be present AND trusted (necessary, not sufficient).
     if not com or not _commitment_is_trusted(com, trusted):
         print("Reject: commitment missing or not trusted.")
         return False
 
-    if not cfg.require_full_verify:
-        return True
-
-    psi = _load_published_psi(com)
-    if psi is None:
-        if bool(int(os.getenv("WAVELOCK_REJECT_IF_UNPUBLISHED", "0"))):
-            print("Reject: psi* not published for strict mode.")
-            return False
-        else:
-            print("Strict: psi* not published, allowing due to policy.")
-            return True
-
-    kp = CurvatureKeyPair(n=4, test_mode=True)
-    kp.psi_star = psi
-    kp.psi_0 = cp.zeros_like(psi)
-    kp.commitment = com
-
-    msg_ok = (msg is not None) and (sig is not None)
-    if not msg_ok:
+    # 2. Message + signature fields must be present.
+    if msg is None or sig is None:
         print("Reject: missing curvature message/signature fields.")
         return False
 
-    if not kp.verify(msg, sig):
-        print("Reject: curvature signature invalid.")
+    # 3. Proof material must be published. No bypass: unpublished => reject.
+    try:
+        psi = _load_published_psi(com)
+    except Exception as e:
+        print(f"Reject: failed to load published proof material: {e}")
+        return False
+    if psi is None:
+        print("Reject: proof material not published; cannot verify (fail closed).")
+        return False
+
+    # 4. A valid signature is ALWAYS required.
+    try:
+        kp = CurvatureKeyPair(n=4, test_mode=True)
+        kp.psi_star = psi
+        kp.psi_0 = cp.zeros_like(psi)
+        kp.commitment = com
+        if not kp.verify(msg, sig):
+            print("Reject: curvature signature invalid.")
+            return False
+    except Exception as e:
+        print(f"Reject: verification error (fail closed): {e}")
         return False
 
     return True
+
+
+# Backwards-compatible alias. The old name implied a "strict" toggle existed;
+# verification is now unconditionally fail-closed.
+_strict_verify_curvature = _verify_curvature
 
 ###############################################################################
 # P2P: dedupe + broadcast
@@ -198,7 +223,7 @@ def try_accept_block_dict(d: dict, cfg) -> bool:
 def try_accept_block(b: Block, cfg) -> bool:
     if not _verify_pow_and_linkage(b, cfg):
         return False
-    if not _strict_verify_curvature(b, cfg):
+    if not _verify_curvature(b, cfg):
         return False
     CHAIN.append(b)
     print(f"Accepted Block #{b.index} | {b.hash[:12]}...")
@@ -288,9 +313,9 @@ def main():
     trusted = _load_trusted_commitments()
     print(f"Trusted commitments loaded: {len(trusted)}")
     print(f"WaveLock P2P server listening on port {cfg.port}")
-    print(f"  Strict curvature verify: {'ON' if cfg.require_full_verify else 'OFF'}")
-    reject_unpub = bool(int(os.getenv("WAVELOCK_REJECT_IF_UNPUBLISHED", "0")))
-    print(f"  Reject if psi* unpublished: {'ON' if reject_unpub else 'OFF'}")
+    print("  Curvature verify: FAIL-CLOSED (always requires a valid signature)")
+    print("  Trust-list membership alone never accepts a block.")
+    print("  Unpublished proof material is rejected.")
 
     for seed in cfg.seeds or []:
         try:
