@@ -1,5 +1,25 @@
 # WaveLock-OTS — Red-Team Audit
 
+> ## STATUS (post-remediation)
+>
+> This report is preserved as the original audit. The findings have since been
+> addressed as follows (see `docs/WAVELOCK_OTS_DESIGN.md` §6a/§6b,
+> `docs/WAVELOCK_MERKLE_ROADMAP.md`, and `tests/test_ots_redteam.py`):
+>
+> | # | Finding | Status |
+> |---|---------|--------|
+> | A | merkle_root unverified / commitments unbound → key substitution | **FIXED** — `verify_ots`/`load_public_key` recompute the Merkle root from `pk_commitments` and recompute the canonical `public_key_fingerprint`; both are required to match. |
+> | B | signature malleability (SUF broken) | **FIXED** — strict exact canonical signature field set (no missing/extra), enforced scheme/version/hash_alg, present+correct `message_digest`, and `one_time_key_id`/`public_key_fingerprint`/`params_hash`/`psi_commitment` all bound to the key. |
+> | C | one-time reuse → total forgery | **INHERENT (NOT fixed)** — inherent to Lamport-style OTS; PoC preserved and still succeeds on reuse. Mitigation is non-reuse + ledger duplicate-key rejection, not a code fix. |
+> | D | one-time enforcement is advisory file state | **MITIGATED host-locally / otherwise a deployment issue** — signing atomically claims `one_time_key_id` in a host-local registry (a copied key cannot sign twice on the same host); a copy on another host still bypasses it. Production MUST reject duplicate `one_time_key_id`/leaf at the verifier/ledger (`OTSReplayLedger`, roadmap). |
+> | G | OTS not wired into consensus | **DOCUMENTED BLOCKER** — block acceptance still verifies legacy SIGv2. A fail-closed `verify_ots_payload` server entry point (with duplicate-key rejection, never accepting legacy where OTS is expected) is added, but consensus integration is not done. |
+>
+> The PoC scripts and this report are kept as regression evidence. The A/B PoCs
+> now fail to forge (the breaks are closed); the C PoC still forges on reuse.
+> **WaveLock-OTS remains experimental and is NOT production- or bounty-ready.**
+>
+> ---
+
 > **Scope:** the *new* WaveLock-OTS construction only —
 > `wavelock/crypto/wavelock_ots.py`, the `ots-*` CLI
 > (`wavelock/crypto/ots_cli.py`), the server verification changes

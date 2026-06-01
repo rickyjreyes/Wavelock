@@ -5,7 +5,10 @@ from wavelock.chain.hash_families import hash_hex, HashFamily
 def test_tampered_commitment_detection():
     kp = CurvatureKeyPair(n=8)
     c = kp.commitment
-    tampered = c[:-1] + "a"  # corrupt final hex char
+    # Corrupt the final hex char, picking a value guaranteed to differ from the
+    # original (a fixed "a" is a no-op ~1/16 of the time → flaky).
+    repl = "b" if c[-1] == "a" else "a"
+    tampered = c[:-1] + repl
 
     assert tampered != kp.commitment
 

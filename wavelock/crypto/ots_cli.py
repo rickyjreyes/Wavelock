@@ -145,23 +145,25 @@ def cmd_verify(args) -> int:
 
 
 def cmd_inspect(args) -> int:
+    # load_public_key strictly validates the canonical shape, recomputes the
+    # Merkle root from pk_commitments, and recomputes the fingerprint; a
+    # tampered key fails to load (fail-closed) before we print anything.
     public_key = load_public_key(args.public)
-    print(f"scheme:          {public_key.get('scheme')}")
-    print(f"hash_alg:        {public_key.get('hash_alg')}")
-    print(f"one_time_key_id: {public_key.get('one_time_key_id')}")
-    print(f"created_at:      {public_key.get('created_at')}")
-    print(f"params_hash:     {public_key.get('params_hash')}")
-    print(f"psi_commitment:  {public_key.get('psi_commitment')}")
-    print(f"merkle_root:     {public_key.get('merkle_root')}")
+    print(f"scheme:               {public_key.get('scheme')}")
+    print(f"version:              {public_key.get('version')}")
+    print(f"hash_alg:             {public_key.get('hash_alg')}")
+    print(f"one_time_key_id:      {public_key.get('one_time_key_id')}")
+    print(f"params_hash:          {public_key.get('params_hash')}")
+    print(f"psi_commitment:       {public_key.get('psi_commitment')}")
+    print(f"merkle_root:          {public_key.get('merkle_root')}")
+    print(f"pubkey_fingerprint:   {public_key.get('public_key_fingerprint')}")
     pk = public_key.get("pk_commitments") or []
-    print(f"pk_commitments:  {len(pk)} bit positions x 2 slices")
-    params = public_key.get("params", {})
-    print(f"kernel_version:  {params.get('kernel_version')}")
-    print(f"n_bits:          {params.get('n_bits')}")
+    print(f"pk_commitments:       {len(pk)} bit positions x 2 slices")
+    print("canonical check:      OK (merkle_root + fingerprint recomputed)")
     # Confirm no secret leakage to the operator.
     leaked = [f for f in ("seed", "seed_hex", "psi_0", "psi_star")
               if f in public_key]
-    print(f"secret leakage:  {'NONE' if not leaked else leaked}")
+    print(f"secret leakage:       {'NONE' if not leaked else leaked}")
     return 0
 
 

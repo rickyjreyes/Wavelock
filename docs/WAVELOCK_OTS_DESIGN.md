@@ -67,8 +67,8 @@ WaveLock-OTS is structurally a **Lamport one-time signature**:
 | Public     | `pk[i][b] = H(sk[i][b])`             | `pk[i][b] = H("WL-OTS-PK" ‖ params_hash ‖ i ‖ b ‖ sk[i][b])` |
 | Digest     | `H(message)` → bit string            | `SHAKE256("WL-OTS-MSG" ‖ params_hash ‖ message)` → 256 bits |
 | Sign       | reveal `sk[i][bit_i]`                | reveal `sk[i][bit_i]` |
-| Verify     | `H(revealed) == pk[i][bit_i]`        | `H(... ‖ revealed) == pk[i][bit_i]` |
-| One-time   | required                              | required + **enforced** (`used` flag) |
+| Verify     | `H(revealed) == pk[i][bit_i]`        | strict canonical key+sig (see §6a) then `H(... ‖ revealed) == pk[i][bit_i]` |
+| One-time   | required                              | required; host-local atomic registry + ledger model (§6b) — reuse still inherently catastrophic |
 
 Like Lamport, security rests on the one-wayness of the hash: forging *m′*
 requires the *unrevealed* `sk[i][bit′_i]` for at least one differing bit, which
@@ -126,7 +126,108 @@ message digests differ in a bit, the adversary then holds *both* `sk[i][0]` and
 - stores `used: false` in the secret key;
 - sets `used: true` after the first signature;
 - refuses a second signature (`OTSKeyReuseError` / CLI exit code 2) unless the
-  explicit, loudly-warned `--unsafe-allow-reuse` flag is given (tests only).
+  explicit, loudly-warned `--unsafe-allow-reuse` flag is given (tests only);
+- additionally claims the `one_time_key_id` in a host-local atomic registry so a
+  *copy* of the secret file cannot sign twice on the same host.
+
+The `used` flag is advisory and the registry is host-local — neither is
+cryptographic reuse prevention. See §6b and `docs/WAVELOCK_MERKLE_ROADMAP.md`
+for why a server/ledger duplicate-key check is required in production.
+
+## 6a. Canonical objects, fingerprint binding, strict verification (Findings A & B)
+
+The red-team audit (`attacks/WAVELOCK_OTS_REDTEAM.md`) found that the public key
+and signature were under-bound. These are now closed.
+
+### Canonical public key
+
+A WaveLock-OTS public key is **exactly** these fields (strict verification and
+`load_public_key` reject any key with unknown or missing fields):
+
+```
+scheme, version, hash_alg, params_hash, psi_commitment,
+one_time_key_id, pk_commitments, merkle_root, public_key_fingerprint
+```
+
+Note `params` is **not** a public-key field. It is bound through `params_hash`
+(and the fingerprint); the full parameter set lives only in the secret key. This
+removes the previous ambiguity where `params` and `pk_commitments` rode along
+unbound.
+
+### Fingerprint binding (closes Finding A)
+
+```
+public_key_fingerprint = H( "WL-OTS-PK-FINGERPRINT-v1"
+                            ‖ canonical_json(scheme, version, hash_alg,
+                                             params_hash, psi_commitment,
+                                             one_time_key_id, pk_commitments,
+                                             merkle_root) )
+```
+
+On load **and** verify, WaveLock-OTS:
+
+1. recomputes `merkle_root` from `pk_commitments` (in `(i, b)` leaf order) and
+   requires it to equal the stored root — a garbage/tampered root is rejected;
+2. recomputes `public_key_fingerprint` over the canonical payload and requires
+   it to equal the stored fingerprint — so `pk_commitments` cannot be swapped
+   under a victim's pinned identity (key substitution is rejected).
+
+Because `pk_commitments` are folded into the fingerprint via canonical
+serialization, the fingerprint *is* the binding identity.
+
+### Strict signature verification (closes Finding B)
+
+A WaveLock-OTS signature is **exactly** these fields (no missing, no extra):
+
+```
+scheme, version, hash_alg, one_time_key_id, public_key_fingerprint,
+params_hash, psi_commitment, message_digest, revealed_slices
+```
+
+`verify_ots` rejects unless **all** hold (fail-closed on any exception):
+
+- exact field set; `scheme`/`version`/`hash_alg` equal the expected constants;
+- `message_digest` is present and equals the digest recomputed from the message;
+- `one_time_key_id` equals the public key's `one_time_key_id`;
+- `public_key_fingerprint` equals the recomputed public-key fingerprint;
+- `params_hash` equals the public key's `params_hash`;
+- `psi_commitment` equals the public key's `psi_commitment`;
+- `len(revealed_slices)` equals the digest bit length (256);
+- each revealed slice hashes to `pk[i][selected_bit]`.
+
+This removes the malleability that previously let an attacker mint many distinct
+verifying byte-strings from one signature.
+
+### Domain separators
+
+Every hash is domain-separated and versioned:
+
+| Purpose | Domain tag |
+|---------|------------|
+| public-key fingerprint | `WL-OTS-PK-FINGERPRINT-v1` |
+| Merkle leaf hash | `WL-OTS-MERKLE-LEAF-v1` |
+| Merkle internal node hash | `WL-OTS-MERKLE-NODE-v1` |
+| message digest | `WL-OTS-MSG-v1` |
+| signature transcript | `WL-OTS-SIG-TRANSCRIPT-v1` |
+| secret slice / public slice | `WL-OTS-SK-v1` / `WL-OTS-PK-v1` |
+| ψ-commitment | `WL-PSI-COMMIT` |
+
+## 6b. Reuse (C) and one-time enforcement (D)
+
+- **Finding C is inherent and NOT fixed** by the A/B hardening. Reusing a key
+  still leaks both Lamport halves and enables total forgery; strict canonical
+  checks cannot stop an attacker who assembles a fully canonical signature from
+  harvested slices. The PoC (`attacks/ots_reuse_to_total_forgery.py`) is
+  preserved and still succeeds once the key is reused. The defenses are: never
+  reuse a key, and reject duplicate key/leaf usage at the ledger.
+- **Finding D is mitigated host-locally and otherwise a deployment issue.**
+  Signing now atomically claims the `one_time_key_id` in a host-local key-state
+  registry (`O_CREAT|O_EXCL`, `WAVELOCK_OTS_STATE_DIR`), so a copied secret key
+  cannot sign twice **on the same host**. A copy moved to another host, or a
+  wiped registry, still bypasses it — this is **not** cryptographic reuse
+  prevention. Production verifiers/servers/ledgers MUST reject duplicate
+  `one_time_key_id` (and, under WaveLock-Merkle, duplicate leaf indices);
+  `OTSReplayLedger` models this check. See `docs/WAVELOCK_MERKLE_ROADMAP.md`.
 
 ## 7. What remains unproven / experimental
 

@@ -82,26 +82,33 @@ def attempt_forge_ots_from_public(public_key: dict, target_message: str) -> dict
     bit of ``H(message)``. With SHAKE256-256 that is a 256-bit preimage search
     per slice; infeasible.
 
-    Here we make the strongest *cheap* attempt: submit the public commitments
-    themselves as if they were the revealed secrets. This is the natural "I only
-    have the public key, let me reuse it" forgery and it must fail.
+    Here we make the strongest *cheap* attempt: build a fully canonical
+    signature (correct fingerprint, key id, recomputed message_digest, all
+    fields present) but submit the public commitments themselves as if they were
+    the revealed secrets. This is the natural "I only have the public key, let
+    me reuse it" forgery. It is structurally valid yet must FAIL, because each
+    revealed slice must be a SHAKE256 preimage of pk[i][bit] — which the public
+    commitment is not.
     """
-    params = public_key["params"]
-    n_bits = int(params["n_bits"])
+    from wavelock.crypto.wavelock_ots import _message_digest, VERSION
+
+    p_hash = bytes.fromhex(public_key["params_hash"])
     pk_commitments = public_key["pk_commitments"]
+    n_bits = len(pk_commitments)
+    digest = _message_digest(target_message, p_hash)
     # Naive forgery: claim the public commitment IS the secret slice.
-    revealed = []
-    for i in range(n_bits):
-        # pick bit 0 arbitrarily; verifier recomputes the real bit anyway.
-        revealed.append(pk_commitments[i][0])
+    # pick bit 0 arbitrarily; verifier recomputes the real selected bit anyway.
+    revealed = [pk_commitments[i][0] for i in range(n_bits)]
     return {
         "scheme": public_key["scheme"],
+        "version": VERSION,
         "hash_alg": public_key["hash_alg"],
-        "version": 1,
-        "one_time_key_id": public_key.get("one_time_key_id"),
+        "one_time_key_id": public_key["one_time_key_id"],
+        "public_key_fingerprint": public_key["public_key_fingerprint"],
         "params_hash": public_key["params_hash"],
         "psi_commitment": public_key["psi_commitment"],
-        "revealed": revealed,
+        "message_digest": digest.hex(),
+        "revealed_slices": revealed,
     }
 
 

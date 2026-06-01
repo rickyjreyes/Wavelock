@@ -51,9 +51,9 @@ def test_ots_modified_signature_fails(keypair):
     sig = sign_ots(sec, "hello")
     # Flip one nibble in a revealed slice.
     tampered = copy.deepcopy(sig)
-    r0 = tampered["revealed"][0]
+    r0 = tampered["revealed_slices"][0]
     flipped = ("0" if r0[0] != "0" else "1") + r0[1:]
-    tampered["revealed"][0] = flipped
+    tampered["revealed_slices"][0] = flipped
     assert verify_ots(pub, "hello", tampered) is False
 
 
@@ -61,7 +61,7 @@ def test_ots_truncated_signature_fails(keypair):
     pub, sec = keypair["public_key"], keypair["secret_key"]
     sig = sign_ots(sec, "hello")
     sig2 = copy.deepcopy(sig)
-    sig2["revealed"] = sig2["revealed"][:-1]  # wrong count
+    sig2["revealed_slices"] = sig2["revealed_slices"][:-1]  # wrong count
     assert verify_ots(pub, "hello", sig2) is False
 
 
@@ -169,7 +169,7 @@ def test_signature_reveals_only_the_selected_half(keypair):
     pk = pub["pk_commitments"]
 
     for i, bit in enumerate(bits):
-        sk = bytes.fromhex(sig["revealed"][i])
+        sk = bytes.fromhex(sig["revealed_slices"][i])
         # Revealed half matches the committed selected half.
         assert _public_slice(p_hash, i, bit, sk).hex() == pk[i][bit]
         # Revealed half does NOT match the unrevealed (other) half.

@@ -25,7 +25,14 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   - **The verifier cannot forge**, because it only ever sees the
     *message-selected* secret slices (one of two per digest bit). The
     unrevealed halves stay secret.
-  - **Keys are one-time.** Reuse is detected and loudly rejected.
+  - **Strict, fail-closed verification.** The public key has an exact canonical
+    field set; `verify_ots`/`load_public_key` recompute the Merkle root from
+    `pk_commitments` and recompute a `public_key_fingerprint`, and signatures
+    have an exact canonical field set bound to that fingerprint (no malleability,
+    no key substitution). See `docs/WAVELOCK_OTS_DESIGN.md` §6a.
+  - **Keys are one-time.** Reuse is rejected by default; signing also claims a
+    host-local atomic key-state registry so a *copied* key cannot sign twice on
+    the same host.
   - Seeds are ≥128-bit (default 256-bit); there are no tiny integer seeds, and
     no ψ★/seed is exported in any public artifact.
 
@@ -33,6 +40,13 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   security proof. **Do not use it for production funds.** For production, use
   **Ed25519, SLH-DSA, LMS, or XMSS**. See `docs/WAVELOCK_OTS_DESIGN.md` for the
   threat model and known limitations.
+
+- **Known, documented limits (red-team status).** Reuse → total forgery is
+  *inherent* to Lamport-style OTS (never reuse a key); the host-local registry
+  is not cryptographic reuse prevention (a copy on another host bypasses it);
+  and OTS is **not yet wired into consensus** (block acceptance still verifies
+  legacy SIGv2). Production needs ledger-level duplicate-key/leaf rejection. See
+  `attacks/WAVELOCK_OTS_REDTEAM.md` and `docs/WAVELOCK_MERKLE_ROADMAP.md`.
 
 ### WaveLock-OTS quick start
 
