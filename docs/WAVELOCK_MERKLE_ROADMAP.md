@@ -5,9 +5,15 @@
 > duplicate-use rejection it calls for **is now implemented and wired into block
 > acceptance** for the single-key case: a durable replay ledger
 > (`PersistentOTSReplayLedger`) rejects a reused `one_time_key_id`/leaf at
-> `server.try_accept_block` (see `tests/test_ots_consensus.py`). What remains is
-> cross-node consensus replication of that ledger and the multi-signature tree.
-> Do not treat WaveLock-OTS as safe for repeated signing or value transfer.
+> `server.try_accept_block` (see `tests/test_ots_consensus.py`).
+>
+> **Mythos integration-layer fixes (M1/M2/M3) are now in** (see
+> `attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md`): OTS block signatures bind the
+> canonical block body (M1); consumed OTS identities are reconstructed from
+> accepted chain state independent of current config (M2); and the replay
+> ledger's accept critical section is inter-process locked (M3). What remains is
+> **cross-node consensus replication** of that ledger and the multi-signature
+> tree. Do not treat WaveLock-OTS as safe for repeated signing or value transfer.
 
 ## Why this is needed
 
@@ -70,9 +76,11 @@ WaveLock-OTS is plain Lamport-style OTS. Two security facts drive this roadmap:
 | Tree of many OTS keys (root → leaves) | **NOT implemented** |
 | Leaf index + authentication path in signatures | **NOT implemented** |
 | Stateful signer that never reuses a leaf | **NOT implemented** |
-| Durable, reconstructable consumed-key/leaf ledger | **implemented** (`wavelock/crypto/ots_ledger.py`, `PersistentOTSReplayLedger`: append-only + fsync, rebuildable from accepted blocks; the in-memory `OTSReplayLedger` model is retained for the standalone entry point) |
+| Durable, reconstructable consumed-key/leaf ledger | **implemented** (`wavelock/crypto/ots_ledger.py`, `PersistentOTSReplayLedger`: append-only + fsync, **inter-process `flock`-locked accept (M3)**, rebuildable from accepted chain state; now the single authoritative ledger — `OTS_LEDGER` is an alias for `CONSENSUS_OTS_LEDGER`) |
+| OTS signature bound to the canonical block body | **implemented (M1)** (`server.canonical_ots_block_message` / `canonical_ots_block_digest`; `_verify_ots_block` recomputes and verifies against the body transcript) |
+| Consumed-id reconstruction independent of current config | **implemented (M2)** (`server._reconstruct_consumed_ots` indexes accepted OTS blocks by structure; fails closed on malformed OTS auth) |
 | OTS verification wired into block acceptance | **implemented** (`server.try_accept_block` → `_verify_ots_block`; durable replay rejection; legacy SIGv2 refused on the OTS path) |
-| Multi-node consensus replication of the ledger | **NOT implemented** (the ledger is canonical *per node*; cross-node agreement is the remaining gap) |
+| Multi-node consensus replication of the ledger | **NOT implemented** (the ledger is canonical *per host/filesystem*; cross-node agreement is the remaining gap) |
 
 ## Deployment requirement (restate, loudly)
 

@@ -1,6 +1,6 @@
 # network/server.py
 from __future__ import annotations
-import os, socket, threading, time, json, traceback
+import os, socket, threading, time, json, hashlib, traceback
 from typing import List, Tuple, Dict, Optional
 
 import numpy as np
@@ -39,15 +39,7 @@ class ChainState:
         with self._lock:
             self.blocks = load_all_blocks()
             self.by_hash = {b.hash: b for b in self.blocks}
-            # Reconstruct the consumed-id set from already-accepted OTS blocks so
-            # the replay ledger stays canonical (= a function of chain state)
-            # even if the JSONL cache was lost. Accepted blocks were already
-            # verified, so this only folds their identifiers into memory.
-            for b in self.blocks:
-                if block_requires_ots(b):
-                    auth = _extract_ots_auth(b)
-                    if auth and isinstance(auth.get("signature"), dict):
-                        CONSENSUS_OTS_LEDGER.index_signature(auth["signature"])
+            _reconstruct_consumed_ots(self.blocks, CONSENSUS_OTS_LEDGER)
 
     def tip(self) -> Optional[Block]:
         with self._lock:
@@ -211,7 +203,7 @@ from wavelock.crypto.wavelock_ots import (
     OTSReplayLedger,
     verify_ots as _verify_ots,
 )
-from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger
+from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger, OTSLedgerError
 
 #: Durable, reconstructable consumed-id ledger used by block acceptance. The
 #: consumed set is a function of accepted chain state (see ``index_signature``),
@@ -221,9 +213,82 @@ from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger
 #: against a ledger derived from agreed chain state.
 CONSENSUS_OTS_LEDGER = PersistentOTSReplayLedger()
 
-#: Legacy in-memory model kept for the standalone ``verify_ots_payload`` entry
-#: point and existing tests. Not used by consensus (which uses the durable one).
-OTS_LEDGER = OTSReplayLedger()
+#: There is exactly ONE authoritative replay ledger (Mythos M3). ``OTS_LEDGER``
+#: used to be an independent in-memory :class:`OTSReplayLedger`; keeping two
+#: ledgers that each "consume" a one_time_key_id independently was a bypass risk
+#: (a signature consumed on one would still be free on the other). It is now an
+#: alias for the durable, inter-process-locked :data:`CONSENSUS_OTS_LEDGER`, so
+#: the standalone ``verify_ots_payload`` entry point and consensus block
+#: acceptance share the same consumed set. The pure in-memory ``OTSReplayLedger``
+#: class is still importable for callers that want an explicit ephemeral ledger
+#: (they must pass it via ``ledger=``); the module default is the durable one.
+OTS_LEDGER = CONSENSUS_OTS_LEDGER
+
+
+#: Bumped if the canonical OTS block-signing transcript shape changes.
+OTS_BLOCK_TRANSCRIPT_VERSION = 1
+
+
+def _ots_block_transcript_payload(block_type, previous_hash, messages, meta) -> dict:
+    """Build the canonical, signature-free transcript object for an OTS block.
+
+    This is the object an OTS signature actually authorizes (Mythos M1). It binds
+    the consensus-stable, attacker-relevant parts of the block:
+
+    * ``messages`` — the actual accepted body payload;
+    * ``block_type`` — so an OTS auth can't be retyped onto another block kind;
+    * ``previous_hash`` — the parent reference (consensus linkage);
+    * ``auth_scheme`` and the **public key** carried in ``ots_auth`` — binds the
+      signing identity;
+    * any other ``meta`` fields a deployment adds.
+
+    It deliberately EXCLUDES the self-referential ``ots_auth.signature`` and
+    ``ots_auth.message`` (those carry / equal the transcript itself) and the
+    mining outputs (``nonce``/``hash``) and ``timestamp``/``index`` (not signed:
+    a node may legitimately reposition an identical body, and the durable replay
+    ledger — not the index — is what prevents reuse).
+    """
+    m = dict(meta or {})
+    auth = m.get("ots_auth")
+    if isinstance(auth, dict):
+        # Strip the self-referential fields so sign-time and verify-time agree.
+        m = {**m, "ots_auth": {k: v for k, v in auth.items()
+                               if k not in ("signature", "message")}}
+    return {
+        "wl_ots_block_transcript": OTS_BLOCK_TRANSCRIPT_VERSION,
+        "auth_scheme": m.get("auth_scheme"),
+        "block_type": str(block_type or ""),
+        "previous_hash": previous_hash,
+        "messages": list(messages or []),
+        "meta": m,
+    }
+
+
+def canonical_ots_block_message(b: "Block") -> bytes:
+    """Canonical signing transcript (preimage bytes) for an OTS block.
+
+    Recomputed from the *received* block at verify time so the OTS signature is
+    bound to the actual block body, not to an arbitrary ``meta.ots_auth.message``
+    (Mythos M1). Sign-time and verify-time produce identical bytes because the
+    self-referential signature/message fields are excluded.
+    """
+    return _canonical_json(_ots_block_transcript_payload(
+        getattr(b, "block_type", ""),
+        getattr(b, "previous_hash", None),
+        getattr(b, "messages", []) or [],
+        getattr(b, "meta", {}) or {},
+    ))
+
+
+def canonical_ots_block_digest(b: "Block") -> str:
+    """Domain-separated hex digest of :func:`canonical_ots_block_message`.
+
+    This hex string is the message an OTS signer signs and the verifier
+    recomputes; it is what gets stored in ``meta.ots_auth.message``.
+    """
+    return hashlib.sha256(
+        b"WL-OTS-BLOCK-TRANSCRIPT-v1\x00" + canonical_ots_block_message(b)
+    ).hexdigest()
 
 
 def build_ots_block_meta(public_key: dict, message, signature: dict) -> dict:
@@ -231,7 +296,10 @@ def build_ots_block_meta(public_key: dict, message, signature: dict) -> dict:
 
     The auth material lives in ``meta`` so it is covered by the block hash
     (``Block.calculate_hash`` hashes a sorted-key JSON of ``meta``), binding the
-    OTS signature into the block identity.
+    OTS signature into the block identity. ``message`` MUST be the canonical
+    block-signing digest (:func:`canonical_ots_block_digest`) that ``signature``
+    actually signs — a free-text message no longer authorizes a block (M1). Use
+    :func:`build_signed_ots_block` to construct blocks correctly.
     """
     return {
         "auth_scheme": OTS_SCHEME,
@@ -241,6 +309,36 @@ def build_ots_block_meta(public_key: dict, message, signature: dict) -> dict:
             "signature": signature,
         },
     }
+
+
+def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
+                           *, index: int = 1, previous_hash: str = "0" * 64,
+                           difficulty: int = 1, block_type: str = "OTS",
+                           extra_meta: Optional[dict] = None,
+                           allow_reuse: bool = False) -> "Block":
+    """Build a mined OTS block whose signature is bound to its body (M1).
+
+    The signer signs :func:`canonical_ots_block_digest` of the body (messages,
+    block_type, previous_hash, auth scheme, public key, extra meta) — NOT a
+    free-text message — so the accepted body is exactly what was authorized.
+    """
+    from wavelock.crypto.wavelock_ots import sign_ots
+
+    base_meta = dict(extra_meta or {})
+    base_meta["auth_scheme"] = OTS_SCHEME
+    base_meta["ots_auth"] = {"public_key": public_key}
+    transcript = hashlib.sha256(
+        b"WL-OTS-BLOCK-TRANSCRIPT-v1\x00" + _canonical_json(
+            _ots_block_transcript_payload(block_type, previous_hash, messages, base_meta)
+        )
+    ).hexdigest()
+    sig = sign_ots(secret_key, transcript, allow_reuse=allow_reuse)
+    meta = build_ots_block_meta(public_key, transcript, sig)
+    if extra_meta:
+        for k, v in extra_meta.items():
+            meta.setdefault(k, v)
+    return Block(index=index, messages=list(messages), previous_hash=previous_hash,
+                 difficulty=difficulty, block_type=block_type, meta=meta)
 
 
 def _extract_ots_auth(b: "Block") -> Optional[dict]:
@@ -266,6 +364,56 @@ def block_requires_ots(b: "Block", cfg=None) -> bool:
     if cfg is not None and getattr(cfg, "require_ots", False):
         return True
     return False
+
+
+def _is_well_formed_ots_signature(sig) -> bool:
+    """True if ``sig`` is structurally a WaveLock-OTS signature with replay ids."""
+    return (isinstance(sig, dict)
+            and sig.get("scheme") == OTS_SCHEME
+            and sig.get("one_time_key_id") is not None
+            and sig.get("public_key_fingerprint") is not None)
+
+
+def _block_claims_ots(b: "Block") -> bool:
+    """True if a block STRUCTURALLY declares itself OTS-authenticated.
+
+    Independent of any current config (Mythos M2): detection is by ``block_type``
+    or ``meta.auth_scheme`` only, so reconstruction recognizes OTS blocks even if
+    ``cfg.require_ots`` is no longer set.
+    """
+    if str(getattr(b, "block_type", "") or "").upper() == "OTS":
+        return True
+    meta = getattr(b, "meta", None) or {}
+    return str(meta.get("auth_scheme", "")) == OTS_SCHEME
+
+
+def _reconstruct_consumed_ots(blocks, ledger) -> None:
+    """Rebuild the consumed-OTS-identity set from accepted chain state (M2).
+
+    The consumed set is a function of *accepted chain state*, not of the current
+    config or of the side ``ots_replay.jsonl`` cache. For every accepted block
+    carrying well-formed WaveLock-OTS auth material we fold its identifiers into
+    the ledger via :meth:`PersistentOTSReplayLedger.index_signature`, regardless
+    of whether ``cfg.require_ots`` is currently true. Deleting the side ledger and
+    restarting therefore cannot resurrect a consumed OTS identity while the
+    accepted chain still contains the block that consumed it.
+
+    Fail-closed: a block that STRUCTURALLY claims to be OTS (``block_type ==
+    "OTS"`` or ``meta.auth_scheme == WaveLock-OTS-v1``) but carries malformed or
+    missing OTS auth raises :class:`OTSLedgerError` rather than being skipped — a
+    silently-skipped OTS block would reopen the replay hole this closes.
+    """
+    for b in blocks:
+        auth = _extract_ots_auth(b)
+        sig = auth.get("signature") if isinstance(auth, dict) else None
+        if _is_well_formed_ots_signature(sig):
+            ledger.index_signature(sig)
+        elif _block_claims_ots(b):
+            raise OTSLedgerError(
+                f"accepted OTS block #{getattr(b, 'index', '?')} "
+                f"({str(getattr(b, 'hash', ''))[:12]}...) has malformed/missing OTS "
+                "auth; refusing to reconstruct replay state (fail closed)."
+            )
 
 
 def _verify_ots_block(b: "Block", cfg=None, ledger: "PersistentOTSReplayLedger | None" = None) -> bool:
@@ -296,7 +444,18 @@ def _verify_ots_block(b: "Block", cfg=None, ledger: "PersistentOTSReplayLedger |
         if pub.get("scheme") != OTS_SCHEME or sig.get("scheme") != OTS_SCHEME:
             print("Reject: non-OTS scheme on OTS-required path (legacy SIGv2 refused).")
             return False
-        if not led.accept(pub, msg, sig):
+        # --- Mythos M1: bind the signature to the actual block body. ----------
+        # Recompute the canonical transcript digest from the RECEIVED block and
+        # require it to be what was signed. A signature over an arbitrary message
+        # (e.g. a public "hello world" signature) no longer authorizes a block
+        # whose body says something else: the carried message must equal the
+        # recomputed transcript, and verification runs against that transcript.
+        expected = canonical_ots_block_digest(b)
+        import hmac as _hmac
+        if not _hmac.compare_digest(msg, expected):
+            print("Reject: OTS auth message does not bind the block body (M1, fail closed).")
+            return False
+        if not led.accept(pub, expected, sig):
             print("Reject: OTS signature invalid or replayed (fail closed).")
             return False
         return True
@@ -323,7 +482,10 @@ def verify_ots_payload(public_key: dict, message, signature: dict,
             return False
         if not isinstance(public_key, dict) or public_key.get("scheme") != OTS_SCHEME:
             return False
-        led = ledger if ledger is not None else OTS_LEDGER
+        # Default to the single authoritative durable ledger (M3 unification),
+        # so a signature consumed here is also consumed for consensus and vice
+        # versa. Callers wanting an ephemeral ledger pass it via ``ledger=``.
+        led = ledger if ledger is not None else CONSENSUS_OTS_LEDGER
         return bool(led.accept(public_key, message, signature))
     except Exception:
         return False

@@ -37,16 +37,18 @@ def _fresh_ledger(tmp_path):
     return PersistentOTSReplayLedger(path=str(tmp_path / "ots_replay.jsonl"))
 
 
-def _ots_block(pub, msg, sig, index=1, prev="0" * 64, difficulty=1):
-    """Build a mined, OTS-authenticated block (difficulty kept low for speed)."""
-    meta = server.build_ots_block_meta(pub, msg, sig)
-    return Block(
-        index=index,
-        messages=[f"ots: {msg}"],
-        previous_hash=prev,
-        difficulty=difficulty,
-        block_type="OTS",
-        meta=meta,
+def _signed_block(kp, payload, *, index=1, prev="0" * 64, difficulty=1,
+                  allow_reuse=False):
+    """Build a mined OTS block whose signature is bound to its body (M1).
+
+    ``payload`` is the human-readable body line; the signature signs the
+    canonical block transcript (not the free text), via
+    ``server.build_signed_ots_block``.
+    """
+    return server.build_signed_ots_block(
+        kp["secret_key"], kp["public_key"], [f"ots: {payload}"],
+        index=index, previous_hash=prev, difficulty=difficulty,
+        allow_reuse=allow_reuse,
     )
 
 
@@ -57,9 +59,7 @@ def _ots_block(pub, msg, sig, index=1, prev="0" * 64, difficulty=1):
 def test_valid_first_ots_block_accepted(tmp_path):
     led = _fresh_ledger(tmp_path)
     kp = generate_ots_keypair(entropy_bits=256)
-    pub, sec = kp["public_key"], kp["secret_key"]
-    sig = sign_ots(sec, "pay alice 5")
-    b = _ots_block(pub, "pay alice 5", sig)
+    b = _signed_block(kp, "pay alice 5")
     assert server._verify_ots_block(b, None, ledger=led) is True
 
 
@@ -73,9 +73,7 @@ def test_valid_first_ots_block_accepted_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setattr(server, "broadcast_inv", lambda h: None)
 
     kp = generate_ots_keypair(entropy_bits=256)
-    pub, sec = kp["public_key"], kp["secret_key"]
-    sig = sign_ots(sec, "genesis-ots")
-    b = _ots_block(pub, "genesis-ots", sig)
+    b = _signed_block(kp, "genesis-ots")
     assert server.try_accept_block(b, types.SimpleNamespace()) is True
     assert len(appended) == 1
 
@@ -87,13 +85,15 @@ def test_valid_first_ots_block_accepted_end_to_end(tmp_path, monkeypatch):
 def test_replay_same_ots_signature_rejected(tmp_path):
     led = _fresh_ledger(tmp_path)
     kp = generate_ots_keypair(entropy_bits=256)
-    pub, sec = kp["public_key"], kp["secret_key"]
-    sig = sign_ots(sec, "pay alice 5")
-    b1 = _ots_block(pub, "pay alice 5", sig)
-    b2 = _ots_block(pub, "pay alice 5", copy.deepcopy(sig), index=2)
+    b1 = _signed_block(kp, "pay alice 5")
+    # Re-wrap the SAME signed body at a different index. The transcript excludes
+    # index, so the signature still verifies => rejection MUST come from the
+    # replay ledger (same one_time_key_id/leaf), proving replay control, not a
+    # mere transcript mismatch.
+    b2 = Block(index=2, messages=list(b1.messages), previous_hash=b1.previous_hash,
+               difficulty=1, block_type="OTS", meta=copy.deepcopy(b1.meta))
 
     assert server._verify_ots_block(b1, None, ledger=led) is True
-    # Exact same signature again => same one_time_key_id/leaf => rejected.
     assert server._verify_ots_block(b2, None, ledger=led) is False
 
 
@@ -107,15 +107,15 @@ def test_different_message_same_copied_key_rejected_after_first(tmp_path):
     kp = generate_ots_keypair(entropy_bits=256)
     pub, sec = kp["public_key"], kp["secret_key"]
 
-    sig1 = sign_ots(sec, "pay alice 5")
-    b1 = _ots_block(pub, "pay alice 5", sig1)
+    b1 = _signed_block(kp, "pay alice 5")
     assert server._verify_ots_block(b1, None, ledger=led) is True
 
-    # A copied secret key (taken before use) signs a DIFFERENT message.
+    # A copied secret key (taken before use) signs a DIFFERENT block body.
     # allow_reuse simulates the copy producing a second, individually-valid sig.
-    sig2 = sign_ots(sec, "pay mallory 1000000", allow_reuse=True)
-    assert verify_ots(pub, "pay mallory 1000000", sig2) is True  # crypto-valid
-    b2 = _ots_block(pub, "pay mallory 1000000", sig2, index=2)
+    b2 = _signed_block(kp, "pay mallory 1000000", index=2, allow_reuse=True)
+    auth2 = b2.meta["ots_auth"]
+    assert auth2["message"] == server.canonical_ots_block_digest(b2)
+    assert verify_ots(pub, auth2["message"], auth2["signature"]) is True  # crypto-valid
     # ...but the ledger rejects it: same one_time_key_id already consumed.
     assert server._verify_ots_block(b2, None, ledger=led) is False
 
@@ -136,15 +136,13 @@ def test_second_host_cold_copy_rejected_by_durable_ledger(tmp_path):
     kp = generate_ots_keypair(entropy_bits=256)
     pub, sec = kp["public_key"], kp["secret_key"]
 
-    sig1 = sign_ots(sec, "pay alice 5")
-    b1 = _ots_block(pub, "pay alice 5", sig1)
+    b1 = _signed_block(kp, "pay alice 5")
     assert server._verify_ots_block(b1, None, ledger=led_host1) is True
 
     # "Cold copy" of the secret key signs again on another host (allow_reuse),
     # and a second node loads the persisted ledger and sees the consumption.
     led_host2 = PersistentOTSReplayLedger(path=path)
-    sig2 = sign_ots(sec, "pay alice 5 again", allow_reuse=True)
-    b2 = _ots_block(pub, "pay alice 5 again", sig2, index=2)
+    b2 = _signed_block(kp, "pay alice 5 again", index=2, allow_reuse=True)
     assert server._verify_ots_block(b2, None, ledger=led_host2) is False
 
 
@@ -198,14 +196,14 @@ def test_malformed_auth_fields_rejected(tmp_path):
 def test_tampered_revealed_slice_rejected_without_consuming(tmp_path):
     led = _fresh_ledger(tmp_path)
     kp = generate_ots_keypair(entropy_bits=256)
-    pub, sec = kp["public_key"], kp["secret_key"]
-    sig = sign_ots(sec, "ok")
-    tampered = copy.deepcopy(sig)
-    tampered["revealed_slices"][0] = "00" * 32
-    b_bad = _ots_block(pub, "ok", tampered)
+    b_good = _signed_block(kp, "ok")
+    # Same body (same transcript/message) but a tampered revealed slice.
+    b_bad = Block(index=1, messages=list(b_good.messages),
+                  previous_hash=b_good.previous_hash, difficulty=1,
+                  block_type="OTS", meta=copy.deepcopy(b_good.meta))
+    b_bad.meta["ots_auth"]["signature"]["revealed_slices"][0] = "00" * 32
     assert server._verify_ots_block(b_bad, None, ledger=led) is False
-    # Not consumed => the genuine signature still goes through.
-    b_good = _ots_block(pub, "ok", sig, index=2)
+    # Not consumed => the genuine block still goes through.
     assert server._verify_ots_block(b_good, None, ledger=led) is True
 
 

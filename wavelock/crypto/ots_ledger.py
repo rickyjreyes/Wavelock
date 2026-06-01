@@ -28,20 +28,40 @@ that records which ``one_time_key_id`` / OTS leaf identifiers have already been
   function of chain state rather than private host state.
 * **Fail-closed** — any verification, parsing, hashing, fingerprint, Merkle, or
   replay error rejects (returns ``False``); nothing is consumed on rejection.
+* **Inter-process safe (Mythos M3)** — the whole read-check-append-fsync-update
+  critical section runs under an OS-level ``flock`` (POSIX), so two separate
+  ledger instances/processes sharing the same file cannot both accept the same
+  OTS identity. Under the lock the file is re-scanned so a concurrent append is
+  seen before the duplicate check.
 
-HONEST LIMITS. A single-process / single-file ledger is *consensus-shaped*, not
-a finished distributed consensus. Finding D is only truly closed when this
-rejection runs at every accepting node against a ledger derived from agreed
-chain state. Until then this is the load-bearing control on one node plus the
-mechanism other nodes reuse — not a claim of production safety.
+HONEST LIMITS. A single-file ledger with file locking is *consensus-shaped*, not
+a finished distributed consensus. Cross-node/global enforcement is only truly
+closed when this rejection runs at every accepting node against a ledger derived
+from agreed chain state — that remains future work. File locking gives correct
+exclusion for instances/processes on the SAME host/filesystem, not across hosts.
+Until cross-node replication exists this is the load-bearing control on one host
+plus the mechanism other nodes reuse — not a claim of production safety.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import threading
 from typing import Optional
+
+try:  # POSIX inter-process file locking (Mythos M3).
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - Windows / non-POSIX
+    _fcntl = None
+
+#: True when OS-level (inter-process) ledger locking is available. On POSIX this
+#: is ``flock``. On platforms without ``fcntl`` the ledger still serializes
+#: within a process via its ``RLock``, but it CANNOT guarantee two separate
+#: processes won't both accept the same identity — tests that assert
+#: inter-process exclusion are POSIX-only (see tests/test_ots_mythos_break.py).
+INTERPROCESS_LOCKING = _fcntl is not None
 
 from wavelock.crypto.wavelock_ots import (
     SCHEME as OTS_SCHEME,
@@ -103,35 +123,74 @@ class PersistentOTSReplayLedger:
         self._leaf_ids: set[str] = set()
         self._load()
 
+    # -- inter-process locking (Mythos M3) -----------------------------------
+
+    @contextlib.contextmanager
+    def _interprocess_lock(self):
+        """Hold an OS-level exclusive lock over the ledger for the whole
+        read-check-append-fsync-update critical section.
+
+        Uses ``flock`` on a sibling ``<path>.lock`` file so two separate
+        :class:`PersistentOTSReplayLedger` instances (or processes) sharing the
+        same ledger file cannot interleave their accept critical sections and
+        both accept the same OTS identity. On non-POSIX platforms without
+        ``fcntl`` this is a no-op and only the per-instance ``RLock`` applies
+        (documented; inter-process exclusion is POSIX-only).
+        """
+        if _fcntl is None:  # pragma: no cover - non-POSIX
+            yield
+            return
+        directory = os.path.dirname(os.path.abspath(self.path))
+        os.makedirs(directory, exist_ok=True)
+        lock_path = self.path + ".lock"
+        fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            _fcntl.flock(fd, _fcntl.LOCK_EX)
+            yield
+        finally:
+            try:
+                _fcntl.flock(fd, _fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
+
     # -- durable state -------------------------------------------------------
+
+    def _scan_file_into_sets(self) -> None:
+        """Union every consumed id currently on disk into the in-memory sets.
+
+        Additive (never clears) so identifiers folded in from accepted chain
+        state via :meth:`index_signature` survive a re-scan, while appends made
+        by *other* processes since we last read are picked up. Corruption fails
+        closed (raises :class:`OTSLedgerError`)."""
+        if not os.path.exists(self.path):
+            return
+        try:
+            with open(self.path, "r", encoding="utf-8") as fh:
+                for lineno, line in enumerate(fh, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except Exception as e:  # noqa: BLE001 - rethrow as ledger error
+                        raise OTSLedgerError(
+                            f"corrupt OTS ledger line {lineno} in {self.path!r}: {e}"
+                        ) from e
+                    kid = rec.get("one_time_key_id")
+                    leaf = rec.get("leaf_id")
+                    if kid is not None:
+                        self._key_ids.add(str(kid))
+                    if leaf is not None:
+                        self._leaf_ids.add(str(leaf))
+        except OSError as e:
+            raise OTSLedgerError(
+                f"cannot read OTS ledger {self.path!r}: {e}"
+            ) from e
 
     def _load(self) -> None:
         """Read the existing ledger into memory. Corruption fails closed."""
         with self._lock:
-            if not os.path.exists(self.path):
-                return
-            try:
-                with open(self.path, "r", encoding="utf-8") as fh:
-                    for lineno, line in enumerate(fh, 1):
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            rec = json.loads(line)
-                        except Exception as e:  # noqa: BLE001 - rethrow as ledger error
-                            raise OTSLedgerError(
-                                f"corrupt OTS ledger line {lineno} in {self.path!r}: {e}"
-                            ) from e
-                        kid = rec.get("one_time_key_id")
-                        leaf = rec.get("leaf_id")
-                        if kid is not None:
-                            self._key_ids.add(str(kid))
-                        if leaf is not None:
-                            self._leaf_ids.add(str(leaf))
-            except OSError as e:
-                raise OTSLedgerError(
-                    f"cannot read OTS ledger {self.path!r}: {e}"
-                ) from e
+            self._scan_file_into_sets()
 
     def _append(self, kid: str, leaf: str, transcript: str) -> None:
         """Append one consumed record durably (flush + fsync). Raises on failure."""
@@ -178,12 +237,19 @@ class PersistentOTSReplayLedger:
                 return False
             if signature.get("scheme") != OTS_SCHEME:
                 return False
-            # Pure cryptographic verification (no state) first.
+            # Pure cryptographic verification (no state) first (no lock needed).
             if not verify_ots(public_key, message, signature):
                 return False
             kid, leaf = _ids_for(signature)
             transcript = signature_transcript(signature)
-            with self._lock:
+            # Entire read-check-append-fsync-update is one critical section,
+            # guarded BOTH by the per-instance RLock (intra-process) and by an
+            # OS-level flock (inter-process, Mythos M3). Under the flock we
+            # re-scan the file so appends made by another process/instance since
+            # construction are seen before the duplicate check — two separate
+            # instances on the same file cannot both accept the same identity.
+            with self._lock, self._interprocess_lock():
+                self._scan_file_into_sets()
                 if kid in self._key_ids or leaf in self._leaf_ids:
                     return False
                 # Durable record BEFORE the in-memory mutation: if the fsync'd
@@ -216,6 +282,7 @@ class PersistentOTSReplayLedger:
 
 __all__ = [
     "LEDGER_VERSION",
+    "INTERPROCESS_LOCKING",
     "OTSLedgerError",
     "default_ledger_path",
     "PersistentOTSReplayLedger",
