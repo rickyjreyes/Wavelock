@@ -3,6 +3,12 @@ ots_key_substitution.py — merkle_root / pk_commitments are not bound in verify
 
 Finding A (WAVELOCK_OTS_REDTEAM.md).
 
+STATUS: FIXED. ``verify_ots``/``load_public_key`` now recompute the Merkle root
+from ``pk_commitments`` and recompute the public-key fingerprint over the
+canonical public key, so both functions below return ``False``. This module is
+preserved as runnable regression evidence; the text below documents the
+*original* defect.
+
 ``generate_ots_keypair`` computes a ``merkle_root`` over all ``pk_commitments``
 and publishes it in the public key. ``docs/WAVELOCK_OTS_DESIGN.md`` (§4) and the
 deterministic-keypair test present ``merkle_root`` as part of the binding public
@@ -75,7 +81,13 @@ def key_substitution_forgery() -> bool:
 
 
 if __name__ == "__main__":
-    print(f"[A] garbage merkle_root still verifies:   {merkle_root_is_ignored()}")
-    print(f"[A] fingerprint-keyed substitution forge: {key_substitution_forgery()}")
-    print("  (both SUCCEED — merkle_root is published but never verified; "
-          "pk_commitments are unbound to the key fingerprint.)")
+    garbage = merkle_root_is_ignored()
+    subst = key_substitution_forgery()
+    print(f"[A] garbage merkle_root still verifies:   {garbage}")
+    print(f"[A] fingerprint-keyed substitution forge: {subst}")
+    if not garbage and not subst:
+        print("  (both DEFENDED — verify/load recompute the Merkle root from "
+              "pk_commitments and recompute the public-key fingerprint; "
+              "Finding A fixed. This script is now regression evidence.)")
+    else:
+        print("  (a check SUCCEEDED — Finding A is NOT fully closed.)")

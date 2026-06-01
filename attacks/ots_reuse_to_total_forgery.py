@@ -47,7 +47,7 @@ def collect_both_halves(secret_key: dict, public_key: dict,
         sig = sign_ots(secret_key, message, allow_reuse=True)
         bits = _digest_bits(_message_digest(message, p_hash))
         for i, b in enumerate(bits):
-            known[(i, b)] = sig["revealed"][i]
+            known[(i, b)] = sig["revealed_slices"][i]
     return known
 
 
@@ -57,20 +57,31 @@ def forge_arbitrary(public_key: dict, known: dict, target_message: str):
     Returns the forged signature dict, or ``None`` if a needed half is missing.
     """
     p_hash = bytes.fromhex(public_key["params_hash"])
-    bits = _digest_bits(_message_digest(target_message, p_hash))
+    digest = _message_digest(target_message, p_hash)
+    bits = _digest_bits(digest)
     revealed = []
     for i, b in enumerate(bits):
         if (i, b) not in known:
             return None
         revealed.append(known[(i, b)])
+    # The attacker assembles a FULLY CANONICAL signature: the public key is
+    # public, so the fingerprint, key id, params_hash, psi_commitment and the
+    # recomputed message_digest are all known. The A/B hardening (strict field
+    # checks, fingerprint binding) does NOT stop this — reuse → total forgery is
+    # inherent to Lamport-style OTS (Finding C). The only defense is never
+    # reusing the key and rejecting duplicate one_time_key_id at the ledger.
+    from wavelock.crypto.wavelock_ots import VERSION
+
     return {
         "scheme": public_key["scheme"],
+        "version": VERSION,
         "hash_alg": public_key["hash_alg"],
-        "version": 1,
-        "one_time_key_id": public_key.get("one_time_key_id"),
+        "one_time_key_id": public_key["one_time_key_id"],
+        "public_key_fingerprint": public_key["public_key_fingerprint"],
         "params_hash": public_key["params_hash"],
         "psi_commitment": public_key["psi_commitment"],
-        "revealed": revealed,
+        "message_digest": digest.hex(),
+        "revealed_slices": revealed,
     }
 
 

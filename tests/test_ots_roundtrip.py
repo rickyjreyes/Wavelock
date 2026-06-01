@@ -77,9 +77,14 @@ def test_deterministic_from_seed():
 
 
 def test_psi_commitment_binds_to_evolution():
-    """psi_commitment is H of the evolved ψ★, not of ψ₀ or the seed."""
+    """psi_commitment is H of the evolved ψ★, not of ψ₀ or the seed.
+
+    NOTE: ``params`` is no longer a public-key field (it is bound via
+    ``params_hash`` and the fingerprint); the full parameter set lives in the
+    secret key.
+    """
     seed = bytes(range(1, 33))
-    params = generate_ots_keypair(seed=seed)["public_key"]["params"]
+    params = generate_ots_keypair(seed=seed)["secret_key"]["params"]
     psi = evolve_psi_star(seed, params)
     assert psi_commitment(psi).hex() == \
         generate_ots_keypair(seed=seed)["public_key"]["psi_commitment"]
@@ -94,12 +99,11 @@ def test_signature_bound_to_psi_commitment():
 
 
 def test_params_tamper_fails():
-    """Tampering the published params (so params_hash drifts) fails closed."""
+    """Tampering params_hash breaks the fingerprint + sig binding (fail closed)."""
     kp = generate_ots_keypair()
     sig = sign_ots(kp["secret_key"], "m")
     pub = dict(kp["public_key"])
-    pub["params"] = dict(pub["params"])
-    pub["params"]["n_bits"] = 128  # mismatched
+    pub["params_hash"] = "00" * 32  # mismatched → fingerprint + sig binding break
     assert verify_ots(pub, "m", sig) is False
 
 

@@ -3,6 +3,13 @@ ots_signature_malleability.py — WaveLock-OTS signatures are malleable.
 
 Finding B (WAVELOCK_OTS_REDTEAM.md).
 
+STATUS: FIXED. ``verify_ots`` now enforces the exact canonical signature field
+set (no missing, no extra), the scheme/version/hash_alg constants, a present and
+correct ``message_digest``, and binds ``one_time_key_id`` /
+``public_key_fingerprint`` to the key — so every mutation below now fails to
+verify. Preserved as runnable regression evidence; the text below documents the
+*original* defect.
+
 ``verify_ots`` validates the scheme string, ``params_hash``, ``psi_commitment``
 (equality only), and the revealed slices. It does NOT validate several fields
 that ARE carried inside the signature object:
@@ -73,7 +80,12 @@ def malleate() -> list[dict]:
 if __name__ == "__main__":
     seen = set()
     for r in malleate():
-        seen.add(r["bytes"])
+        if r["verifies"]:
+            seen.add(r["bytes"])
         print(f"[B] {r['label']:32s} verifies={r['verifies']}")
-    print(f"[B] distinct verifying byte-strings minted: {len(seen)} "
-          "(all from one signature) — SUF broken.")
+    print(f"[B] distinct verifying byte-strings minted: {len(seen)}")
+    if seen:
+        print("    SUF broken (mutations still verify).")
+    else:
+        print("    DEFENDED: strict verification rejects every mutation "
+              "(Finding B fixed; this script is now regression evidence).")

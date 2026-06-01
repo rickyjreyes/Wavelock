@@ -107,3 +107,42 @@ def test_non_strict_bypass_removed_or_disabled(monkeypatch, legacy_signed):
     cfg = types.SimpleNamespace(require_full_verify=False)
     b = _block(_fields(legacy_signed["msg"], legacy_signed["sig"], com))
     assert server._verify_curvature(b, cfg) is False
+
+
+# ---------------------------------------------------------------------------
+# WaveLock-OTS server verification path (fail-closed; not yet in consensus)
+# ---------------------------------------------------------------------------
+
+from wavelock.crypto.wavelock_ots import (
+    OTSReplayLedger,
+    generate_ots_keypair,
+    sign_ots,
+)
+
+
+def test_ots_payload_valid_accepted_once_then_replay_rejected():
+    ledger = OTSReplayLedger()
+    kp = generate_ots_keypair(entropy_bits=256)
+    pub, sec = kp["public_key"], kp["secret_key"]
+    sig = sign_ots(sec, "pay alice 5")
+    assert server.verify_ots_payload(pub, "pay alice 5", sig, ledger=ledger) is True
+    # Same one_time_key_id again (e.g. a copied key on another host) is rejected.
+    sig2 = sign_ots(sec, "pay bob 9", allow_reuse=True)
+    assert server.verify_ots_payload(pub, "pay bob 9", sig2, ledger=ledger) is False
+
+
+def test_ots_payload_rejects_legacy_sigv2_where_ots_expected():
+    """Legacy SIGv2 must NOT be silently accepted on the OTS path."""
+    kp = generate_ots_keypair(entropy_bits=256)
+    pub = kp["public_key"]
+    legacy_like = {"scheme": "WLv2", "signature": "deadbeef"}
+    assert server.verify_ots_payload(pub, "m", legacy_like) is False
+
+
+def test_ots_payload_rejects_tampered_signature():
+    ledger = OTSReplayLedger()
+    kp = generate_ots_keypair(entropy_bits=256)
+    pub, sec = kp["public_key"], kp["secret_key"]
+    sig = sign_ots(sec, "m")
+    sig["revealed_slices"][0] = "00" * 32
+    assert server.verify_ots_payload(pub, "m", sig, ledger=ledger) is False

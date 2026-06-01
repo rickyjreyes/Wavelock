@@ -2,7 +2,32 @@
 
 Short summary of what changed, what attacks are now blocked, and what remains
 experimental. Full design: `docs/WAVELOCK_OTS_DESIGN.md`. Migration:
-`docs/MIGRATION_FROM_SIGV2.md`.
+`docs/MIGRATION_FROM_SIGV2.md`. Red-team audit + status:
+`attacks/WAVELOCK_OTS_REDTEAM.md`.
+
+## Red-team remediation status (A/B/C/D + integration)
+
+- **A — FIXED.** `verify_ots` and `load_public_key` recompute the Merkle root
+  from `pk_commitments` and recompute the canonical `public_key_fingerprint`;
+  both must match. Garbage roots and fingerprint/key-substitution are rejected.
+- **B — FIXED.** Strict canonical signature verification: exact field set (no
+  missing/extra), enforced `scheme`/`version`/`hash_alg`, present+correct
+  `message_digest`, and `one_time_key_id`/`public_key_fingerprint`/`params_hash`/
+  `psi_commitment` bound to the key.
+- **C — INHERENT, NOT FIXED.** Reuse → total forgery is inherent to
+  Lamport-style OTS. The PoC is preserved and still succeeds on reuse. The fix
+  is operational (never reuse) + ledger duplicate-key rejection, not code.
+- **D — MITIGATED host-locally, otherwise a deployment issue.** A host-local
+  atomic key-state registry stops a copied key from signing twice on the same
+  host; a copy on another host still bypasses it. Production MUST reject
+  duplicate `one_time_key_id`/leaf at the verifier/ledger (`OTSReplayLedger`;
+  see `docs/WAVELOCK_MERKLE_ROADMAP.md`).
+- **Integration (Finding G) — BLOCKER, documented.** Block/consensus acceptance
+  still verifies legacy SIGv2; OTS is not wired into consensus. A fail-closed
+  `server.verify_ots_payload` entry point (with duplicate-key rejection, never
+  accepting legacy SIGv2 where OTS is expected) exists but is not in consensus.
+
+**WaveLock-OTS is experimental and is NOT production- or bounty-ready.**
 
 ## What changed
 

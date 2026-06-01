@@ -55,6 +55,7 @@ import hashlib
 import json
 import os
 import struct
+import tempfile
 import uuid
 from typing import Optional
 
@@ -85,6 +86,10 @@ from wavelock.chain.WaveLock import (
 SCHEME = "WaveLock-OTS-v1"
 HASH_ALG = "SHAKE256-256"
 
+#: Wire/version integer carried in every public key and signature. Strict
+#: verification rejects anything that does not equal this exact value.
+VERSION = 1
+
 #: Output length in bytes for all SHAKE256-256 outputs (digests, slices, pk).
 _HASH_LEN = 32
 
@@ -94,6 +99,52 @@ _N_BITS = 256
 #: Minimum acceptable seed entropy. 128 bits is the floor; 256 is the default.
 MIN_ENTROPY_BITS = 128
 DEFAULT_ENTROPY_BITS = 256
+
+# ---------------------------------------------------------------------------
+# Domain separators
+# ---------------------------------------------------------------------------
+# Every hash in WaveLock-OTS is domain-separated. Distinct, versioned tags make
+# it impossible for a digest computed for one purpose (e.g. a Merkle leaf) to be
+# reinterpreted as another (e.g. an internal node or a fingerprint).
+_DOM_PK_FINGERPRINT = b"WL-OTS-PK-FINGERPRINT-v1"  # public-key fingerprint
+_DOM_MERKLE_LEAF = b"WL-OTS-MERKLE-LEAF-v1"        # Merkle leaf hash
+_DOM_MERKLE_NODE = b"WL-OTS-MERKLE-NODE-v1"        # Merkle internal node hash
+_DOM_MERKLE_EMPTY = b"WL-OTS-MERKLE-EMPTY-v1"      # (defensive) empty tree
+_DOM_MSG = b"WL-OTS-MSG-v1"                        # message digest
+_DOM_SIG_TRANSCRIPT = b"WL-OTS-SIG-TRANSCRIPT-v1"  # signature transcript
+
+# ---------------------------------------------------------------------------
+# Canonical object shapes (strict verification rejects anything else)
+# ---------------------------------------------------------------------------
+#: The EXACT field set of a canonical WaveLock-OTS public key. Strict
+#: verification and load reject a public key whose keys differ from this set
+#: (no unknown fields, no missing fields). ``params`` is intentionally NOT a
+#: public-key field: it is bound through ``params_hash`` (and the fingerprint),
+#: and the full parameter set lives only in the secret key.
+PUBLIC_KEY_FIELDS = (
+    "scheme",
+    "version",
+    "hash_alg",
+    "params_hash",
+    "psi_commitment",
+    "one_time_key_id",
+    "pk_commitments",
+    "merkle_root",
+    "public_key_fingerprint",
+)
+
+#: The EXACT field set of a canonical WaveLock-OTS signature.
+SIGNATURE_FIELDS = (
+    "scheme",
+    "version",
+    "hash_alg",
+    "one_time_key_id",
+    "public_key_fingerprint",
+    "params_hash",
+    "psi_commitment",
+    "message_digest",
+    "revealed_slices",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -261,16 +312,32 @@ def _public_slice(p_hash: bytes, i: int, b: int, sk: bytes) -> bytes:
 def _merkle_root(leaves: list[bytes]) -> bytes:
     """Binary Merkle root over leaf hashes (odd levels duplicate the last)."""
     if not leaves:
-        return _h(b"WL-OTS-MERKLE-EMPTY")
-    level = [_h(b"WL-OTS-MERKLE-LEAF", leaf) for leaf in leaves]
+        return _h(_DOM_MERKLE_EMPTY)
+    level = [_h(_DOM_MERKLE_LEAF, leaf) for leaf in leaves]
     while len(level) > 1:
         if len(level) % 2 == 1:
             level.append(level[-1])
         level = [
-            _h(b"WL-OTS-MERKLE-NODE", level[i], level[i + 1])
+            _h(_DOM_MERKLE_NODE, level[i], level[i + 1])
             for i in range(0, len(level), 2)
         ]
     return level[0]
+
+
+def _merkle_root_from_commitments(pk_commitments) -> bytes:
+    """Recompute the Merkle root from the published ``pk_commitments`` array.
+
+    The leaves are the per-(bit, half) public commitments, flattened in the same
+    ``(i, b)`` order used at key generation: ``pk[0][0], pk[0][1], pk[1][0], …``.
+    Raises on any structurally invalid commitment so callers fail closed.
+    """
+    leaves: list[bytes] = []
+    for row in pk_commitments:
+        if not isinstance(row, (list, tuple)) or len(row) != 2:
+            raise ValueError("each pk_commitments row must hold exactly 2 halves")
+        for half in row:
+            leaves.append(bytes.fromhex(half))
+    return _merkle_root(leaves)
 
 
 def _message_digest(message, p_hash: bytes) -> bytes:
@@ -281,7 +348,7 @@ def _message_digest(message, p_hash: bytes) -> bytes:
         msg = bytes(message)
     else:
         raise TypeError("message must be str or bytes")
-    return _h(b"WL-OTS-MSG-v1", p_hash, msg, out_len=_N_BITS // 8)
+    return _h(_DOM_MSG, p_hash, msg, out_len=_N_BITS // 8)
 
 
 def _digest_bits(digest: bytes) -> list[int]:
@@ -291,6 +358,55 @@ def _digest_bits(digest: bytes) -> list[int]:
         for k in range(7, -1, -1):
             bits.append((byte >> k) & 1)
     return bits
+
+
+# ---------------------------------------------------------------------------
+# Canonical public-key fingerprint
+# ---------------------------------------------------------------------------
+
+
+def _canonical_public_key_payload(public_key: dict) -> dict:
+    """The canonical, fingerprint-covered view of a public key.
+
+    Exactly the public-key fields *except* ``public_key_fingerprint`` itself.
+    Binding ``pk_commitments`` and ``merkle_root`` in here is what makes a
+    fingerprint/key-substitution attack impossible: you cannot keep a victim's
+    fingerprint while swapping in attacker commitments — the recomputed
+    fingerprint changes.
+    """
+    return {
+        "scheme": public_key["scheme"],
+        "version": public_key["version"],
+        "hash_alg": public_key["hash_alg"],
+        "params_hash": public_key["params_hash"],
+        "psi_commitment": public_key["psi_commitment"],
+        "one_time_key_id": public_key["one_time_key_id"],
+        "pk_commitments": public_key["pk_commitments"],
+        "merkle_root": public_key["merkle_root"],
+    }
+
+
+def public_key_fingerprint(public_key: dict) -> str:
+    """Recompute the canonical fingerprint of a public key (hex).
+
+    fingerprint = H(WL-OTS-PK-FINGERPRINT-v1 || canonical_json(payload)) where
+    ``payload`` is every public-key field except the fingerprint itself, in
+    sorted-key canonical JSON. This binds scheme/version/hash_alg/params_hash/
+    psi_commitment/one_time_key_id/pk_commitments/merkle_root into one value.
+    """
+    payload = _canonical_public_key_payload(public_key)
+    return _h(_DOM_PK_FINGERPRINT, _canon(payload)).hex()
+
+
+def signature_transcript(signature: dict) -> str:
+    """Deterministic transcript hash over the canonical signature (hex).
+
+    A stable identifier for a signature object that a replay ledger / server can
+    dedupe on. Domain-separated so it can never collide with a fingerprint, a
+    message digest, or a Merkle node.
+    """
+    payload = {k: signature.get(k) for k in SIGNATURE_FIELDS}
+    return _h(_DOM_SIG_TRANSCRIPT, _canon(payload)).hex()
 
 
 # ---------------------------------------------------------------------------
@@ -374,23 +490,25 @@ def generate_ots_keypair(params: Optional[dict] = None,
     one_time_key_id = str(uuid.uuid4())
     created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+    # Build the canonical public key (exactly PUBLIC_KEY_FIELDS), then bind every
+    # field into the fingerprint. ``params`` is NOT a public-key field — it is
+    # bound through ``params_hash`` and kept only in the secret key.
     public_key = {
         "scheme": SCHEME,
+        "version": VERSION,
         "hash_alg": HASH_ALG,
-        "version": 1,
-        "params": params,
         "params_hash": p_hash.hex(),
         "psi_commitment": psi_commit.hex(),
+        "one_time_key_id": one_time_key_id,
         "pk_commitments": pk_commitments,
         "merkle_root": merkle_root.hex(),
-        "one_time_key_id": one_time_key_id,
-        "created_at": created_at,
     }
+    public_key["public_key_fingerprint"] = public_key_fingerprint(public_key)
 
     secret_key = {
         "scheme": SCHEME,
         "hash_alg": HASH_ALG,
-        "version": 1,
+        "version": VERSION,
         "params": params,
         "params_hash": p_hash.hex(),
         # High-entropy seed material. Stays local; never written to a *public*
@@ -398,6 +516,9 @@ def generate_ots_keypair(params: Optional[dict] = None,
         "seed_hex": seed_bytes.hex(),
         "psi_commitment": psi_commit.hex(),
         "one_time_key_id": one_time_key_id,
+        # Bind the secret key to the public identity it signs under, so signing
+        # can stamp the fingerprint into the signature without the public key.
+        "public_key_fingerprint": public_key["public_key_fingerprint"],
         "created_at": created_at,
         "used": False,
     }
@@ -408,6 +529,64 @@ def generate_ots_keypair(params: Optional[dict] = None,
 # ---------------------------------------------------------------------------
 # Signing
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Local one-time key-state registry (host-local mitigation for Finding D)
+# ---------------------------------------------------------------------------
+# The `used` bool in the secret-key dict/file is advisory: a copy taken BEFORE
+# signing has used=False and would sign again. This registry adds a host-local,
+# atomic guard: signing atomically *claims* a one_time_key_id (O_CREAT|O_EXCL),
+# so a second signing attempt under the same id on the same host fails closed —
+# even from a separate copy of the secret file.
+#
+# HONEST LIMITS: this is NOT cryptographic reuse prevention. A secret key copied
+# to a DIFFERENT host (no shared registry), or a wiped registry, still bypasses
+# it. Production MUST additionally reject duplicate one_time_key_id / duplicate
+# Merkle-leaf usage at the verifier/server/ledger layer (see OTSReplayLedger and
+# docs/WAVELOCK_MERKLE_ROADMAP.md).
+
+
+def _state_dir() -> str:
+    """Directory backing the local key-state registry.
+
+    Override with ``WAVELOCK_OTS_STATE_DIR``; defaults to a per-user temp dir.
+    """
+    d = os.environ.get("WAVELOCK_OTS_STATE_DIR")
+    if not d:
+        d = os.path.join(tempfile.gettempdir(), "wavelock-ots-state")
+    return d
+
+
+def _key_id_marker_path(one_time_key_id: str) -> str:
+    h = hashlib.sha256(str(one_time_key_id).encode("utf-8")).hexdigest()
+    return os.path.join(_state_dir(), h + ".used")
+
+
+def _claim_one_time_key(one_time_key_id: str) -> bool:
+    """Atomically claim ``one_time_key_id``. True if newly claimed, else False.
+
+    Uses ``O_CREAT | O_EXCL`` so two concurrent signers race-safely: exactly one
+    wins the create; the loser sees the marker already exists and is refused.
+    """
+    if not one_time_key_id:
+        return True  # nothing to bind on; in-memory `used` guard still applies
+    path = _key_id_marker_path(one_time_key_id)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        return False
+    except OSError:
+        # If we cannot use the registry at all, fall back to the in-memory guard
+        # rather than blocking signing. (Documented: registry is best-effort.)
+        return True
+    try:
+        os.write(fd, (str(one_time_key_id) + "\n").encode("utf-8"))
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    return True
 
 
 def _seed_from_secret(secret_key: dict) -> bytes:
@@ -432,11 +611,23 @@ def sign_ots(secret_key: dict, message, allow_reuse: bool = False) -> dict:
     if secret_key.get("scheme") != SCHEME:
         raise WaveLockOTSError(f"not a {SCHEME} secret key")
 
+    one_time_key_id = secret_key.get("one_time_key_id")
+
     if secret_key.get("used") and not allow_reuse:
         raise OTSKeyReuseError(
             "WaveLock-OTS secret key has already signed once. One-time keys "
             "MUST NOT be reused — reuse leaks unrevealed secret halves and "
             "enables forgery. Generate a fresh key. (override: allow_reuse=True)"
+        )
+
+    # Host-local atomic guard: claim the one_time_key_id before signing so a
+    # copy of the secret file (used=False) cannot sign a second message on this
+    # host. Skipped under allow_reuse (tests/demo only).
+    if not allow_reuse and not _claim_one_time_key(one_time_key_id):
+        raise OTSKeyReuseError(
+            "WaveLock-OTS one_time_key_id has already been consumed on this "
+            f"host (local key-state registry): {one_time_key_id}. A copied "
+            "secret key cannot sign twice here. (override: allow_reuse=True)"
         )
 
     params = secret_key["params"]
@@ -465,15 +656,23 @@ def sign_ots(secret_key: dict, message, allow_reuse: bool = False) -> dict:
     # Mark the in-memory secret key as used (callers persist this).
     secret_key["used"] = True
 
+    fingerprint = secret_key.get("public_key_fingerprint")
+    if not fingerprint:
+        raise WaveLockOTSError(
+            "secret key is missing public_key_fingerprint; regenerate the key "
+            "with this version (the signature must bind to a key identity)."
+        )
+
     return {
         "scheme": SCHEME,
+        "version": VERSION,
         "hash_alg": HASH_ALG,
-        "version": 1,
-        "one_time_key_id": secret_key.get("one_time_key_id"),
+        "one_time_key_id": one_time_key_id,
+        "public_key_fingerprint": fingerprint,
         "params_hash": secret_key["params_hash"],
         "psi_commitment": psi_commit.hex(),
         "message_digest": digest.hex(),
-        "revealed": revealed,
+        "revealed_slices": revealed,
     }
 
 
@@ -482,55 +681,133 @@ def sign_ots(secret_key: dict, message, allow_reuse: bool = False) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _check_public_key_canonical(public_key: dict) -> str:
+    """Validate a public key's canonical shape and self-consistency.
+
+    Returns the recomputed canonical fingerprint on success. Raises
+    :class:`WaveLockOTSError` on ANY problem: unknown/missing fields, wrong
+    constants, a ``merkle_root`` that does not match ``pk_commitments``, or a
+    stored ``public_key_fingerprint`` that does not match the recomputed one.
+
+    This is the single place that (a) enforces the exact field set, (b)
+    recomputes the Merkle root from ``pk_commitments``, and (c) recomputes and
+    checks the fingerprint — closing Finding A (garbage roots / key
+    substitution).
+    """
+    if not isinstance(public_key, dict):
+        raise WaveLockOTSError("public key must be a dict")
+
+    keys = set(public_key.keys())
+    expected = set(PUBLIC_KEY_FIELDS)
+    if keys != expected:
+        missing = expected - keys
+        extra = keys - expected
+        raise WaveLockOTSError(
+            f"public key has non-canonical fields (missing={sorted(missing)}, "
+            f"unknown={sorted(extra)})"
+        )
+
+    if public_key["scheme"] != SCHEME:
+        raise WaveLockOTSError("public key has wrong scheme")
+    if public_key["version"] != VERSION:
+        raise WaveLockOTSError("public key has wrong version")
+    if public_key["hash_alg"] != HASH_ALG:
+        raise WaveLockOTSError("public key has wrong hash_alg")
+
+    pk_commitments = public_key["pk_commitments"]
+    if not isinstance(pk_commitments, list) or len(pk_commitments) != _N_BITS:
+        raise WaveLockOTSError(
+            f"pk_commitments must be a list of {_N_BITS} [half0, half1] rows"
+        )
+
+    # (A) Recompute the Merkle root over pk_commitments and require a match.
+    recomputed_root = _merkle_root_from_commitments(pk_commitments).hex()
+    if not _ct_eq(recomputed_root, str(public_key["merkle_root"])):
+        raise WaveLockOTSError(
+            "merkle_root does not match pk_commitments (tampered/garbage root)"
+        )
+
+    # (A) Recompute the fingerprint over the canonical payload and require a
+    # match. This binds pk_commitments/merkle_root/params_hash/psi_commitment/
+    # one_time_key_id to the advertised identity.
+    recomputed_fp = public_key_fingerprint(public_key)
+    if not _ct_eq(recomputed_fp, str(public_key["public_key_fingerprint"])):
+        raise WaveLockOTSError(
+            "public_key_fingerprint does not match the canonical public key "
+            "(fingerprint/key-substitution attempt)"
+        )
+    return recomputed_fp
+
+
 def verify_ots(public_key: dict, message, signature: dict) -> bool:
     """Verify a WaveLock-OTS signature using ONLY public material.
 
-    Fail-closed: any structural mismatch, scheme mismatch, params/ψ-commitment
-    mismatch, wrong count of revealed slices, or a single bad slice returns
-    ``False``. There is no trust-list shortcut and no "non-strict" bypass — a
-    signature is accepted iff every revealed slice hashes to the committed
-    public slice for the bit selected by ``H(message)``.
+    Strict and fail-closed. A signature is accepted iff ALL of the following
+    hold (any failure, or any raised exception, returns ``False``):
 
-    Crucially this never touches ψ★, the seed, or any unrevealed slice; the
-    verifier cannot forge because it only ever sees the message-selected halves.
+    Public key (Finding A):
+      * exactly the canonical fields, correct scheme/version/hash_alg;
+      * ``merkle_root`` recomputes from ``pk_commitments``;
+      * ``public_key_fingerprint`` recomputes from the canonical public key.
+
+    Signature (Finding B):
+      * exactly the canonical fields — no missing, no extra;
+      * correct scheme/version/hash_alg;
+      * ``message_digest`` present and equal to the recomputed digest;
+      * ``one_time_key_id`` == public key's ``one_time_key_id``;
+      * ``public_key_fingerprint`` == recomputed public-key fingerprint;
+      * ``params_hash`` == public key's ``params_hash``;
+      * ``psi_commitment`` == public key's ``psi_commitment``;
+      * ``revealed_slices`` length == digest bit length;
+      * every revealed slice hashes to ``pk[i][selected_bit]``.
+
+    Never touches ψ★, the seed, or any unrevealed slice; the verifier cannot
+    forge because it only ever sees the message-selected halves.
     """
     try:
         if not isinstance(public_key, dict) or not isinstance(signature, dict):
             return False
-        if public_key.get("scheme") != SCHEME or signature.get("scheme") != SCHEME:
+
+        # --- Public key: canonical shape + self-consistency (Finding A). ------
+        fingerprint = _check_public_key_canonical(public_key)
+        p_hash_hex = str(public_key["params_hash"])
+        try:
+            p_hash = bytes.fromhex(p_hash_hex)
+        except (ValueError, TypeError):
             return False
 
-        params = public_key.get("params")
-        if not params:
+        # --- Signature: exact canonical field set, no extras (Finding B). -----
+        if set(signature.keys()) != set(SIGNATURE_FIELDS):
+            return False
+        if signature["scheme"] != SCHEME:
+            return False
+        if signature["version"] != VERSION:
+            return False
+        if signature["hash_alg"] != HASH_ALG:
             return False
 
-        # Recompute params_hash from the published params and require agreement
-        # across the public key and the signature. Fail closed on any drift.
-        p_hash = params_hash(params)
-        if public_key.get("params_hash") != p_hash.hex():
+        # Bind the signature to THIS public identity (Finding B).
+        if signature["one_time_key_id"] != public_key["one_time_key_id"]:
             return False
-        if signature.get("params_hash") != p_hash.hex():
+        if not _ct_eq(str(signature["public_key_fingerprint"]), fingerprint):
             return False
-
-        # Bind to the ψ-state commitment: the signature must reference the same
-        # ψ evolution that the public key committed to.
-        if signature.get("psi_commitment") != public_key.get("psi_commitment"):
+        if not _ct_eq(str(signature["params_hash"]), p_hash_hex):
+            return False
+        if not _ct_eq(str(signature["psi_commitment"]),
+                      str(public_key["psi_commitment"])):
             return False
 
-        pk_commitments = public_key.get("pk_commitments")
-        revealed = signature.get("revealed")
-        n_bits = int(params.get("n_bits", _N_BITS))
-        if not isinstance(pk_commitments, list) or len(pk_commitments) != n_bits:
-            return False
-        if not isinstance(revealed, list) or len(revealed) != n_bits:
-            return False
-
-        # Recompute the message digest from public params; do not trust the
-        # digest carried in the signature.
+        # Recompute the message digest; require the carried digest to be present
+        # AND equal (no missing-field bypass).
         digest = _message_digest(message, p_hash)
-        if signature.get("message_digest") not in (None, digest.hex()):
+        if not _ct_eq(str(signature["message_digest"]), digest.hex()):
             return False
         bits = _digest_bits(digest)
+
+        revealed = signature["revealed_slices"]
+        pk_commitments = public_key["pk_commitments"]
+        if not isinstance(revealed, list) or len(revealed) != len(bits):
+            return False
 
         for i, bit in enumerate(bits):
             try:
@@ -552,6 +829,48 @@ def _ct_eq(a: str, b: str) -> bool:
     import hmac
 
     return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# Server / ledger replay model (Finding D — deployment-layer duplicate rejection)
+# ---------------------------------------------------------------------------
+
+
+class OTSReplayLedger:
+    """Minimal model of the duplicate-use rejection a deployment MUST provide.
+
+    WaveLock-OTS is one-time (Finding C: reuse → total forgery is *inherent* to
+    Lamport-style OTS and is NOT fixed by the A/B hardening). The local
+    key-state registry (:func:`_claim_one_time_key`) only protects a single
+    host. A production verifier/server/ledger must additionally refuse a second
+    *accepted* signature under the same ``one_time_key_id`` (and, under
+    WaveLock-Merkle, the same consumed leaf index). This class is that check,
+    consumed by tests and available for server integration. It is intentionally
+    fail-closed: a signature that does not verify is never recorded or accepted.
+
+    This is a reference/model object — it is NOT yet wired into block/consensus
+    acceptance (see docs/WAVELOCK_MERKLE_ROADMAP.md and the report).
+    """
+
+    def __init__(self):
+        self._consumed_key_ids: set[str] = set()
+
+    def is_consumed(self, one_time_key_id: str) -> bool:
+        return str(one_time_key_id) in self._consumed_key_ids
+
+    def accept(self, public_key: dict, message, signature: dict) -> bool:
+        """Verify then consume. Returns True only on first valid use.
+
+        Rejects (returns False) if the signature is invalid OR if its
+        ``one_time_key_id`` has already been consumed (replay/reuse).
+        """
+        if not verify_ots(public_key, message, signature):
+            return False
+        kid = str(signature.get("one_time_key_id"))
+        if kid in self._consumed_key_ids:
+            return False
+        self._consumed_key_ids.add(kid)
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -646,7 +965,13 @@ def _decrypt_seed(seed_enc_hex: str, passphrase: str, kdf: dict) -> bytes:
 
 
 def load_public_key(source) -> dict:
-    """Load a public key from a path, file-like object, JSON string, or dict."""
+    """Load and strictly validate a public key (path/file/JSON string/dict).
+
+    Beyond the secret-leak guards, this enforces the canonical public-key shape
+    and recomputes the Merkle root + fingerprint, raising on any mismatch. A
+    public key that does not validate canonically is rejected at load time, so a
+    tampered/garbage root or a spliced fingerprint never reaches verification.
+    """
     pk = _load_json(source)
     if pk.get("scheme") != SCHEME:
         raise WaveLockOTSError(f"not a {SCHEME} public key")
@@ -656,6 +981,8 @@ def load_public_key(source) -> dict:
                 f"public key file contains forbidden secret field {f!r}; "
                 "this file is compromised — do not trust it."
             )
+    # Canonical shape + Merkle-root + fingerprint self-consistency (Finding A).
+    _check_public_key_canonical(pk)
     return pk
 
 
@@ -700,15 +1027,21 @@ __all__ = [
     "InsufficientEntropyError",
     "SCHEME",
     "HASH_ALG",
+    "VERSION",
     "MIN_ENTROPY_BITS",
     "DEFAULT_ENTROPY_BITS",
+    "PUBLIC_KEY_FIELDS",
+    "SIGNATURE_FIELDS",
     "default_params",
     "params_hash",
     "evolve_psi_star",
     "psi_commitment",
+    "public_key_fingerprint",
+    "signature_transcript",
     "generate_ots_keypair",
     "sign_ots",
     "verify_ots",
+    "OTSReplayLedger",
     "export_public_key",
     "export_secret_key",
     "load_public_key",

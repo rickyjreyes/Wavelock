@@ -174,6 +174,58 @@ def _verify_curvature(b: Block, cfg) -> bool:
 # verification is now unconditionally fail-closed.
 _strict_verify_curvature = _verify_curvature
 
+
+###############################################################################
+# WaveLock-OTS server verification (fail-closed) — NOT yet wired into consensus
+###############################################################################
+#
+# INTEGRATION STATUS (Finding G / report item 6): block acceptance
+# (``try_accept_block`` below) still verifies the *legacy* SIGv2 curvature
+# signature. WaveLock-OTS is NOT yet part of consensus. This is a hard blocker
+# before any bounty: the chain does not yet enforce OTS.
+#
+# The entry point below is provided so that (a) a deployment can verify OTS
+# signatures with duplicate one_time_key_id rejection, and (b) the integration
+# story is explicit rather than implied. It is fail-closed and NEVER accepts a
+# legacy SIGv2 payload where an OTS signature is expected (no silent fallback).
+# See docs/WAVELOCK_MERKLE_ROADMAP.md for the path to many-signature support.
+
+from wavelock.crypto.wavelock_ots import (
+    SCHEME as OTS_SCHEME,
+    OTSReplayLedger,
+    verify_ots as _verify_ots,
+)
+
+#: Process-local model of the consumed-key ledger. A real deployment needs a
+#: DURABLE, consensus-replicated ledger of consumed one_time_key_ids (and, under
+#: WaveLock-Merkle, consumed leaf indices). This in-memory set is a placeholder.
+OTS_LEDGER = OTSReplayLedger()
+
+
+def verify_ots_payload(public_key: dict, message, signature: dict,
+                       ledger: "OTSReplayLedger | None" = None) -> bool:
+    """Fail-closed WaveLock-OTS verification + duplicate-key rejection.
+
+    Returns True only if the signature verifies AND its one_time_key_id has not
+    been consumed before. Rejects (False) on:
+
+    * any non-WaveLock-OTS scheme (legacy SIGv2 is never accepted here);
+    * any verification failure (strict canonical checks in ``verify_ots``);
+    * a replayed/duplicate one_time_key_id;
+    * any exception (fail closed).
+
+    NOTE: not wired into ``try_accept_block``; consensus still uses legacy SIGv2.
+    """
+    try:
+        if not isinstance(signature, dict) or signature.get("scheme") != OTS_SCHEME:
+            return False
+        if not isinstance(public_key, dict) or public_key.get("scheme") != OTS_SCHEME:
+            return False
+        led = ledger if ledger is not None else OTS_LEDGER
+        return bool(led.accept(public_key, message, signature))
+    except Exception:
+        return False
+
 ###############################################################################
 # P2P: dedupe + broadcast
 ###############################################################################

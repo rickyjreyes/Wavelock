@@ -5,6 +5,37 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS red-team remediation (A/B fixed; C/D documented)
+
+Hardening of the experimental WaveLock-OTS construction
+(`wavelock/crypto/wavelock_ots.py`) in response to the red-team audit
+(`attacks/WAVELOCK_OTS_REDTEAM.md`). **WaveLock-OTS remains experimental and is
+NOT production- or bounty-ready.**
+
+- **Finding A (FIXED) — fingerprint binding.** Public keys now have an exact
+  canonical field set with a `public_key_fingerprint`. `verify_ots` and
+  `load_public_key` recompute the Merkle root from `pk_commitments` and
+  recompute the fingerprint over the canonical public key, rejecting garbage
+  roots and fingerprint/key-substitution. `params` is no longer a public-key
+  field (bound via `params_hash`/fingerprint; kept in the secret key).
+- **Finding B (FIXED) — strict signatures.** Signatures have an exact canonical
+  field set (`revealed` → `revealed_slices`, adds `public_key_fingerprint`).
+  `verify_ots` rejects missing/extra fields, wrong scheme/version/hash_alg, a
+  missing or wrong `message_digest`, and binds `one_time_key_id`/fingerprint/
+  `params_hash`/`psi_commitment` to the key. Versioned domain separators added.
+- **Finding C (INHERENT).** Reuse → total forgery is inherent to Lamport-style
+  OTS; the PoC is preserved and still succeeds on reuse.
+- **Finding D (MITIGATED host-locally).** Signing atomically claims the
+  `one_time_key_id` in a host-local registry (`WAVELOCK_OTS_STATE_DIR`); a
+  copied key cannot sign twice on the same host. `OTSReplayLedger` models the
+  server/ledger duplicate-key rejection production requires.
+- **Integration.** `server.verify_ots_payload` adds a fail-closed OTS entry
+  point (duplicate-key rejection; never accepts legacy SIGv2 where OTS is
+  expected). OTS is **not** yet wired into block/consensus acceptance.
+- Docs: new `docs/WAVELOCK_MERKLE_ROADMAP.md`; updated OTS design/report/README.
+
+Not a consensus change (OTS is not on the consensus path).
+
 ## [Unreleased] — WLv3.1 SHAKE-256 ψ₀ derivation upgrade
 
 ### Consensus break
