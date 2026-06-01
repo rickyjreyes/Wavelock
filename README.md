@@ -6,6 +6,47 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
 
 ---
 
+## ⚠️ Security notice — read this first
+
+- **Legacy WaveLock SIGv2 (`WLv2`) is DEPRECATED and INSECURE.** It signs with
+  `H("SIGv2" ‖ message ‖ header ‖ ψ★)` and verifies by recomputing the same
+  hash, so **the verifier must possess ψ★ — and anyone who can verify can
+  forge.** It is a symmetric MAC, not an asymmetric signature. See
+  `attacks/WAVELOCK_THEORY_BREAK_AUDIT.md` and `docs/MIGRATION_FROM_SIGV2.md`.
+  The legacy CLI (`wavelock-cli keygen` / `sign`) now prints a deprecation
+  warning.
+
+- **WaveLock-OTS is the new, experimental asymmetric construction.** It is a
+  Lamport/WOTS-style one-time signature with WaveLock ψ-state binding
+  underneath (`wavelock/crypto/wavelock_ots.py`, CLI `wavelock-ots`). Key
+  guarantees:
+  - **Public verification never requires ψ★.** The public key is only
+    commitments, hashes, a Merkle root, parameters, and metadata.
+  - **The verifier cannot forge**, because it only ever sees the
+    *message-selected* secret slices (one of two per digest bit). The
+    unrevealed halves stay secret.
+  - **Keys are one-time.** Reuse is detected and loudly rejected.
+  - Seeds are ≥128-bit (default 256-bit); there are no tiny integer seeds, and
+    no ψ★/seed is exported in any public artifact.
+
+- **WaveLock-OTS is NOT yet a formal cryptographic standard** and has no
+  security proof. **Do not use it for production funds.** For production, use
+  **Ed25519, SLH-DSA, LMS, or XMSS**. See `docs/WAVELOCK_OTS_DESIGN.md` for the
+  threat model and known limitations.
+
+### WaveLock-OTS quick start
+
+```bash
+wavelock-ots ots-keygen  --out keys/
+wavelock-ots ots-sign    --secret keys/wl_ots_secret.json --message "pay alice 5" --sig sig.json
+wavelock-ots ots-verify  --public keys/wl_ots_public.json --message "pay alice 5" --sig sig.json
+wavelock-ots ots-inspect --public keys/wl_ots_public.json
+```
+
+(Each key signs **once**. Generate a fresh key per message.)
+
+---
+
 ## 0) Requirements
 
 - **Python** 3.9+
