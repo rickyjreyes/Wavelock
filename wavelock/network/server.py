@@ -39,6 +39,15 @@ class ChainState:
         with self._lock:
             self.blocks = load_all_blocks()
             self.by_hash = {b.hash: b for b in self.blocks}
+            # Reconstruct the consumed-id set from already-accepted OTS blocks so
+            # the replay ledger stays canonical (= a function of chain state)
+            # even if the JSONL cache was lost. Accepted blocks were already
+            # verified, so this only folds their identifiers into memory.
+            for b in self.blocks:
+                if block_requires_ots(b):
+                    auth = _extract_ots_auth(b)
+                    if auth and isinstance(auth.get("signature"), dict):
+                        CONSENSUS_OTS_LEDGER.index_signature(auth["signature"])
 
     def tip(self) -> Optional[Block]:
         with self._lock:
@@ -176,45 +185,138 @@ _strict_verify_curvature = _verify_curvature
 
 
 ###############################################################################
-# WaveLock-OTS server verification (fail-closed) — NOT yet wired into consensus
+# WaveLock-OTS block acceptance (fail-closed) — WIRED INTO CONSENSUS
 ###############################################################################
 #
-# INTEGRATION STATUS (Finding G / report item 6): block acceptance
-# (``try_accept_block`` below) still verifies the *legacy* SIGv2 curvature
-# signature. WaveLock-OTS is NOT yet part of consensus. This is a hard blocker
-# before any bounty: the chain does not yet enforce OTS.
+# INTEGRATION STATUS: OTS verification + replay rejection is now wired into the
+# real block-acceptance path (``try_accept_block`` below). A block is an
+# "OTS-required" block when its ``block_type == "OTS"`` (or its ``meta`` declares
+# ``auth_scheme == WaveLock-OTS-v1``, or the config sets ``require_ots``). On
+# that path:
 #
-# The entry point below is provided so that (a) a deployment can verify OTS
-# signatures with duplicate one_time_key_id rejection, and (b) the integration
-# story is explicit rather than implied. It is fail-closed and NEVER accepts a
-# legacy SIGv2 payload where an OTS signature is expected (no silent fallback).
-# See docs/WAVELOCK_MERKLE_ROADMAP.md for the path to many-signature support.
+#   * the block's OTS public key + message + signature are verified with the
+#     pure :func:`verify_ots` (strict canonical / Merkle / fingerprint checks);
+#   * the durable :class:`PersistentOTSReplayLedger` rejects any signature whose
+#     ``one_time_key_id`` or OTS leaf id was already accepted (Findings C/D);
+#   * legacy SIGv2 (or any non-WaveLock-OTS scheme) is NEVER accepted — there is
+#     no silent fallback to ``_verify_curvature`` on an OTS-required block.
+#
+# Non-OTS (legacy curvature) blocks still go through the fail-closed legacy path.
+# This keeps existing ledgers working while making OTS enforceable. WaveLock-OTS
+# remains experimental and is NOT production-ready; see the report and
+# docs/WAVELOCK_MERKLE_ROADMAP.md.
 
 from wavelock.crypto.wavelock_ots import (
     SCHEME as OTS_SCHEME,
     OTSReplayLedger,
     verify_ots as _verify_ots,
 )
+from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger
 
-#: Process-local model of the consumed-key ledger. A real deployment needs a
-#: DURABLE, consensus-replicated ledger of consumed one_time_key_ids (and, under
-#: WaveLock-Merkle, consumed leaf indices). This in-memory set is a placeholder.
+#: Durable, reconstructable consumed-id ledger used by block acceptance. The
+#: consumed set is a function of accepted chain state (see ``index_signature``),
+#: so any node replaying accepted OTS blocks derives the same set. This is the
+#: load-bearing control that turns OTS "one-time" into an enforced invariant on
+#: this node; full Finding-D closure requires every node to run this rejection
+#: against a ledger derived from agreed chain state.
+CONSENSUS_OTS_LEDGER = PersistentOTSReplayLedger()
+
+#: Legacy in-memory model kept for the standalone ``verify_ots_payload`` entry
+#: point and existing tests. Not used by consensus (which uses the durable one).
 OTS_LEDGER = OTSReplayLedger()
 
 
+def build_ots_block_meta(public_key: dict, message, signature: dict) -> dict:
+    """Canonical ``meta`` for an OTS-authenticated block.
+
+    The auth material lives in ``meta`` so it is covered by the block hash
+    (``Block.calculate_hash`` hashes a sorted-key JSON of ``meta``), binding the
+    OTS signature into the block identity.
+    """
+    return {
+        "auth_scheme": OTS_SCHEME,
+        "ots_auth": {
+            "public_key": public_key,
+            "message": message,
+            "signature": signature,
+        },
+    }
+
+
+def _extract_ots_auth(b: "Block") -> Optional[dict]:
+    """Return the ``ots_auth`` dict from a block's meta, or None if absent/malformed."""
+    meta = getattr(b, "meta", None) or {}
+    auth = meta.get("ots_auth")
+    return auth if isinstance(auth, dict) else None
+
+
+def block_requires_ots(b: "Block", cfg=None) -> bool:
+    """True if this block must be authenticated with WaveLock-OTS.
+
+    OTS is required when the block declares it (``block_type == "OTS"`` or
+    ``meta.auth_scheme == WaveLock-OTS-v1``) or when the config opts in
+    (``cfg.require_ots``). On an OTS-required block, legacy SIGv2 is never
+    accepted (no fallback to the curvature path).
+    """
+    if str(getattr(b, "block_type", "") or "").upper() == "OTS":
+        return True
+    meta = getattr(b, "meta", None) or {}
+    if str(meta.get("auth_scheme", "")) == OTS_SCHEME:
+        return True
+    if cfg is not None and getattr(cfg, "require_ots", False):
+        return True
+    return False
+
+
+def _verify_ots_block(b: "Block", cfg=None, ledger: "PersistentOTSReplayLedger | None" = None) -> bool:
+    """Fail-closed OTS verification + durable replay rejection for one block.
+
+    Rejects (returns False), consuming nothing, on:
+
+    * missing/malformed ``ots_auth`` or any missing auth field;
+    * a non-WaveLock-OTS scheme on the public key or signature (legacy SIGv2 is
+      refused here — there is no fallback);
+    * any ``verify_ots`` failure (canonical / Merkle / fingerprint / digest);
+    * a replayed ``one_time_key_id`` or OTS leaf id (durable ledger);
+    * any exception.
+    """
+    led = ledger if ledger is not None else CONSENSUS_OTS_LEDGER
+    try:
+        auth = _extract_ots_auth(b)
+        if auth is None:
+            print("Reject: OTS-required block missing ots_auth.")
+            return False
+        pub = auth.get("public_key")
+        msg = auth.get("message")
+        sig = auth.get("signature")
+        if not isinstance(pub, dict) or not isinstance(sig, dict) or not isinstance(msg, str):
+            print("Reject: malformed/missing OTS auth fields (fail closed).")
+            return False
+        # Legacy SIGv2 (or anything not WaveLock-OTS) is NEVER accepted here.
+        if pub.get("scheme") != OTS_SCHEME or sig.get("scheme") != OTS_SCHEME:
+            print("Reject: non-OTS scheme on OTS-required path (legacy SIGv2 refused).")
+            return False
+        if not led.accept(pub, msg, sig):
+            print("Reject: OTS signature invalid or replayed (fail closed).")
+            return False
+        return True
+    except Exception as e:
+        print(f"Reject: OTS verification error (fail closed): {e}")
+        return False
+
+
 def verify_ots_payload(public_key: dict, message, signature: dict,
-                       ledger: "OTSReplayLedger | None" = None) -> bool:
+                       ledger=None) -> bool:
     """Fail-closed WaveLock-OTS verification + duplicate-key rejection.
 
-    Returns True only if the signature verifies AND its one_time_key_id has not
-    been consumed before. Rejects (False) on:
+    Standalone entry point (not block-shaped). Returns True only if the
+    signature verifies AND its one_time_key_id has not been consumed before.
+    Rejects (False) on:
 
     * any non-WaveLock-OTS scheme (legacy SIGv2 is never accepted here);
     * any verification failure (strict canonical checks in ``verify_ots``);
     * a replayed/duplicate one_time_key_id;
     * any exception (fail closed).
-
-    NOTE: not wired into ``try_accept_block``; consensus still uses legacy SIGv2.
     """
     try:
         if not isinstance(signature, dict) or signature.get("scheme") != OTS_SCHEME:
@@ -275,8 +377,15 @@ def try_accept_block_dict(d: dict, cfg) -> bool:
 def try_accept_block(b: Block, cfg) -> bool:
     if not _verify_pow_and_linkage(b, cfg):
         return False
-    if not _verify_curvature(b, cfg):
-        return False
+    # Route to the correct authentication path. An OTS-required block is verified
+    # with WaveLock-OTS + durable replay rejection and NEVER falls back to the
+    # legacy curvature path (legacy SIGv2 is refused where OTS is expected).
+    if block_requires_ots(b, cfg):
+        if not _verify_ots_block(b, cfg):
+            return False
+    else:
+        if not _verify_curvature(b, cfg):
+            return False
     CHAIN.append(b)
     print(f"Accepted Block #{b.index} | {b.hash[:12]}...")
     broadcast_inv(b.hash)

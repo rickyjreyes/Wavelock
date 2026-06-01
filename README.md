@@ -30,9 +30,12 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
     `pk_commitments` and recompute a `public_key_fingerprint`, and signatures
     have an exact canonical field set bound to that fingerprint (no malleability,
     no key substitution). See `docs/WAVELOCK_OTS_DESIGN.md` §6a.
-  - **Keys are one-time.** Reuse is rejected by default; signing also claims a
-    host-local atomic key-state registry so a *copied* key cannot sign twice on
-    the same host.
+  - **Keys are one-time, enforced at block acceptance.** Reuse is rejected by
+    default; signing also claims a host-local atomic key-state registry
+    (defense-in-depth only). The load-bearing control is a **durable replay
+    ledger** (`wavelock/crypto/ots_ledger.py`) wired into block acceptance: a
+    reused `one_time_key_id`/leaf is rejected when a block is accepted, so a
+    *copied* key cannot get a second OTS block accepted on a node.
   - Seeds are ≥128-bit (default 256-bit); there are no tiny integer seeds, and
     no ψ★/seed is exported in any public artifact.
 
@@ -41,12 +44,18 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   **Ed25519, SLH-DSA, LMS, or XMSS**. See `docs/WAVELOCK_OTS_DESIGN.md` for the
   threat model and known limitations.
 
-- **Known, documented limits (red-team status).** Reuse → total forgery is
-  *inherent* to Lamport-style OTS (never reuse a key); the host-local registry
-  is not cryptographic reuse prevention (a copy on another host bypasses it);
-  and OTS is **not yet wired into consensus** (block acceptance still verifies
-  legacy SIGv2). Production needs ledger-level duplicate-key/leaf rejection. See
-  `attacks/WAVELOCK_OTS_REDTEAM.md` and `docs/WAVELOCK_MERKLE_ROADMAP.md`.
+- **Known, documented limits (red-team status).** Red-team **A/B are fixed**
+  (canonical-field / Merkle / fingerprint binding, fail-closed verification).
+  **C is inherent**: reuse → total forgery is intrinsic to Lamport-style OTS
+  (never reuse a key) — the PoC is preserved as a regression test. **D is fixed
+  at the ledger/consensus layer**: OTS verification + a durable replay ledger are
+  now wired into block acceptance (`server.try_accept_block`), which rejects a
+  reused `one_time_key_id`/leaf and never accepts legacy SIGv2 where OTS is
+  required — but only *fully* closed once every accepting node runs this
+  rejection against agreed chain state; the host-local registry is
+  **defense-in-depth only**. WaveLock-OTS is still experimental and **not
+  production-ready**. See `attacks/WAVELOCK_OTS_REDTEAM.md` and
+  `docs/WAVELOCK_MERKLE_ROADMAP.md`.
 
 ### WaveLock-OTS quick start
 
