@@ -1,0 +1,38 @@
+{
+  "params": {
+    "n": 4,
+    "M": 20000
+  },
+  "FRAMING": "C passes randomness tests because of SHA-256, not the PDE. Evidence about WaveLock's one-wayness lives in psi* and Serialize(psi*), not in C.",
+  "D1_avalanche_C_seedbit": {
+    "mean_fraction_C_bits_flipped": 0.4938,
+    "ideal": 0.5,
+    "verdict": "\u22480.5 as expected \u2014 attributable to SHA-256, not the PDE."
+  },
+  "D2_C_randomness": {
+    "monobit_ones_fraction": 0.50031,
+    "byte_chi2_df255": 258.8,
+    "chi2_critical_0.01_df255": 310.5,
+    "verdict": "C looks uniform \u2014 SHA-256 doing its job; says nothing about PDE."
+  },
+  "D3_serialized_psistar_randomness": {
+    "monobit_ones_fraction": 0.47408,
+    "byte_chi2_df255": 5506757.2,
+    "chi2_critical_0.01_df255": 310.5,
+    "verdict": "Strongly NON-uniform: float64 sign/exponent bytes of psi* are highly biased. Serialize(psi*) is trivially distinguishable from random; only SHA-256 hides it."
+  },
+  "D4_value_distribution": {
+    "min": -50895.995970701326,
+    "max": 296790.43116803135,
+    "mean": 17.349215421866976,
+    "std": 834.4635410056866,
+    "skew": 195.1398417792284,
+    "excess_kurtosis": 57035.84762332813,
+    "fraction_negative": 0.010465625,
+    "verdict": "Heavy-tailed, skewed, far from the input U[0,1) and far from any clean reference distribution \u2014 psi* is structured."
+  },
+  "D5_spatial_autocorrelation": {
+    "neighbor_pearson_corr": 0.57,
+    "verdict": "Non-zero spatial correlation (smoothing stencil) \u2014 psi* carries detectable spatial structure unlike random fields."
+  }
+}

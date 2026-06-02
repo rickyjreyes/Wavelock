@@ -1,0 +1,35 @@
+{
+  "params": {
+    "n": 4,
+    "path": "consensus/XOF (WLv3.1)"
+  },
+  "recover_cli_default": {
+    "published_commitment": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+    "search_range": "0..100000",
+    "recovered_seed": 42,
+    "candidates_tested": 43,
+    "rate_seeds_per_sec": 234.9,
+    "success": true
+  },
+  "recover_20bit_secret": {
+    "secret_seed": 703710,
+    "published_commitment": "68bbdbf12cf490caf1e26467e0fbf705bac4d876cd4e39925045ee23c39f47fb",
+    "search_space_bits": 20,
+    "recovered_seed": 703710,
+    "candidates_tested": 703711,
+    "wall_clock_sec": 145.95,
+    "rate_seeds_per_sec": 4821.5,
+    "success": true
+  },
+  "extrapolation": {
+    "measured_rate_seeds_per_sec": 4821.5,
+    "exhaust_32bit_seconds": 890799.5,
+    "exhaust_32bit_days": 10.31,
+    "exhaust_40bit_days": 2639.4,
+    "note": "Single-core pure-numpy rate. Trivially parallelizable across cores/GPUs; the 4x4 kernel is ~microseconds. A 32-bit seed space (and the legacy MT path is capped at 32-bit) is exhaustible; small-integer/CLI-default seeds fall in seconds."
+  },
+  "mitigation_high_entropy_seed": {
+    "ots_default_entropy_bits": 256,
+    "note": "wavelock/crypto/wavelock_ots.py seeds with os.urandom(256-bit); at 2^256 the brute force is infeasible. The weakness is the STANDALONE WaveLock API accepting low-entropy integer seeds and the CLI defaulting to seed=42, NOT a flaw when a full-entropy seed is supplied."
+  }
+}

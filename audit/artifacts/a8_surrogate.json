@@ -1,0 +1,24 @@
+{
+  "params": {
+    "n": 4,
+    "n_train": 40000,
+    "n_test": 5000,
+    "psistar_clipped_to": 1000.0
+  },
+  "forward_psi0_to_psistar": {
+    "ridge_R2": 0.0011769243323423995,
+    "mlp_R2": 0.006355265182142578
+  },
+  "inverse_psistar_to_psi0": {
+    "ridge_R2": 0.00013205658624437788,
+    "mlp_R2": 0.03128221427670708,
+    "ridge_MAE_psi0": 0.24979481868565245,
+    "baseline_MAE_predict_0.5": 0.2498711558138507,
+    "beats_baseline": true
+  },
+  "C_to_psi0": {
+    "attempted": false,
+    "reason": "C->psi0 is a SHA-256 preimage; provably not learnable by a surrogate. The meaningful surrogate target is psi*->psi0, which presupposes the attacker already has psi* (not just C)."
+  },
+  "verdict": "If inverse R^2 is high, the published psi* leaks the input. If low and it barely beats the predict-0.5 baseline, the PDE destroys local invertibility (consistent with a2's ~1e11 condition numbers). Either way, given only C the attacker still faces SHA-256 + seed brute force."
+}
