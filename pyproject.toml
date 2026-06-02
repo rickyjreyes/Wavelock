@@ -18,6 +18,7 @@ dependencies = [
     "requests>=2.0",
     "fastapi>=0.100",
     "uvicorn>=0.22",
+    "cryptography>=41.0",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,7 @@ wavelockd = "wavelock.network.server:main"
 wavelock-cli = "wavelock.chain.cli:main"
 wavelock-miner = "wavelock.chain.cli:miner_main"
 wavelock-ots = "wavelock.crypto.ots_cli:main"
+wavelock-encrypt = "wavelock.crypto.wavelock_encrypt:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

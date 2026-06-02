@@ -81,6 +81,26 @@ wavelock-ots ots-inspect --public keys/wl_ots_public.json
 
 (Each key signs **once**. Generate a fresh key per message.)
 
+### WaveLock-Encrypt quick start (experimental)
+
+`WaveLock-Encrypt v1` (`wavelock/crypto/wavelock_encrypt.py`, CLI
+`wavelock-encrypt`) is an **experimental** hybrid public-key encryption wrapper.
+It is **not a new raw cipher** — confidentiality and integrity come entirely
+from X25519 (ephemeral-static), HKDF-SHA256, and ChaCha20-Poly1305. The
+WaveLock contribution is **canonical transcript/context binding**: decryption
+fails closed if the authenticated context (purpose, ψ-commitment, block digest,
+OTS fingerprint, …) changes. See
+[`docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`](docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md).
+**Not production audited.**
+
+```bash
+wavelock-encrypt keygen  --private wlenc_private.pem --public wlenc_public.pem
+wavelock-encrypt encrypt --public wlenc_public.pem --input msg.bin --output env.json \
+    --purpose "transport/demo" --psi-commitment <hex>
+wavelock-encrypt decrypt --private wlenc_private.pem --input env.json --output out.bin \
+    --purpose "transport/demo" --psi-commitment <hex>
+```
+
 ---
 
 ## 0) Requirements
