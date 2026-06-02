@@ -37,6 +37,10 @@ import numpy as np
 
 from wavelock.chain.WaveLock import CurvatureKeyPair
 
+def _to_numpy_array(x, dtype=np.float64):
+    if hasattr(x, "get"):  # CuPy array
+        x = x.get()
+    return np.asarray(x, dtype=dtype).copy()
 
 def make_legacy_victim(n: int = 4, seed: int = 12):
     """Create a legacy SIGv2 keypair and return (keypair, psi_star_snapshot).
@@ -45,7 +49,8 @@ def make_legacy_victim(n: int = 4, seed: int = 12):
     verification publishes/loads as "verifier material".
     """
     kp = CurvatureKeyPair(n=n, seed=seed, test_mode=True)
-    snapshot = np.asarray(kp.psi_star, dtype=np.float64).copy()
+    # snapshot = np.asarray(kp.psi_star, dtype=np.float64).copy()
+    snapshot = _to_numpy_array(kp.psi_star)
     return kp, snapshot
 
 

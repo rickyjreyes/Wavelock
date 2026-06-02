@@ -13,7 +13,6 @@ verification after removing the non-strict bypasses:
 The legacy SIGv2 mechanism is still what the server verifies, but it now fails
 closed; new deployments should move to WaveLock-OTS.
 """
-
 import types
 
 import numpy as np
@@ -21,6 +20,12 @@ import pytest
 
 from wavelock.network import server
 from wavelock.chain.WaveLock import CurvatureKeyPair
+
+
+def _to_numpy_array(x, dtype=np.float64):
+    if hasattr(x, "get"):  # CuPy array
+        x = x.get()
+    return np.asarray(x, dtype=dtype).copy()
 
 
 def _block(messages):
@@ -37,7 +42,7 @@ def legacy_signed():
     com = kp.commitment
     msg = "hello"
     sig = kp.sign(msg)
-    psi = np.asarray(kp.psi_star, dtype=np.float64).copy()
+    psi = _to_numpy_array(kp.psi_star)
     return {"kp": kp, "com": com, "msg": msg, "sig": sig, "psi": psi}
 
 
