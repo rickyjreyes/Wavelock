@@ -571,3 +571,309 @@ def test_error_messages_do_not_leak_secrets(recipient, full_context, envelope):
         msg = str(exc)
         assert "BEGIN" not in msg
         assert secret_pem not in msg
+
+
+# ==========================================================================
+# WaveLock-Encrypt v1 — dual-mode (standard vs wavelock-experimental)
+# ==========================================================================
+
+from wavelock.crypto.wavelock_encrypt import (  # noqa: E402
+    MODE_STANDARD,
+    MODE_WAVELOCK,
+    MODES,
+    WaveLockEncryptError,
+    derive_wavelock_material,
+)
+
+
+def _wl_context(**overrides):
+    """A complete wavelock-experimental context."""
+    base = dict(
+        purpose="wl/transport",
+        mode=MODE_WAVELOCK,
+        psi_commitment="psi-commit-abc123",
+        block_digest="block-digest-deadbeef",
+        ots_public_key_fingerprint="ots-fp-cafe",
+        extra={"label": "demo"},
+    )
+    base.update(overrides)
+    return make_context(**base)
+
+
+@pytest.fixture
+def wl_context():
+    return _wl_context()
+
+
+@pytest.fixture
+def wl_envelope(recipient, wl_context):
+    _, pub = recipient
+    return encrypt_for_public_key(
+        recipient_public_key=pub, plaintext=PLAINTEXT, context=wl_context
+    )
+
+
+# 1. Standard mode roundtrip succeeds (and stamps mode=standard).
+def test_standard_mode_roundtrip(recipient, full_context, envelope):
+    priv, _ = recipient
+    assert envelope["mode"] == MODE_STANDARD
+    assert _decrypt(priv, envelope, full_context) == PLAINTEXT
+
+
+# 2. WaveLock experimental mode roundtrip succeeds.
+def test_wavelock_mode_roundtrip(recipient, wl_context, wl_envelope):
+    priv, _ = recipient
+    assert wl_envelope["mode"] == MODE_WAVELOCK
+    assert _decrypt(priv, wl_envelope, wl_context) == PLAINTEXT
+
+
+def test_modes_produce_different_keys(recipient):
+    # Same plaintext + same logical context but different mode => the derived
+    # key differs, so ciphertexts are not interchangeable.
+    _, pub = recipient
+    std = make_context(
+        purpose="cmp", psi_commitment="p", block_digest="b",
+        ots_public_key_fingerprint="o",
+    )
+    wl = make_context(
+        purpose="cmp", mode=MODE_WAVELOCK, psi_commitment="p",
+        block_digest="b", ots_public_key_fingerprint="o",
+    )
+    e_std = encrypt_for_public_key(
+        recipient_public_key=pub, plaintext=b"same", context=std
+    )
+    e_wl = encrypt_for_public_key(
+        recipient_public_key=pub, plaintext=b"same", context=wl
+    )
+    assert e_std["mode"] == MODE_STANDARD
+    assert e_wl["mode"] == MODE_WAVELOCK
+    assert e_std["aad"] != e_wl["aad"]  # mode is bound into AAD
+
+
+# 3. Standard envelope cannot decrypt as WaveLock experimental.
+def test_standard_envelope_not_decryptable_as_wavelock(recipient, envelope):
+    priv, _ = recipient
+    wl_expect = _wl_context(purpose="unit-test/transport")
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, envelope, wl_expect)
+
+
+# 4. WaveLock experimental envelope cannot decrypt as standard.
+def test_wavelock_envelope_not_decryptable_as_standard(recipient, wl_envelope):
+    priv, _ = recipient
+    std_expect = make_context(
+        purpose="wl/transport",
+        psi_commitment="psi-commit-abc123",
+        block_digest="block-digest-deadbeef",
+        ots_public_key_fingerprint="ots-fp-cafe",
+        extra={"label": "demo"},
+    )
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, wl_envelope, std_expect)
+
+
+# 5. Changing the envelope `mode` field rejects (both directions).
+def test_tampered_mode_field_standard_to_wavelock(recipient, full_context, envelope):
+    priv, _ = recipient
+    env = copy.deepcopy(envelope)
+    env["mode"] = MODE_WAVELOCK
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, full_context)
+
+
+def test_tampered_mode_field_wavelock_to_standard(recipient, wl_context, wl_envelope):
+    priv, _ = recipient
+    env = copy.deepcopy(wl_envelope)
+    env["mode"] = MODE_STANDARD
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, wl_context)
+
+
+def test_unknown_mode_value_rejects(recipient, full_context, envelope):
+    priv, _ = recipient
+    env = copy.deepcopy(envelope)
+    env["mode"] = "totally-bogus"
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, full_context)
+
+
+# 6. Changing WaveLock context rejects in experimental mode.
+@pytest.mark.parametrize(
+    "field,bad",
+    [
+        ("purpose", "OTHER"),
+        ("psi_commitment", "WRONG"),
+        ("block_digest", "WRONG"),
+        ("ots_public_key_fingerprint", "WRONG"),
+    ],
+)
+def test_wavelock_context_change_rejects(recipient, wl_envelope, field, bad):
+    priv, _ = recipient
+    overrides = {"purpose": "wl/transport"}
+    overrides[field] = bad
+    bad_ctx = _wl_context(**overrides)
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, wl_envelope, bad_ctx)
+
+
+# 7-9. Missing required WaveLock context fails closed in experimental mode.
+@pytest.mark.parametrize(
+    "drop",
+    ["psi_commitment", "block_digest", "ots_public_key_fingerprint"],
+)
+def test_missing_required_experimental_context_rejects(drop):
+    kwargs = dict(
+        purpose="wl/transport",
+        mode=MODE_WAVELOCK,
+        psi_commitment="p",
+        block_digest="b",
+        ots_public_key_fingerprint="o",
+    )
+    kwargs[drop] = None
+    with pytest.raises(WaveLockEncryptError):
+        make_context(**kwargs)
+
+
+def test_derive_wavelock_material_fails_closed_on_missing_context():
+    # Defense in depth: even bypassing make_context, material derivation rejects
+    # an incomplete WaveLock context.
+    with pytest.raises(WaveLockEncryptError):
+        derive_wavelock_material(
+            secret_input=b"\x00" * 32,
+            context={"purpose": "x", "psi_commitment": "p"},  # missing two
+            aad=b"{}",
+        )
+
+
+def test_derive_wavelock_material_is_deterministic():
+    ctx = {
+        "purpose": "x",
+        "psi_commitment": "p",
+        "block_digest": "b",
+        "ots_public_key_fingerprint": "o",
+    }
+    a = derive_wavelock_material(secret_input=b"\x01" * 32, context=ctx, aad=b"A")
+    b = derive_wavelock_material(secret_input=b"\x01" * 32, context=ctx, aad=b"A")
+    c = derive_wavelock_material(secret_input=b"\x02" * 32, context=ctx, aad=b"A")
+    assert a == b
+    assert a != c
+    assert len(a) == 32
+
+
+# 10. Tampering ciphertext/nonce/salt/ephemeral key rejects in BOTH modes.
+@pytest.mark.parametrize("field", ["ciphertext", "nonce", "salt", "ephemeral_public_key"])
+def test_tamper_rejects_in_wavelock_mode(recipient, wl_context, wl_envelope, field):
+    priv, _ = recipient
+    env = copy.deepcopy(wl_envelope)
+    env[field] = _flip_b64(env[field])
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, wl_context)
+
+
+# 11. Extra envelope fields reject (wavelock mode).
+def test_extra_field_rejects_wavelock(recipient, wl_context, wl_envelope):
+    priv, _ = recipient
+    env = copy.deepcopy(wl_envelope)
+    env["evil"] = "x"
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, wl_context)
+
+
+# 12. Missing envelope fields reject (wavelock mode), including `mode`.
+@pytest.mark.parametrize("field", sorted(ENVELOPE_FIELDS))
+def test_missing_field_rejects_wavelock(recipient, wl_context, wl_envelope, field):
+    priv, _ = recipient
+    env = copy.deepcopy(wl_envelope)
+    del env[field]
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(priv, env, wl_context)
+
+
+def test_mode_is_in_envelope_field_set():
+    assert "mode" in ENVELOPE_FIELDS
+
+
+# 13. Wrong recipient key rejects in both modes.
+def test_wrong_recipient_key_rejects_wavelock(wl_context, wl_envelope):
+    attacker = WLPrivateKey.generate()
+    with pytest.raises(WaveLockDecryptError):
+        _decrypt(attacker, wl_envelope, wl_context)
+
+
+# 14 + 15. CLI supports both modes and defaults to standard.
+def _cli(*args):
+    base = [sys.executable, "-m", "wavelock.crypto.wavelock_encrypt"]
+    return subprocess.run(base + list(args), capture_output=True, text=True)
+
+
+def test_cli_wavelock_mode_roundtrip(tmp_path):
+    priv = tmp_path / "priv.pem"
+    pub = tmp_path / "pub.pem"
+    msg = tmp_path / "msg.txt"
+    env = tmp_path / "env.json"
+    out = tmp_path / "out.txt"
+    secret = b"experimental payload"
+    msg.write_bytes(secret)
+
+    assert _cli("keygen", "--private", str(priv), "--public", str(pub)).returncode == 0
+
+    enc = _cli(
+        "encrypt", "--public", str(pub), "--input", str(msg), "--output", str(env),
+        "--purpose", "cli-wl", "--mode", "wavelock-experimental",
+        "--psi-commitment", "p", "--block-digest", "b",
+        "--ots-public-key-fingerprint", "o",
+    )
+    assert enc.returncode == 0, enc.stderr
+
+    import json as _json
+    assert _json.loads(env.read_text())["mode"] == MODE_WAVELOCK
+
+    dec = _cli(
+        "decrypt", "--private", str(priv), "--input", str(env), "--output", str(out),
+        "--purpose", "cli-wl", "--mode", "wavelock-experimental",
+        "--psi-commitment", "p", "--block-digest", "b",
+        "--ots-public-key-fingerprint", "o",
+    )
+    assert dec.returncode == 0, dec.stderr
+    assert out.read_bytes() == secret
+
+
+def test_cli_defaults_to_standard_mode(tmp_path):
+    priv = tmp_path / "priv.pem"
+    pub = tmp_path / "pub.pem"
+    msg = tmp_path / "msg.txt"
+    env = tmp_path / "env.json"
+    msg.write_bytes(b"hi")
+
+    assert _cli("keygen", "--private", str(priv), "--public", str(pub)).returncode == 0
+    enc = _cli(
+        "encrypt", "--public", str(pub), "--input", str(msg), "--output", str(env),
+        "--purpose", "default-mode",
+    )
+    assert enc.returncode == 0, enc.stderr
+    import json as _json
+    assert _json.loads(env.read_text())["mode"] == MODE_STANDARD
+
+
+def test_cli_mode_mismatch_fails(tmp_path):
+    # Encrypt standard, attempt decrypt as wavelock-experimental.
+    priv = tmp_path / "priv.pem"
+    pub = tmp_path / "pub.pem"
+    msg = tmp_path / "msg.txt"
+    env = tmp_path / "env.json"
+    out = tmp_path / "out.txt"
+    msg.write_bytes(b"hi")
+
+    assert _cli("keygen", "--private", str(priv), "--public", str(pub)).returncode == 0
+    assert _cli(
+        "encrypt", "--public", str(pub), "--input", str(msg), "--output", str(env),
+        "--purpose", "m",
+    ).returncode == 0
+    dec = _cli(
+        "decrypt", "--private", str(priv), "--input", str(env), "--output", str(out),
+        "--purpose", "m", "--mode", "wavelock-experimental",
+        "--psi-commitment", "p", "--block-digest", "b",
+        "--ots-public-key-fingerprint", "o",
+    )
+    assert dec.returncode != 0
+    assert not out.exists()

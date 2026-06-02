@@ -40,7 +40,30 @@ KEM = "X25519-ephemeral-static"
 KDF = "HKDF-SHA256"
 AEAD = "ChaCha20-Poly1305"
 
+# Encryption modes.
+#
+# - MODE_STANDARD: the secure default. Reviewed primitives only.
+# - MODE_WAVELOCK: EXPERIMENTAL research mode. Same envelope/primitives, but
+#   mixes WaveLock-derived binding material into key derivation so we can study
+#   whether WaveLock context binding adds anything over the standard path.
+#   It still uses HKDF-SHA256 and ChaCha20-Poly1305; it does NOT remove SHA and
+#   is NOT a custom cipher.
+MODE_STANDARD = "standard"
+MODE_WAVELOCK = "wavelock-experimental"
+MODES: Set[str] = {MODE_STANDARD, MODE_WAVELOCK}
+
+# Context fields that wavelock-experimental mode must have to derive material.
+REQUIRED_EXPERIMENTAL_CONTEXT = (
+    "psi_commitment",
+    "block_digest",
+    "ots_public_key_fingerprint",
+)
+
 KDF_INFO = b"WL-ENC-v1|X25519|HKDF-SHA256|ChaCha20-Poly1305"
+
+# Domain separation for the experimental WaveLock layer.
+WL_EXPERIMENTAL_TAG = b"|WL-EXPERIMENTAL"
+WL_MATERIAL_INFO = b"WL-ENC-v1|wavelock-material"
 
 NONCE_SIZE = 12
 SALT_SIZE = 32
@@ -50,6 +73,7 @@ X25519_PUBLIC_KEY_SIZE = 32
 ENVELOPE_FIELDS: Set[str] = {
     "scheme",
     "version",
+    "mode",
     "kem",
     "kdf",
     "aead",
@@ -114,6 +138,7 @@ def sha256_hex(data: bytes) -> str:
 def make_context(
     *,
     purpose: str,
+    mode: str = MODE_STANDARD,
     psi_commitment: Optional[str] = None,
     block_digest: Optional[str] = None,
     ots_public_key_fingerprint: Optional[str] = None,
@@ -126,17 +151,27 @@ def make_context(
 
     Decryption fails if any included field changes.
     Use this to bind encryption to:
+    - encryption mode (standard / wavelock-experimental)
     - protocol purpose
     - psi commitment
     - canonical block digest
     - OTS public key fingerprint
     - chain/session/application metadata
+
+    ``mode`` is authenticated both inside the AAD (here) and as a top-level
+    envelope field, so a ciphertext cannot be reinterpreted under a different
+    mode. ``wavelock-experimental`` mode additionally requires the WaveLock
+    binding fields and fails closed if they are missing.
     """
     if not isinstance(purpose, str) or not purpose:
         raise ValueError("purpose must be a non-empty string")
 
+    if mode not in MODES:
+        raise ValueError(f"mode must be one of {sorted(MODES)}")
+
     ctx: Dict[str, Any] = {
         "scheme": SCHEME,
+        "mode": mode,
         "purpose": purpose,
     }
 
@@ -152,10 +187,81 @@ def make_context(
     if extra:
         ctx["extra"] = extra
 
+    # Experimental mode must carry the full WaveLock binding context; fail
+    # closed at construction time so neither encrypt nor decrypt can proceed
+    # with incomplete ψ binding.
+    if mode == MODE_WAVELOCK:
+        missing = [k for k in REQUIRED_EXPERIMENTAL_CONTEXT if not ctx.get(k)]
+        if missing:
+            raise WaveLockEncryptError(
+                "wavelock-experimental mode requires context fields: "
+                f"{sorted(missing)}"
+            )
+
     # Force canonical JSON validation now.
     canonical_json(ctx)
 
     return ctx
+
+
+def derive_wavelock_material(
+    *,
+    secret_input: bytes,
+    context: Dict[str, Any],
+    aad: bytes,
+) -> bytes:
+    """
+    EXPERIMENTAL. Deterministically derive WaveLock binding material.
+
+    This is research-only. It uses ONLY standard primitives (HKDF-SHA256); it
+    is not a custom cipher and it does not replace SHA. The "WaveLock" part is
+    that the material commits to the WaveLock transcript:
+
+    - purpose
+    - psi_commitment
+    - block_digest
+    - ots_public_key_fingerprint
+    - the canonical AAD (via its SHA-256)
+    - an optional WaveLock params hash, if the caller supplies
+      ``extra["wavelock_params"]``
+
+    The material is keyed by a shared-secret-derived input. It is purely
+    internal: this function never returns or logs the shared secret, the
+    standard key, the final key, ψ★, seeds, or private OTS slices.
+
+    Fails closed if required WaveLock context is missing.
+    """
+    if not isinstance(secret_input, bytes):
+        raise WaveLockEncryptError("wavelock material requires bytes secret_input")
+
+    missing = [k for k in REQUIRED_EXPERIMENTAL_CONTEXT if not context.get(k)]
+    if missing:
+        raise WaveLockEncryptError(
+            f"wavelock-experimental mode requires context fields: {sorted(missing)}"
+        )
+
+    binding: Dict[str, Any] = {
+        "purpose": context.get("purpose"),
+        "psi_commitment": context.get("psi_commitment"),
+        "block_digest": context.get("block_digest"),
+        "ots_public_key_fingerprint": context.get("ots_public_key_fingerprint"),
+        "aad_sha256": sha256_hex(aad),
+    }
+
+    extra = context.get("extra")
+    if isinstance(extra, dict) and extra.get("wavelock_params") is not None:
+        binding["wavelock_params_sha256"] = sha256_hex(
+            canonical_json(extra["wavelock_params"])
+        )
+
+    info = WL_MATERIAL_INFO + b"|" + canonical_json(binding)
+
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=KEY_SIZE,
+        salt=None,
+        info=info,
+    ).derive(secret_input)
 
 
 @dataclass(frozen=True)
@@ -219,18 +325,55 @@ class WLPublicKey:
         return WLPublicKey(x25519.X25519PublicKey.from_public_bytes(data))
 
 
-def derive_key(shared_secret: bytes, salt: bytes, aad: bytes) -> bytes:
+def derive_key(
+    shared_secret: bytes,
+    salt: bytes,
+    aad: bytes,
+    *,
+    mode: str = MODE_STANDARD,
+    context: Optional[Dict[str, Any]] = None,
+) -> bytes:
+    """
+    Derive the 32-byte ChaCha20-Poly1305 key.
+
+    Standard mode (the secure default) is unchanged: HKDF-SHA256 over the
+    X25519 shared secret, bound to the salt and AAD.
+
+    wavelock-experimental mode keeps the standard derivation and then folds in
+    WaveLock binding material via a second HKDF-SHA256 pass under a distinct
+    domain tag. Both passes are HKDF-SHA256; SHA is never removed.
+    """
     if len(salt) != SALT_SIZE:
         raise WaveLockEncryptError("bad salt length")
 
+    if mode not in MODES:
+        raise WaveLockEncryptError("unknown mode")
+
     aad_hash = sha256_hex(aad).encode("ascii")
 
-    return HKDF(
+    standard_key = HKDF(
         algorithm=hashes.SHA256(),
         length=KEY_SIZE,
         salt=salt,
         info=KDF_INFO + b"|" + aad_hash,
     ).derive(shared_secret)
+
+    if mode == MODE_STANDARD:
+        return standard_key
+
+    # wavelock-experimental
+    wl_material = derive_wavelock_material(
+        secret_input=standard_key,
+        context=context or {},
+        aad=aad,
+    )
+
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=KEY_SIZE,
+        salt=salt,
+        info=KDF_INFO + b"|" + aad_hash + WL_EXPERIMENTAL_TAG,
+    ).derive(standard_key + wl_material)
 
 
 def check_envelope_shape(envelope: Dict[str, Any]) -> None:
@@ -267,6 +410,10 @@ def encrypt_for_public_key(
     if not isinstance(plaintext, bytes):
         raise TypeError("plaintext must be bytes")
 
+    mode = context.get("mode", MODE_STANDARD)
+    if mode not in MODES:
+        raise WaveLockEncryptError(f"unknown mode: {mode!r}")
+
     aad = canonical_json(context)
 
     eph_private = x25519.X25519PrivateKey.generate()
@@ -276,7 +423,7 @@ def encrypt_for_public_key(
 
     salt = os.urandom(SALT_SIZE)
     nonce = os.urandom(NONCE_SIZE)
-    key = derive_key(shared, salt, aad)
+    key = derive_key(shared, salt, aad, mode=mode, context=context)
 
     ciphertext = ChaCha20Poly1305(key).encrypt(nonce, plaintext, aad)
 
@@ -288,6 +435,7 @@ def encrypt_for_public_key(
     envelope = {
         "scheme": SCHEME,
         "version": VERSION,
+        "mode": mode,
         "kem": KEM,
         "kdf": KDF,
         "aead": AEAD,
@@ -341,6 +489,18 @@ def decrypt_with_private_key(
         if envelope["aead"] != AEAD:
             raise WaveLockDecryptError("wrong AEAD")
 
+        # Mode is authenticated twice: as a strict top-level envelope field and
+        # inside the AAD (via expected_context). Both must agree with the
+        # caller's expectation, so a ciphertext cannot be reinterpreted under a
+        # different mode.
+        expected_mode = expected_context.get("mode", MODE_STANDARD)
+        if expected_mode not in MODES:
+            raise WaveLockDecryptError("unknown expected mode")
+        if envelope["mode"] not in MODES:
+            raise WaveLockDecryptError("unknown envelope mode")
+        if envelope["mode"] != expected_mode:
+            raise WaveLockDecryptError("mode mismatch")
+
         expected_aad = canonical_json(expected_context)
         encoded_aad = b64d(envelope["aad"])
 
@@ -365,7 +525,10 @@ def decrypt_with_private_key(
         eph_pub = WLPublicKey.from_raw(eph_pub_raw)
 
         shared = recipient_private_key.private_key.exchange(eph_pub.public_key)
-        key = derive_key(shared, salt, expected_aad)
+        key = derive_key(
+            shared, salt, expected_aad,
+            mode=expected_mode, context=expected_context,
+        )
 
         return ChaCha20Poly1305(key).decrypt(nonce, ciphertext, expected_aad)
 
@@ -423,6 +586,7 @@ def cmd_encrypt(args: argparse.Namespace) -> None:
 
     ctx = make_context(
         purpose=args.purpose,
+        mode=args.mode,
         psi_commitment=args.psi_commitment,
         block_digest=args.block_digest,
         ots_public_key_fingerprint=args.ots_public_key_fingerprint,
@@ -452,6 +616,7 @@ def cmd_decrypt(args: argparse.Namespace) -> None:
 
     ctx = make_context(
         purpose=args.purpose,
+        mode=args.mode,
         psi_commitment=args.psi_commitment,
         block_digest=args.block_digest,
         ots_public_key_fingerprint=args.ots_public_key_fingerprint,
@@ -489,6 +654,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--input", required=True)
     p.add_argument("--output", required=True)
     p.add_argument("--purpose", required=True)
+    p.add_argument(
+        "--mode", choices=sorted(MODES), default=MODE_STANDARD,
+        help="standard (secure default) or wavelock-experimental (research only)",
+    )
     p.add_argument("--psi-commitment")
     p.add_argument("--block-digest")
     p.add_argument("--ots-public-key-fingerprint")
@@ -501,6 +670,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--input", required=True)
     p.add_argument("--output", required=True)
     p.add_argument("--purpose", required=True)
+    p.add_argument(
+        "--mode", choices=sorted(MODES), default=MODE_STANDARD,
+        help="standard (secure default) or wavelock-experimental (research only)",
+    )
     p.add_argument("--psi-commitment")
     p.add_argument("--block-digest")
     p.add_argument("--ots-public-key-fingerprint")

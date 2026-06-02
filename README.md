@@ -93,12 +93,27 @@ OTS fingerprint, …) changes. See
 [`docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`](docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md).
 **Not production audited.**
 
+It has two modes, bound into the envelope and authenticated:
+
+- `standard` (**secure default**) — reviewed primitives only; this is what you
+  should use. WaveLock does **not** remove SHA from this path.
+- `wavelock-experimental` (**research only**) — same envelope/primitives, but
+  folds WaveLock ψ/context binding material into a second HKDF-SHA256 pass, to
+  compare standard vs WaveLock-hybrid binding. Not for real secrets.
+
 ```bash
 wavelock-encrypt keygen  --private wlenc_private.pem --public wlenc_public.pem
+
+# standard mode (default)
 wavelock-encrypt encrypt --public wlenc_public.pem --input msg.bin --output env.json \
     --purpose "transport/demo" --psi-commitment <hex>
 wavelock-encrypt decrypt --private wlenc_private.pem --input env.json --output out.bin \
     --purpose "transport/demo" --psi-commitment <hex>
+
+# wavelock-experimental mode (research only; requires the WaveLock binding fields)
+wavelock-encrypt encrypt --public wlenc_public.pem --input msg.bin --output env.json \
+    --mode wavelock-experimental --purpose "transport/demo" \
+    --psi-commitment <hex> --block-digest <hex> --ots-public-key-fingerprint <hex>
 ```
 
 ---
