@@ -5,6 +5,50 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS Mythos integration-layer fixes (M1/M2/M3)
+
+Claude Mythos found three integration-layer bounty blockers after the A/B/D
+remediation. The pure `verify_ots` core held; the block acceptance/replay layer
+had cheap outs. All three are now fixed (writeup:
+`attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md`; pins: `tests/test_ots_mythos_break.py`).
+**WaveLock-OTS remains experimental and is NOT production-ready.**
+
+- **M1 — OTS signature now binds the canonical block body.** Added
+  `server.canonical_ots_block_message(block) -> bytes` and
+  `canonical_ots_block_digest(block) -> str` binding `messages`, `block_type`,
+  `previous_hash`, `auth_scheme`, and the carried public key (excluding the
+  self-referential signature/message and mining outputs). `_verify_ots_block`
+  recomputes this from the received block, requires `meta.ots_auth.message` to
+  equal it, and verifies the signature against it — a benign `"hello world"`
+  signature can no longer authorize an unrelated block body. New helper
+  `server.build_signed_ots_block(...)` constructs correctly-bound OTS blocks.
+- **M2 — replay reconstruction is independent of current config.**
+  `server._reconstruct_consumed_ots` (run by `load_from_disk`) rebuilds consumed
+  OTS identities from accepted chain state **by structure**, regardless of
+  `cfg.require_ots`, and **fails closed** (`OTSLedgerError`) on a malformed
+  OTS-claiming block. Deleting `ots_replay.jsonl` and restarting no longer
+  reopens replay while the accepted chain still contains the OTS block.
+- **M3 — inter-process ledger file lock.** `PersistentOTSReplayLedger.accept`
+  now runs the entire read-check-append-fsync-update critical section under an
+  OS-level `flock` (POSIX) and re-scans the file under the lock, so two
+  instances/processes on the same file cannot both accept the same identity
+  (`ots_ledger.INTERPROCESS_LOCKING` advertises availability; POSIX-only). The
+  previously-separate `OTS_LEDGER` is now an **alias** for the single
+  authoritative `CONSENSUS_OTS_LEDGER` (no independent bypass ledger).
+- **Cross-node/global consensus enforcement remains future work.** The ledger is
+  authoritative per host/filesystem, not yet replicated across nodes.
+- New PoCs (now fail closed): `attacks/ots_block_body_unbound.py`,
+  `attacks/ots_ledger_reconstruction_failopen.py`,
+  `attacks/ots_ledger_concurrent_double_accept.py`. The inherent reuse PoC
+  (`attacks/ots_reuse_to_total_forgery.py`) is unchanged and still demonstrates
+  Finding C.
+- Tests: `tests/test_ots_mythos_break.py` (14 hard-passing M1/M2/M3 pins);
+  `tests/test_ots_consensus.py` updated to build body-bound OTS blocks.
+
+Consensus-affecting: OTS-required blocks must now carry a signature over the
+canonical block body; the prior free-text `meta.ots_auth.message` no longer
+authorizes a block.
+
 ## [Unreleased] — WaveLock-OTS consensus replay protection (Finding D wired in)
 
 OTS verification is now wired into the real block-acceptance path with a durable

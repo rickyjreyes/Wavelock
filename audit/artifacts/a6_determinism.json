@@ -1,0 +1,62 @@
+{
+  "params": {
+    "n": 4,
+    "seed": 42,
+    "path": "consensus/XOF (WLv3.1)"
+  },
+  "T1_repeatability": {
+    "commitment_run1": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+    "commitment_run2": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+    "identical": true,
+    "note": "in-process determinism (necessary, not sufficient)"
+  },
+  "T2_threading_blas": {
+    "commitments": {
+      "threads=1": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+      "threads=2": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+      "threads=4": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38",
+      "threads=8": "5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38"
+    },
+    "all_identical": true,
+    "note": "BLAS available in this env may be reference-only; result documents this host"
+  },
+  "T3_ulp_sensitivity": {
+    "base_commitment": "11b2b0c493987af3c62834633b074c9b0dbc47f420f3a51f019df3d67809c20c",
+    "+1ULP@(0,0)": {
+      "input_delta_ulps_or_eps": "+1ULP@(0,0)",
+      "commitment_changed": false,
+      "psistar_max_abs_change": 0.0,
+      "psistar_max_rel_change": 0.0
+    },
+    "-1ULP@(0,0)": {
+      "input_delta_ulps_or_eps": "-1ULP@(0,0)",
+      "commitment_changed": false,
+      "psistar_max_abs_change": 0.0,
+      "psistar_max_rel_change": 0.0
+    },
+    "+1e-15@(1,1)": {
+      "input_delta_ulps_or_eps": "+1e-15@(1,1)",
+      "commitment_changed": false,
+      "psistar_max_abs_change": 0.0,
+      "psistar_max_rel_change": 0.0
+    },
+    "+1e-12@(2,2)": {
+      "input_delta_ulps_or_eps": "+1e-12@(2,2)",
+      "commitment_changed": true,
+      "psistar_max_abs_change": 6.613486647211175e-09,
+      "psistar_max_rel_change": 2.197222565351792e-10
+    }
+  },
+  "T4_reassociation": {
+    "base_commitment": "11b2b0c493987af3c62834633b074c9b0dbc47f420f3a51f019df3d67809c20c",
+    "reassociated_commitment": "9d814a4e855b1ca732db2e29f9386ad6e21da84ec784b9cd04b7d6c91facc5cc",
+    "commitment_changed": true,
+    "psistar_max_abs_change": 3.552713678800501e-15,
+    "psistar_max_rel_change": 2.1931444929350512e-16,
+    "note": "Same mathematical kernel, different float op-order (emulates a different BLAS/SIMD/compiler/numpy reassociation). A changed commitment means independent conforming implementations disagree."
+  },
+  "T5_vendor_admission": {
+    "gpu_guard_excerpt": "tly in test_mode.\n        if (not self.test_mode) and (\n            self.use_v3 or self.use_v4 or self.use_v5 or self.use_v6 or self.use_v7\n        ):\n            raise RuntimeError(\n                \"GPU backend is non-consensus. \"\n                \"Only NumPy reference backend may emit consensus commitments.\"\n         ",
+    "note": "WaveLock itself rejects GPU-produced consensus commitments \u2014 an explicit admission that the kernel is not reproducible across backends."
+  }
+}

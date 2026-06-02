@@ -36,9 +36,43 @@ experimental. Full design: `docs/WAVELOCK_OTS_DESIGN.md`. Migration:
   durable replay rejection, and **never** falls back to legacy SIGv2 on that
   path. Legacy curvature blocks still use the legacy fail-closed path.
 
-**WaveLock-OTS is experimental and is NOT production- or bounty-ready.** The
-ledger integration closes the host-copy replay gap on a node, but the scheme is
-still single-time Lamport (Finding C is inherent), unproven, and unreviewed.
+## Mythos integration-layer remediation (M1 / M2 / M3)
+
+A later Claude Mythos pass confirmed the pure `verify_ots` core held under A/B/D
+hardening but found three **integration-layer** bounty blockers in the block
+acceptance / replay layer. All three are now fixed (full writeup:
+`attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md`; pins:
+`tests/test_ots_mythos_break.py`):
+
+- **M1 — FIXED by signing the canonical block transcript/body.** The OTS block
+  signature now binds the actual block body. `server._verify_ots_block`
+  recomputes `canonical_ots_block_digest(block)` (over `messages`, `block_type`,
+  `previous_hash`, `auth_scheme`, and the carried public key) from the *received*
+  block and verifies against it; `meta.ots_auth.message` must equal that digest.
+  A signature over a benign `"hello world"` can no longer authorize an unrelated
+  block body. Build blocks with `server.build_signed_ots_block(...)`.
+- **M2 — FIXED by reconstructing consumed OTS identities from accepted chain
+  state, independent of current config.** `server._reconstruct_consumed_ots`
+  (run by `load_from_disk`) indexes every accepted block carrying well-formed OTS
+  auth by structure — regardless of `cfg.require_ots` — and fails closed on a
+  malformed OTS-claiming block. Deleting `ots_replay.jsonl` and restarting no
+  longer reopens replay while the accepted chain still contains the OTS block.
+- **M3 — FIXED by inter-process ledger file locking.** The whole
+  read-check-append-fsync-update critical section in `PersistentOTSReplayLedger`
+  runs under an OS-level `flock` (POSIX) and re-scans the file under the lock, so
+  two instances/processes on the same file cannot both accept the same identity.
+  The previously-separate `OTS_LEDGER` is now an alias for the single
+  authoritative `CONSENSUS_OTS_LEDGER` (no independent bypass ledger).
+
+**Cross-node / global consensus enforcement remains future work** — the ledger is
+authoritative per host/filesystem, not yet replicated across nodes.
+
+**WaveLock-OTS is experimental and is NOT production-ready.** The ledger
+integration plus the M1/M2/M3 fixes close the body-binding and host-level replay
+gaps, but the scheme is still single-time Lamport (Finding C is inherent),
+unproven, and unreviewed. With M1/M2/M3 fixed it may be ready for a **scoped**
+bounty focused on canonical verification, replay protection, and OTS block
+acceptance — not an open-scope or value-transfer bounty.
 
 ## What changed
 

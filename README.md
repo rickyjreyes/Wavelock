@@ -57,6 +57,19 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   production-ready**. See `attacks/WAVELOCK_OTS_REDTEAM.md` and
   `docs/WAVELOCK_MERKLE_ROADMAP.md`.
 
+- **Mythos integration-layer fixes (M1/M2/M3).** A later red-team pass closed
+  three block acceptance/replay-layer blockers: OTS block signatures now bind the
+  **canonical block body** (M1, no more free-text `meta.ots_auth.message`);
+  consumed OTS identities are **reconstructed from accepted chain state
+  independent of current config** and fail closed on malformed auth (M2, deleting
+  `ots_replay.jsonl` no longer reopens replay); and the replay ledger's accept
+  critical section is **inter-process `flock`-locked** with a single authoritative
+  ledger (M3). Cross-node/global consensus enforcement remains future work. With
+  M1/M2/M3 fixed the system may be ready for a **scoped** bounty (canonical
+  verification, replay protection, OTS block acceptance) — not value transfer.
+  See `attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md` and
+  `tests/test_ots_mythos_break.py`.
+
 ### WaveLock-OTS quick start
 
 ```bash
@@ -67,6 +80,26 @@ wavelock-ots ots-inspect --public keys/wl_ots_public.json
 ```
 
 (Each key signs **once**. Generate a fresh key per message.)
+
+### WaveLock-Encrypt quick start (experimental)
+
+`WaveLock-Encrypt v1` (`wavelock/crypto/wavelock_encrypt.py`, CLI
+`wavelock-encrypt`) is an **experimental** hybrid public-key encryption wrapper.
+It is **not a new raw cipher** — confidentiality and integrity come entirely
+from X25519 (ephemeral-static), HKDF-SHA256, and ChaCha20-Poly1305. The
+WaveLock contribution is **canonical transcript/context binding**: decryption
+fails closed if the authenticated context (purpose, ψ-commitment, block digest,
+OTS fingerprint, …) changes. See
+[`docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`](docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md).
+**Not production audited.**
+
+```bash
+wavelock-encrypt keygen  --private wlenc_private.pem --public wlenc_public.pem
+wavelock-encrypt encrypt --public wlenc_public.pem --input msg.bin --output env.json \
+    --purpose "transport/demo" --psi-commitment <hex>
+wavelock-encrypt decrypt --private wlenc_private.pem --input env.json --output out.bin \
+    --purpose "transport/demo" --psi-commitment <hex>
+```
 
 ---
 

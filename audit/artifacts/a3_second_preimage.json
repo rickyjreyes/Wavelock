@@ -1,0 +1,50 @@
+{
+  "P1_direct_sweep": {
+    "available": true,
+    "seeds_swept": 1000000,
+    "exact_psistar_collisions": 0,
+    "exact_commitment_collisions": 0,
+    "distinct_commitments": 1000000,
+    "examples": []
+  },
+  "P2_fixed_point_test": {
+    "seeds": [
+      11,
+      22
+    ],
+    "results": {
+      "steps=50": {
+        "both_finite": true,
+        "L2_distance_psistar_A_vs_B": 5.109236124889213,
+        "byte_identical": false
+      },
+      "steps=200": {
+        "both_finite": true,
+        "L2_distance_psistar_A_vs_B": 5.093859418463277,
+        "byte_identical": false
+      },
+      "steps=1000": {
+        "both_finite": true,
+        "L2_distance_psistar_A_vs_B": 5.0130054161390145,
+        "byte_identical": false
+      },
+      "steps=5000": {
+        "both_finite": true,
+        "L2_distance_psistar_A_vs_B": 4.627583542044949,
+        "byte_identical": false
+      }
+    },
+    "verdict": "psi*(A) and psi*(B) do NOT converge to a common field under extra iteration (distance does not -> 0), so there is no seed-independent attractor to mass-produce collisions."
+  },
+  "P3_serialization_aliasing": {
+    "available": true,
+    "signed_zero_commitments_differ": true,
+    "note": "a5 shows one logical field has multiple byte images. These are encoding faults (same input, two commitments), the OPPOSITE of a 2nd-preimage (two inputs, one commitment). Not a collision against the stated claim."
+  },
+  "P4_birthday_bound": {
+    "effective_output": "256-bit (SHA-256), commitments all distinct over 1e6",
+    "generic_collision_cost": "~2^128",
+    "verdict": "No PDE shortcut to collisions observed; second-preimage resistance is inherited from SHA-256, not added by WaveLock."
+  },
+  "OVERALL": "No practical second preimage found. The PDE neither collapses to a shared attractor nor exhibits sub-birthday structure; collision/2nd-preimage resistance rests entirely on SHA-256."
+}

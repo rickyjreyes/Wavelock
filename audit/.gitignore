@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+artifacts/*_run.log
+artifacts/a1_checkpoint.json

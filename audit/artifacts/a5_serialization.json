@@ -1,0 +1,36 @@
+{
+  "S1_signed_zero": {
+    "fields_numerically_equal": true,
+    "python_equal (0.0 == -0.0)": true,
+    "serialized_bytes_equal": false,
+    "commitment_pos": "ed40c188ed42949934fb1670f372dfd30bb7957de91fbc61f33a7bc23635063b",
+    "commitment_neg": "1733e708d555e9f1f5ccba0c6b2dc974790f1e9960734e8cd95e078debb97714",
+    "commitments_differ": true,
+    "verdict": "NON-CANONICAL: +0.0 and -0.0 are the same number but yield different commitments. Any reimplementation/platform that produces -0.0 vs +0.0 in a cell breaks verification."
+  },
+  "S2_nan_payloads": {
+    "both_are_nan": true,
+    "serialized_equal": false,
+    "commitments_differ": true,
+    "verdict": "Distinct NaN bit-patterns are all 'NaN' yet commit differently; and NaN-valued cells make verify() self-inconsistent since NaN != NaN. Kernel does not emit NaN for finite seeds (a1), so severity is conditional."
+  },
+  "S3_endianness_dual_schema": {
+    "v2_body_sha256": "b44b00da4b6b88da95123246353a9d19e056dc9f5085dc229e4de1ae750cbcd1",
+    "v3_body_sha256": "95a7c116c61a1a08f60841d95fb7a2f3bdf70cdd2699dc650ce1b00f318b13a4",
+    "bodies_differ": true,
+    "verdict": "The SAME terminal field has two project-sanctioned serializations (WLv2 little-endian tobytes vs WLv3 big-endian '>f8'), hence two distinct commitments. Commitment identity depends on schema label, not just psi*."
+  },
+  "S4_energy_block_redundancy": {
+    "energies_deterministic_in_psistar": true,
+    "packed_bytes_len": 32,
+    "verdict": "The 32-byte packed energy block is a deterministic function of psi*, adding no second-preimage strength beyond psi* itself, while adding 4 more float64 channels that must match bit-exactly across implementations (amplifying the a6 reproducibility problem)."
+  },
+  "injectivity": {
+    "raw_tobytes_is_bijective_on_bitpatterns": true,
+    "logical_value_aliasing": [
+      "+0.0/-0.0 (S1)",
+      "NaN payloads (S2)"
+    ],
+    "note": "No two distinct bit-pattern fields share a serialization; the ambiguity is the reverse \u2014 one logical field, many byte images."
+  }
+}
