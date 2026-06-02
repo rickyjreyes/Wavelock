@@ -1,0 +1,65 @@
+{
+  "params": {
+    "alpha": 1.5,
+    "beta": 0.0026,
+    "theta": 1e-05,
+    "dt": 0.1,
+    "steps": 50,
+    "damping": 2e-05,
+    "n": 4,
+    "side": 4,
+    "path": "consensus/XOF (WLv3.1)"
+  },
+  "seeds_processed": 1000000,
+  "finite_seeds": 1000000,
+  "nan_seeds": 0,
+  "inf_seeds": 0,
+  "huge_seeds_gt_1e6": 15,
+  "exact_psistar_collisions": 0,
+  "exact_commitment_collisions": 0,
+  "distinct_psistar": 1000000,
+  "distinct_commitments": 1000000,
+  "psistar_collision_examples": [],
+  "commitment_collision_examples": [],
+  "fingerprint_distinct": {
+    "0": 232928,
+    "1": 300000,
+    "2": 300000,
+    "3": 300000
+  },
+  "fingerprint_capped": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": true
+  },
+  "elapsed_sec": 260.7,
+  "rate_seeds_per_sec": 3836.2,
+  "final": true,
+  "entropy_bits_distinct_C_lowerbound": 19.932,
+  "per_cell_entropy_bits": [
+    2.0,
+    1.999,
+    1.999,
+    1.998,
+    1.999,
+    2.0,
+    1.999,
+    1.997,
+    1.999,
+    1.999,
+    1.999,
+    1.997,
+    1.999,
+    2.0,
+    1.999,
+    1.997
+  ],
+  "per_cell_entropy_bits_sum": 31.981,
+  "per_cell_entropy_bits_mean": 1.999,
+  "input_entropy_bits_reference": 848,
+  "subsample_saved": [
+    50000,
+    16
+  ]
+}
