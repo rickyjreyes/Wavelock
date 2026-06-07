@@ -1,0 +1,13 @@
+{
+  "done": 100000,
+  "target": 100000,
+  "elapsed_seconds": 3753.813812971115,
+  "rate_per_second": 26.639573772800084,
+  "chunks_done": 10,
+  "total_chunks": 10,
+  "profile": "standard",
+  "n": 6,
+  "workers": 6,
+  "chunk_size": 10000,
+  "timestamp": 1780578674.4102561
+}

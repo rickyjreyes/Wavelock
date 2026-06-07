@@ -1,0 +1,244 @@
+{
+  "timestamp": "20260601_160352",
+  "environment": {
+    "python": "3.10.17",
+    "os": "Windows",
+    "os_version": "10.0.22631",
+    "machine": "AMD64",
+    "timestamp": "2026-06-01T16:03:52.511284",
+    "torch": "2.5.1+cu121",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 3090",
+    "cuda_version": "12.1",
+    "cupy": "13.4.1",
+    "cupy_cuda_version": 12080,
+    "git_commit": "44e4e211c1f0ea2b694a0207003a6ee9afa5c9af"
+  },
+  "sha256": "af4bd6b7e92301154f119fe9e85b3a7eaaadc92310bfa844a04d33d1fc78f2e2",
+  "tests": [
+    {
+      "name": "test_wavelock_advanced.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 10.398308753967285
+    },
+    {
+      "name": "test_wavelock_attack_nextgen.py",
+      "category": "classical",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 18.430549383163452
+    },
+    {
+      "name": "test_wavelock_claude_legacy.py",
+      "category": "ml",
+      "danger": 2,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 6.974366188049316
+    },
+    {
+      "name": "test_wavelock_claude_legacy_v2.py",
+      "category": "ml",
+      "danger": 2,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 5.400357961654663
+    },
+    {
+      "name": "test_wavelock_claude_legacy_v3.py",
+      "category": "ml",
+      "danger": 1,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 1.4772679805755615
+    },
+    {
+      "name": "test_wavelock_claude_v4.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 3.2825510501861572
+    },
+    {
+      "name": "test_wavelock_claude_v4_again.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 88.83969902992249
+    },
+    {
+      "name": "test_wavelock_curvature_attack.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 137.15430569648743
+    },
+    {
+      "name": "test_wavelock_dual_hamiltonian.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 130.53314185142517
+    },
+    {
+      "name": "test_wavelock_exotic.py",
+      "category": "spectral",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 3.0442073345184326
+    },
+    {
+      "name": "test_wavelock_extreme.py",
+      "category": "pde",
+      "danger": 1,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 6.341284275054932
+    },
+    {
+      "name": "test_wavelock_hyper.py",
+      "category": "pde",
+      "danger": 4,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 49.064443588256836
+    },
+    {
+      "name": "test_wavelock_hyper_v4.py",
+      "category": "pde",
+      "danger": 4,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 57.70649194717407
+    },
+    {
+      "name": "test_wavelock_inn.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 61.76141905784607
+    },
+    {
+      "name": "test_wavelock_inn_glow.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 7.293901205062866
+    },
+    {
+      "name": "test_wavelock_post_quantum.py",
+      "category": "quantum",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 14.619749307632446
+    },
+    {
+      "name": "test_wavelock_scaled_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 12707.711803913116
+    },
+    {
+      "name": "test_wavelock_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 120.5293116569519
+    },
+    {
+      "name": "test_wavelock_tbja_xl.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 5.787654399871826
+    },
+    {
+      "name": "test_wavelock_wct_modes_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "runtime": 421.35419750213623
+    },
+    {
+      "name": "test_wavelock_scaled_neural.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u26a0 CRASH",
+      "runtime": 8.498185157775879
+    },
+    {
+      "name": "test_wavelock_tangent.py",
+      "category": "classical",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 23.904672861099243
+    },
+    {
+      "name": "test_wavelock_jacob.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 68.97679948806763
+    },
+    {
+      "name": "test_wavelock_lyapunov.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 321.42967104911804
+    },
+    {
+      "name": "test_wavelock_tier_omega.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 1390.4107534885406
+    },
+    {
+      "name": "test_wavelock_sha_collision.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 3281.429044008255
+    },
+    {
+      "name": "test_wavelock_attacks_surrogate.py",
+      "category": "classical",
+      "danger": 1,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 3639.1081874370575
+    },
+    {
+      "name": "test_wavelock_scaled_collision.py",
+      "category": "uncategorized",
+      "danger": 1,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "runtime": 86287.91416573524
+    }
+  ]
+}

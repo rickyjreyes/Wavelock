@@ -1,0 +1,1182 @@
+{
+  "timestamp": "20260604_004953",
+  "environment": {
+    "python": "3.10.17",
+    "os": "Windows",
+    "os_version": "10.0.22631",
+    "machine": "AMD64",
+    "timestamp": "2026-06-04T00:49:53.531461",
+    "torch": "2.5.1+cu121",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 3090",
+    "cuda_version": "12.1",
+    "cupy": "13.4.1",
+    "cupy_cuda_version": 12080,
+    "git_commit": "2f827ade8b325253c874f931c37e7257b183078a"
+  },
+  "sha256": "0247921d7db6849638cdaa6275a83fa4fb22eb6116b50a3f83bd1b335b97fc56",
+  "config": {
+    "only": null,
+    "cpu_workers": 2,
+    "cpu_sequential": false,
+    "timeout_seconds": null,
+    "pythonpath": "R:\\RESEARCH\\wavelock-py-research",
+    "thread_limits": {
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "tests": [
+    {
+      "name": "test_wavelock_advanced.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "collisions": 0,
+        "diagnostic_checks": 20,
+        "diagnostic_failures": 5,
+        "elapsed_seconds": 101.58532476425171,
+        "failed_checks": [
+          "multidepth_hash_variation_T5",
+          "multidepth_hash_variation_T10",
+          "multidepth_hash_variation_T20",
+          "multidepth_hash_variation_T40",
+          "multidepth_hash_variation_T80"
+        ],
+        "false_accepts": 0,
+        "forgeries": 0,
+        "matched": false,
+        "nan_detected": false,
+        "profile": "standard",
+        "test": "advanced"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 103.3536491394043
+    },
+    {
+      "name": "test_wavelock_attack_nextgen.py",
+      "category": "classical",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "attack_count": 5,
+        "collisions": 0,
+        "crashes": 0,
+        "elapsed_seconds": 863.5940845012665,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "matched": false,
+        "matched_attacks": [],
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "seed_count": 5,
+        "test": "attack_nextgen"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 864.9930381774902
+    },
+    {
+      "name": "test_wavelock_claude_legacy.py",
+      "category": "ml",
+      "danger": 2,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 9.456027030944824
+    },
+    {
+      "name": "test_wavelock_claude_legacy_v2.py",
+      "category": "ml",
+      "danger": 2,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 10.769068956375122
+    },
+    {
+      "name": "test_wavelock_claude_legacy_v3.py",
+      "category": "ml",
+      "danger": 1,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 2.18184757232666
+    },
+    {
+      "name": "test_wavelock_claude_v4.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 5.904378652572632
+    },
+    {
+      "name": "test_wavelock_claude_v4_again.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 151.50725555419922
+    },
+    {
+      "name": "test_wavelock_curvature_attack.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 231.07944917678833
+    },
+    {
+      "name": "test_wavelock_dual_hamiltonian.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 186.71896123886108
+    },
+    {
+      "name": "test_wavelock_exotic.py",
+      "category": "spectral",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "attack_count": 8,
+        "collisions": 0,
+        "crashes": 0,
+        "danger_total": 0,
+        "elapsed_seconds": 74.78840661048889,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "matched": false,
+        "matched_attacks": [],
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "status": "pass",
+        "subtests": {
+          "adjoint_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 14.783215616128397,
+                "matched": false,
+                "runtime_seconds": 5.923272371292114,
+                "seed": 123,
+                "steps": 5000
+              },
+              {
+                "best_energy": 388.69375182509793,
+                "matched": false,
+                "runtime_seconds": 5.922178030014038,
+                "seed": 7,
+                "steps": 5000
+              },
+              {
+                "best_energy": 41.866336897292435,
+                "matched": false,
+                "runtime_seconds": 5.860108137130737,
+                "seed": 42,
+                "steps": 5000
+              },
+              {
+                "best_energy": 93.24439146478151,
+                "matched": false,
+                "runtime_seconds": 5.895679950714111,
+                "seed": 99,
+                "steps": 5000
+              },
+              {
+                "best_energy": 139.14647976808712,
+                "matched": false,
+                "runtime_seconds": 5.918722867965698,
+                "seed": 2025,
+                "steps": 5000
+              }
+            ],
+            "runs": 5
+          },
+          "dual_space_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 9.941441761475522,
+                "matched": false,
+                "runtime_seconds": 6.9155542850494385,
+                "seed": 123,
+                "steps": 10000
+              },
+              {
+                "best_energy": 387.50101018501846,
+                "matched": false,
+                "runtime_seconds": 6.823920249938965,
+                "seed": 7,
+                "steps": 10000
+              },
+              {
+                "best_energy": 38.19121675151454,
+                "matched": false,
+                "runtime_seconds": 6.8435282707214355,
+                "seed": 42,
+                "steps": 10000
+              },
+              {
+                "best_energy": 90.56022113917608,
+                "matched": false,
+                "runtime_seconds": 6.867050409317017,
+                "seed": 99,
+                "steps": 10000
+              },
+              {
+                "best_energy": 138.87555719393927,
+                "matched": false,
+                "runtime_seconds": 6.985398769378662,
+                "seed": 2025,
+                "steps": 10000
+              }
+            ],
+            "runs": 5
+          },
+          "exotic_phase_warp_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 8.909670514510221,
+                "matched": false,
+                "runtime_seconds": 0.659559965133667,
+                "seed": 123,
+                "trials": 500
+              },
+              {
+                "best_energy": 385.9168004350724,
+                "matched": false,
+                "runtime_seconds": 0.6785252094268799,
+                "seed": 7,
+                "trials": 500
+              },
+              {
+                "best_energy": 37.036718287275015,
+                "matched": false,
+                "runtime_seconds": 0.6909265518188477,
+                "seed": 42,
+                "trials": 500
+              },
+              {
+                "best_energy": 89.36921568208777,
+                "matched": false,
+                "runtime_seconds": 0.6391286849975586,
+                "seed": 99,
+                "trials": 500
+              },
+              {
+                "best_energy": 137.4872730892764,
+                "matched": false,
+                "runtime_seconds": 0.6909816265106201,
+                "seed": 2025,
+                "trials": 500
+              }
+            ],
+            "runs": 5
+          },
+          "hhl_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 2.892166650869537,
+                "matched": false,
+                "runtime_seconds": 0.5008049011230469,
+                "seed": 123,
+                "trials": 50
+              },
+              {
+                "best_energy": 2453.801238607787,
+                "matched": false,
+                "runtime_seconds": 0.14509367942810059,
+                "seed": 7,
+                "trials": 50
+              },
+              {
+                "best_energy": 140.13239167576398,
+                "matched": false,
+                "runtime_seconds": 0.15085887908935547,
+                "seed": 42,
+                "trials": 50
+              },
+              {
+                "best_energy": 700.2717526996681,
+                "matched": false,
+                "runtime_seconds": 0.14653563499450684,
+                "seed": 99,
+                "trials": 50
+              },
+              {
+                "best_energy": 1411.1981135071621,
+                "matched": false,
+                "runtime_seconds": 0.1417222023010254,
+                "seed": 2025,
+                "trials": 50
+              }
+            ],
+            "runs": 5
+          },
+          "manifold_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_dim": 5,
+                "best_energy": 2.1065000811460206e-15,
+                "dims": [
+                  1,
+                  2,
+                  4,
+                  8,
+                  16
+                ],
+                "matched": false,
+                "runtime_seconds": 0.14765286445617676,
+                "seed": 123
+              },
+              {
+                "best_dim": 5,
+                "best_energy": 1.6190569307483172e-13,
+                "dims": [
+                  1,
+                  2,
+                  4,
+                  8,
+                  16
+                ],
+                "matched": false,
+                "runtime_seconds": 0.0937044620513916,
+                "seed": 7
+              },
+              {
+                "best_dim": 5,
+                "best_energy": 7.944109290391274e-15,
+                "dims": [
+                  1,
+                  2,
+                  4,
+                  8,
+                  16
+                ],
+                "matched": false,
+                "runtime_seconds": 0.10257482528686523,
+                "seed": 42
+              },
+              {
+                "best_dim": 5,
+                "best_energy": 4.464808514923677e-14,
+                "dims": [
+                  1,
+                  2,
+                  4,
+                  8,
+                  16
+                ],
+                "matched": false,
+                "runtime_seconds": 0.09507942199707031,
+                "seed": 99
+              },
+              {
+                "best_dim": 5,
+                "best_energy": 4.601844304260854e-14,
+                "dims": [
+                  1,
+                  2,
+                  4,
+                  8,
+                  16
+                ],
+                "matched": false,
+                "runtime_seconds": 0.09263992309570312,
+                "seed": 2025
+              }
+            ],
+            "runs": 5
+          },
+          "qpe_sim_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 10.915844219705244,
+                "matched": false,
+                "runtime_seconds": 0.6649622917175293,
+                "seed": 123,
+                "steps": 500
+              },
+              {
+                "best_energy": 386.8520966042394,
+                "matched": false,
+                "runtime_seconds": 0.3822906017303467,
+                "seed": 7,
+                "steps": 500
+              },
+              {
+                "best_energy": 39.666291909674655,
+                "matched": false,
+                "runtime_seconds": 0.3750588893890381,
+                "seed": 42,
+                "steps": 500
+              },
+              {
+                "best_energy": 91.51826137334628,
+                "matched": false,
+                "runtime_seconds": 0.39170265197753906,
+                "seed": 99,
+                "steps": 500
+              },
+              {
+                "best_energy": 139.1990146728942,
+                "matched": false,
+                "runtime_seconds": 0.3769545555114746,
+                "seed": 2025,
+                "steps": 500
+              }
+            ],
+            "runs": 5
+          },
+          "spectral_mask_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 0.06559151784149014,
+                "matched": false,
+                "runtime_seconds": 0.4155454635620117,
+                "seed": 123,
+                "trials": 500
+              },
+              {
+                "best_energy": 218.63893335213533,
+                "matched": false,
+                "runtime_seconds": 0.3708682060241699,
+                "seed": 7,
+                "trials": 500
+              },
+              {
+                "best_energy": 11.134072026441743,
+                "matched": false,
+                "runtime_seconds": 0.4025743007659912,
+                "seed": 42,
+                "trials": 500
+              },
+              {
+                "best_energy": 51.535643035723446,
+                "matched": false,
+                "runtime_seconds": 0.39281749725341797,
+                "seed": 99,
+                "trials": 500
+              },
+              {
+                "best_energy": 104.20431125446939,
+                "matched": false,
+                "runtime_seconds": 0.3844475746154785,
+                "seed": 2025,
+                "trials": 500
+              }
+            ],
+            "runs": 5
+          },
+          "wavelet_attack": {
+            "crashes": 0,
+            "matched": false,
+            "results": [
+              {
+                "best_energy": 9.742691567618323,
+                "matched": false,
+                "runtime_seconds": 0.35178709030151367,
+                "scales": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "seed": 123,
+                "trials": 50
+              },
+              {
+                "best_energy": 387.4401430413885,
+                "matched": false,
+                "runtime_seconds": 0.32466864585876465,
+                "scales": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "seed": 7,
+                "trials": 50
+              },
+              {
+                "best_energy": 38.61929046004083,
+                "matched": false,
+                "runtime_seconds": 0.32253122329711914,
+                "scales": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "seed": 42,
+                "trials": 50
+              },
+              {
+                "best_energy": 90.84714456453015,
+                "matched": false,
+                "runtime_seconds": 0.3177144527435303,
+                "scales": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "seed": 99,
+                "trials": 50
+              },
+              {
+                "best_energy": 138.8770777850078,
+                "matched": false,
+                "runtime_seconds": 0.38280701637268066,
+                "scales": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "seed": 2025,
+                "trials": 50
+              }
+            ],
+            "runs": 5
+          }
+        },
+        "test": "exotic_phase_adversarial"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 75.92191004753113
+    },
+    {
+      "name": "test_wavelock_extreme.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "avalanche_failures": 0,
+        "collisions": 0,
+        "crashes": 0,
+        "danger_total": 0,
+        "drift_failures": 0,
+        "elapsed_seconds": 81.39892268180847,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "gradient_matched": false,
+        "matched": false,
+        "n": 6,
+        "nan_detected": false,
+        "precision_float16_match": false,
+        "precision_float32_matches": 0,
+        "profile": "standard",
+        "quantized_match": false,
+        "subtests": {
+          "avalanche": {
+            "failure_rate": 0.0,
+            "failures": 0,
+            "flip_attempts": 100000,
+            "runtime_seconds": 54.58586096763611,
+            "seeds": 5
+          },
+          "drift": {
+            "max_delta_norm": 8.91704944287102e-05,
+            "min_delta_norm": 6.600219976487605e-05,
+            "runtime_seconds": 3.2702412605285645,
+            "same_commit": false,
+            "same_commit_count": 0,
+            "seeds": 5,
+            "status": "PASS",
+            "steps_per_seed": 10000
+          },
+          "fourier_attack": {
+            "attempts": 2000,
+            "false_accepts": 0,
+            "rate": 0.0,
+            "runtime_seconds": 1.9531846046447754,
+            "seeds": 5
+          },
+          "gradient_surrogate": {
+            "best_distance": 7.916492853351435,
+            "matched": false,
+            "matched_count": 0,
+            "runtime_seconds": 14.953491449356079,
+            "seeds": 5,
+            "steps_per_seed": 5000
+          },
+          "multi_gpu": {
+            "gpu_count": 1,
+            "runtime_seconds": 0.0,
+            "skip": true
+          },
+          "precision": {
+            "float16_match": false,
+            "float16_matches": 0,
+            "float32_match": false,
+            "float32_matches": 0,
+            "runtime_seconds": 0.43335390090942383,
+            "seeds": 5
+          },
+          "projection_attack": {
+            "attempts": 5000,
+            "false_accepts": 0,
+            "rate": 0.0,
+            "runtime_seconds": 3.2264933586120605,
+            "seeds": 5
+          },
+          "quantization": {
+            "quantized_match": false,
+            "quantized_matches": 0,
+            "runtime_seconds": 0.5322434902191162,
+            "seeds": 5
+          },
+          "recombination_attack": {
+            "attempts": 2000,
+            "false_accepts": 0,
+            "rate": 0.0,
+            "runtime_seconds": 1.5601534843444824,
+            "seeds": 5
+          },
+          "thermal": {
+            "rate": 0.0,
+            "runtime_seconds": 0.8833839893341064,
+            "seeds": 5,
+            "thermal_match": false,
+            "thermal_matches": 0,
+            "trials": 1000
+          }
+        },
+        "test": "extreme",
+        "thermal_match": false
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 82.48150682449341
+    },
+    {
+      "name": "test_wavelock_hyper.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "collisions": 0,
+        "crashes": 0,
+        "danger_total": 0,
+        "deterministic_mismatches": 0,
+        "drift_failures": 0,
+        "elapsed_seconds": 169.88177347183228,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "legacy_pde_accepts": 0,
+        "legacy_resonance_false_accepts": 0,
+        "legacy_symbolic_diagnostic_total": 0,
+        "legacy_symbolic_false_accepts": 0,
+        "matched": false,
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "status": "pass",
+        "subtests": {
+          "collision_resistance": {
+            "collision_rate": 0.0,
+            "collisions": 0,
+            "runtime_seconds": 40.98671364784241,
+            "trials": 500
+          },
+          "deterministic_evolution": {
+            "all_zero": true,
+            "distribution_sample": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_diff": 0,
+            "min_diff": 0,
+            "mismatches": 0,
+            "runtime_seconds": 24.52708411216736,
+            "trials": 100
+          },
+          "drift_sensitivity": {
+            "fail_rate": 0.0,
+            "max_delta_norm": 8.966804108423108e-05,
+            "min_delta_norm": 7.070893294159927e-06,
+            "rate_ok": 1.0,
+            "runtime_seconds": 20.45289158821106,
+            "sensitivity_failures": 0,
+            "trials": 250
+          },
+          "pde_inversion": {
+            "legacy_pde_accepts": 0,
+            "legacy_pde_rate": 0.0,
+            "runtime_seconds": 20.622796773910522,
+            "trials": 250
+          },
+          "resonance_attack": {
+            "legacy_resonance_false_accepts": 0,
+            "legacy_resonance_rate": 0.0,
+            "runtime_seconds": 21.017507314682007,
+            "trials": 250
+          },
+          "signature_forgery": {
+            "forgeries": 0,
+            "rate": 0.0,
+            "runtime_seconds": 40.64684772491455,
+            "trials": 500
+          },
+          "symbolic_false_accept": {
+            "legacy_symbolic_false_accepts": 0,
+            "legacy_symbolic_rate": 0.0,
+            "runtime_seconds": 1.6273956298828125,
+            "trials": 1500
+          }
+        },
+        "test": "hyper_wlv3"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 170.9466278553009
+    },
+    {
+      "name": "test_wavelock_hyper_v4.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "collisions": 0,
+        "crashes": 0,
+        "deterministic_mismatches": 0,
+        "drift_failures": 0,
+        "elapsed_seconds": 173.13335132598877,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "matched": false,
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "subtests": {
+          "collision_resistance": {
+            "collision_rate": 0.0,
+            "collisions": 0,
+            "runtime_seconds": 43.49151301383972,
+            "trials": 500
+          },
+          "deterministic_evolution": {
+            "all_identical": true,
+            "mismatches": 0,
+            "runtime_seconds": 13.195677757263184,
+            "trials": 50,
+            "vector_max_delta": 0.0
+          },
+          "drift_sensitivity": {
+            "drift_failures": 0,
+            "fail_rate": 0.0,
+            "max_vector_delta": 5940.125670067664,
+            "min_vector_delta": 3.172766453973588e-07,
+            "rate_ok": 1.0,
+            "runtime_seconds": 24.051065921783447,
+            "trials": 250
+          },
+          "false_accept": {
+            "false_accepts": 0,
+            "rate": 0.0,
+            "runtime_seconds": 4.9111168384552,
+            "trials": 1500
+          },
+          "pde_inversion": {
+            "accepted": 0,
+            "rate": 0.0,
+            "runtime_seconds": 22.58180832862854,
+            "trials": 250
+          },
+          "resonance_attack": {
+            "false_accepts": 0,
+            "rate": 0.0,
+            "runtime_seconds": 22.886691331863403,
+            "trials": 250
+          },
+          "signature_forgery": {
+            "forgeries": 0,
+            "rate": 0.0,
+            "runtime_seconds": 42.01447820663452,
+            "trials": 500
+          }
+        },
+        "test": "hyper_v4"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 174.22584080696106
+    },
+    {
+      "name": "test_wavelock_inn.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "baseline_metrics": {
+          "mean": {
+            "corr": -6.800804186468667e-08,
+            "mae": 0.2509145736694336,
+            "mse": 0.08377230912446976,
+            "r2": 0.0
+          },
+          "zero": {
+            "corr": 0.0,
+            "mae": 0.49998825788497925,
+            "mse": 0.3337605893611908,
+            "r2": -2.9841394424438477
+          }
+        },
+        "batch_size": 32,
+        "best_epoch": 15,
+        "best_test_mse": 0.08177974820137024,
+        "best_test_r2": 0.023785412311553955,
+        "collisions": 0,
+        "device": "cuda:0",
+        "elapsed_seconds": 42.818352699279785,
+        "epochs": 60,
+        "false_accepts": 0,
+        "final_metrics": {
+          "corr": 0.10573159903287888,
+          "mae": 0.26815512776374817,
+          "mse": 0.1042189672589302,
+          "r2": -0.24407410621643066
+        },
+        "forgeries": 0,
+        "learned_inverse": false,
+        "matched": false,
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "r2_danger_threshold": 0.1,
+        "test": "cnn_neural_inversion",
+        "test_samples": 500,
+        "train_samples": 2000
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 46.25841689109802
+    },
+    {
+      "name": "test_wavelock_inn_glow.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 7.674695253372192
+    },
+    {
+      "name": "test_wavelock_post_quantum.py",
+      "category": "quantum",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "attack_count": 5,
+        "collisions": 0,
+        "crashes": 0,
+        "diagnostic_controls": {
+          "qft_full_rank_reconstruction_controls": []
+        },
+        "elapsed_seconds": 234.18147110939026,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "matched": false,
+        "matched_attacks": [],
+        "n": 6,
+        "nan_detected": false,
+        "profile": "standard",
+        "seed_count": 5,
+        "test": "post_quantum"
+      },
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 235.26442551612854
+    },
+    {
+      "name": "test_wavelock_scaled_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 12003.157677650452
+    },
+    {
+      "name": "test_wavelock_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 124.71544122695923
+    },
+    {
+      "name": "test_wavelock_tbja_xl.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 5.852760314941406
+    },
+    {
+      "name": "test_wavelock_wct_modes_tbja.py",
+      "category": "pde",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 DIAGNOSTIC",
+      "returncode": 0,
+      "runtime": 389.32103061676025
+    },
+    {
+      "name": "test_wavelock_jacob.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 52.0531222820282
+    },
+    {
+      "name": "test_wavelock_attacks_surrogate.py",
+      "category": "classical",
+      "danger": 0,
+      "metrics": {
+        "T_pde": 30,
+        "accepted": 0,
+        "attacks": [
+          {
+            "abs_corr": 0.016007368759392186,
+            "corr": 0.016007368759392186,
+            "crashed": false,
+            "error": null,
+            "loss": 0.05746469844238106,
+            "name": "CurvatureResonance",
+            "runtime_seconds": 16.588270902633667
+          },
+          {
+            "abs_corr": 0.048462751383527035,
+            "corr": 0.048462751383527035,
+            "crashed": false,
+            "error": null,
+            "loss": 0.3745657657133763,
+            "name": "MultiResEnvelope",
+            "runtime_seconds": 13.250648975372314
+          },
+          {
+            "abs_corr": 0.022716869727328313,
+            "corr": 0.022716869727328313,
+            "crashed": false,
+            "error": null,
+            "loss": 0.05745287139628418,
+            "name": "EigenmodeBundle",
+            "runtime_seconds": 15.8257577419281
+          },
+          {
+            "abs_corr": 0.005196228914598378,
+            "corr": -0.005196228914598378,
+            "crashed": false,
+            "error": null,
+            "loss": 0.07098472510806118,
+            "name": "NLSsurrogate",
+            "runtime_seconds": 1.2627677917480469
+          },
+          {
+            "abs_corr": 0.005447225815349506,
+            "corr": 0.005447225815349506,
+            "crashed": false,
+            "error": null,
+            "loss": 0.05246602662649352,
+            "name": "TopologicalMapper",
+            "runtime_seconds": 4.5576863288879395
+          },
+          {
+            "abs_corr": 0.015591191185206205,
+            "corr": 0.015591191185206205,
+            "crashed": false,
+            "error": null,
+            "loss": 0.06736054275482857,
+            "name": "PhaseSpaceAdjoint",
+            "runtime_seconds": 2.385664939880371
+          }
+        ],
+        "best_abs_corr": 0.005447225815349506,
+        "best_attack": "TopologicalMapper",
+        "best_corr": 0.005447225815349506,
+        "best_loss": 0.05246602662649352,
+        "collisions": 0,
+        "corr_danger_threshold": 0.9,
+        "crashes": 0,
+        "danger_total": 0,
+        "elapsed_seconds": 54.101635456085205,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "learned_inverse": false,
+        "loss_danger_threshold": 1e-06,
+        "matched": false,
+        "n": 32,
+        "nan_detected": false,
+        "profile": "standard",
+        "status": "pass",
+        "test": "attacks_surrogate"
+      },
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 55.24054670333862
+    },
+    {
+      "name": "test_wavelock_lyapunov.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 286.4991376399994
+    },
+    {
+      "name": "test_wavelock_scaled_neural.py",
+      "category": "ml",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 302.4889805316925
+    },
+    {
+      "name": "test_wavelock_scaled_collision.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "chunk_size": 10000,
+        "collisions": 0,
+        "comparison_mode": "commitment_sha256",
+        "crashes": 0,
+        "danger_total": 0,
+        "elapsed_seconds": 3905.9449696540833,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "local_dup_check": false,
+        "matched": false,
+        "n": 4,
+        "nan_detected": false,
+        "packed_item_blob": true,
+        "profile": "standard",
+        "rate_per_second": 25.6019992029883,
+        "status": "pass",
+        "target_trials": 100000,
+        "test": "scaled_collision",
+        "trials_completed": 100000,
+        "worker_initializer": true,
+        "workers": 6
+      },
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 3907.0037071704865
+    },
+    {
+      "name": "test_wavelock_tangent.py",
+      "category": "classical",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 11.973615169525146
+    },
+    {
+      "name": "test_wavelock_sha_collision.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": {
+        "accepted": 0,
+        "chunk_size": 10000,
+        "collisions": 0,
+        "crashes": 0,
+        "danger_total": 0,
+        "elapsed_seconds": 3754.0583832263947,
+        "exact_sha256": true,
+        "false_accepts": 0,
+        "forgeries": 0,
+        "local_dup_check": false,
+        "matched": false,
+        "n": 6,
+        "nan_detected": false,
+        "packed_digest_blob": true,
+        "profile": "standard",
+        "rate_per_second": 26.63783825174712,
+        "status": "pass",
+        "target_trials": 100000,
+        "test": "sha_collision_cluster",
+        "trials_completed": 100000,
+        "worker_initializer": true,
+        "workers": 6
+      },
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 3754.3099982738495
+    },
+    {
+      "name": "test_wavelock_tier_omega.py",
+      "category": "uncategorized",
+      "danger": 0,
+      "metrics": null,
+      "status": "\u2713 PASS",
+      "returncode": 0,
+      "runtime": 877.7154986858368
+    }
+  ],
+  "counts": {
+    "total": 28,
+    "pass": 8,
+    "diagnostic": 20,
+    "crash": 0,
+    "timeout": 0
+  }
+}
