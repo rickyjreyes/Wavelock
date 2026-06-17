@@ -26,7 +26,6 @@ def main(argv=None) -> int:
     src.add_argument("--hex", dest="hexmsg", help="message as a hex string")
     src.add_argument("--stdin", action="store_true", help="read message bytes from stdin")
     ap.add_argument("--impl", choices=["reference", "optimized"], default="reference")
-    ap.add_argument("--output-bits", type=int, default=spec.DEFAULT_OUTPUT_BITS)
     args = ap.parse_args(argv)
 
     if args.stdin:
@@ -39,7 +38,7 @@ def main(argv=None) -> int:
         data = b""
 
     impl = optimized if args.impl == "optimized" else reference
-    digest = impl.pde_hash(data, output_bits=args.output_bits)
+    digest = impl.pde_hash(data)
     print(digest.hex())
     return 0
 
