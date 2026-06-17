@@ -75,7 +75,8 @@ any structural leak in §5.
 - Gradient-free inversion; SAT/SMT modeling of reduced-round `Φ` over 𝔽_p;
   mixed-integer / algebraic (Gröbner-style) formulations exploiting that `Φ` is
   polynomial of low degree over 𝔽_p; genetic search; simulated annealing;
-  meet-in-the-middle on the sponge; local-linear / Jacobian approximations;
+  meet-in-the-middle on the sponge-like construction; local-linear / Jacobian
+  approximations;
   surrogate models; full state reconstruction from output; chosen-prefix
   attacks; recovery of internal state from the squeeze.
 - **Special concern for Design A:** each round is a degree-3 polynomial map over

@@ -1,0 +1,91 @@
+{
+  "byte_freq": {
+    "chi2": 244.88599999999997,
+    "dof": 255,
+    "expected_per_byte": 1000.0,
+    "max": 1087,
+    "min": 922
+  },
+  "correlation": {
+    "max_abs_pairwise": 0.0470411225598724,
+    "round_block_corr": [
+      [
+        1.0,
+        -0.0029724467777794677,
+        -0.0003895791664899991,
+        -0.00040347355061194574
+      ],
+      [
+        -0.0029724467777794677,
+        1.0,
+        -0.002424534364551986,
+        0.0015176786434834002
+      ],
+      [
+        -0.0003895791664899992,
+        -0.002424534364551986,
+        1.0,
+        0.000202399827343901
+      ],
+      [
+        -0.00040347355061194574,
+        0.0015176786434834002,
+        0.000202399827343901,
+        1.0
+      ]
+    ],
+    "serial_lag1_max_abs": 0.20766675028032494,
+    "serial_lag1_mean": -0.003643568871322631
+  },
+  "hamming_weight": {
+    "ideal_mean": 128.0,
+    "ideal_std": 8.0,
+    "max": 156,
+    "mean": 127.994125,
+    "min": 99,
+    "std": 7.962762741936682
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "n_msgs": 8000,
+  "pair_table_sensitivity": {
+    "alt_adjacent": {
+      "max": 0.529,
+      "max_abs_dev_from_half": 0.029000000000000026,
+      "min": 0.478
+    },
+    "alt_t_tplus64": {
+      "max": 0.5295,
+      "max_abs_dev_from_half": 0.02949999999999997,
+      "min": 0.4755
+    },
+    "v0_t_tplus128": {
+      "max": 0.524,
+      "max_abs_dev_from_half": 0.027500000000000024,
+      "min": 0.4725
+    }
+  },
+  "per_bit_one_freq": {
+    "max": 0.516625,
+    "max_abs_monobit_z": 2.97397041007472,
+    "mean": 0.49997705078125,
+    "min": 0.486125,
+    "num_bits_z_gt_3": 0,
+    "worst_bit": 111,
+    "worst_bit_ci_halfwidth": 0.010950674738201067,
+    "worst_bit_freq": 0.516625
+  },
+  "phase": "8C_squeeze",
+  "runtime_s": 84.29,
+  "seed": 80030,
+  "ties": {
+    "comparisons_per_round_pair": 8000,
+    "per_round_pair_max": 0,
+    "total_ties": 0
+  }
+}

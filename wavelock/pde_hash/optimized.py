@@ -31,6 +31,8 @@ _PM4 = np.int64((spec.P - 4) % spec.P)
 # ---------------------------------------------------------------------------
 def _pad(message: bytes) -> bytes:
     m = bytes(message)
+    if len(m) * 8 > spec.MAX_INPUT_BITS:
+        raise ValueError("message too long: exceeds MAX_INPUT_BITS")
     out = bytearray(m)
     out.append(1)
     block = spec.BYTES_PER_BLOCK
@@ -81,7 +83,8 @@ def _one_round(psi: np.ndarray) -> np.ndarray:
     return (psi + (_D * lap) % p + react) % p
 
 
-def _permute(psi: np.ndarray) -> np.ndarray:
+def _evolve_T(psi: np.ndarray) -> np.ndarray:
+    """T-round state transformation (not a proven permutation)."""
     for _ in range(spec.T):
         psi = _one_round(psi)
     return psi
@@ -102,10 +105,12 @@ def _absorb(message: bytes) -> np.ndarray:
     for k in range(n_blocks):
         flat = psi.reshape(-1)
         flat[: spec.RATE] = (flat[: spec.RATE] + elems[k]) % p
-        flat[spec.CAP0] = (flat[spec.CAP0] + (np.int64((k + 1) % spec.P) * np.int64(spec.G))) % p
+        q0, q1 = spec.encode_block_counter(k)
+        flat[spec.CAP0] = (flat[spec.CAP0] + np.int64(q0) * np.int64(spec.G)) % p
+        flat[spec.CAP2] = (flat[spec.CAP2] + np.int64(q1) * np.int64(spec.G)) % p
         if k == n_blocks - 1:
             flat[spec.CAP1] = (flat[spec.CAP1] + np.int64(spec.D_TAG)) % p
-        psi = _permute(flat.reshape(_N, _N))
+        psi = _evolve_T(flat.reshape(_N, _N))
     return psi
 
 
@@ -116,7 +121,7 @@ def _squeeze(psi: np.ndarray, output_bits: int) -> bytes:
         cmp = (flat[_PAIRS_A] > flat[_PAIRS_B]).astype(np.uint8)
         bits.extend(int(x) for x in cmp)
         if len(bits) < output_bits:
-            psi = _permute(psi)
+            psi = _evolve_T(psi)
             flat = psi.reshape(-1)
     bits = bits[:output_bits]
     out = bytearray(output_bits // 8)
@@ -132,16 +137,12 @@ def _snapshot_bytes(psi: np.ndarray) -> bytes:
     return flat.tobytes()
 
 
-def pde_hash(message: bytes, *, output_bits: int = spec.DEFAULT_OUTPUT_BITS) -> bytes:
+def pde_hash(message: bytes) -> bytes:
+    """Fixed-output 256-bit digest (NOT an XOF). Always returns 32 bytes."""
     if not isinstance(message, (bytes, bytearray)):
         raise TypeError("message must be bytes")
-    if output_bits <= 0 or output_bits % spec.SQUEEZE_BITS_PER_ROUND != 0:
-        raise ValueError(
-            f"output_bits must be a positive multiple of "
-            f"{spec.SQUEEZE_BITS_PER_ROUND}"
-        )
     psi = _absorb(bytes(message))
-    return _squeeze(psi, output_bits)
+    return _squeeze(psi, spec.OUTPUT_BITS)
 
 
 def trace(message: bytes) -> dict:
@@ -157,19 +158,21 @@ def trace(message: bytes) -> dict:
     for k in range(n_blocks):
         flat = psi.reshape(-1).copy()
         flat[: spec.RATE] = (flat[: spec.RATE] + elems[k]) % p
-        flat[spec.CAP0] = (flat[spec.CAP0] + np.int64((k + 1) % spec.P) * np.int64(spec.G)) % p
+        q0, q1 = spec.encode_block_counter(k)
+        flat[spec.CAP0] = (flat[spec.CAP0] + np.int64(q0) * np.int64(spec.G)) % p
+        flat[spec.CAP2] = (flat[spec.CAP2] + np.int64(q1) * np.int64(spec.G)) % p
         if k == n_blocks - 1:
             flat[spec.CAP1] = (flat[spec.CAP1] + np.int64(spec.D_TAG)) % p
         pre = flat.reshape(_N, _N)
         if k == 0:
             snaps["S_absorb0"] = _snapshot_bytes(pre)
-        psi = _permute(pre)
+        psi = _evolve_T(pre)
         if k == 0:
             snaps["S_perm0"] = _snapshot_bytes(psi)
 
     snaps["S_final"] = _snapshot_bytes(psi)
-    snaps["S_squeeze1"] = _snapshot_bytes(_permute(psi))
-    snaps["digest"] = _squeeze(psi, spec.DEFAULT_OUTPUT_BITS)
+    snaps["S_squeeze1"] = _snapshot_bytes(_evolve_T(psi))
+    snaps["digest"] = _squeeze(psi, spec.OUTPUT_BITS)
     return snaps
 
 

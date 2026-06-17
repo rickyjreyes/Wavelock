@@ -1,0 +1,452 @@
+{
+  "cycles": {
+    "budget": 20000,
+    "examples": [],
+    "n_starts": 8,
+    "num_short_cycles_found": 0
+  },
+  "duplicate_next_state": {
+    "duplicate_next_states": 0,
+    "n_states": 20000,
+    "note": "random full states; duplicates would indicate gross many-to-one collapse"
+  },
+  "fixed_points": {
+    "all_zero_is_fixed_T_round": true,
+    "all_zero_is_fixed_one_round": true,
+    "b_is_quadratic_residue": false,
+    "note": "constant states v with v==0 or v^2==b are fixed; lap vanishes on constants",
+    "num_constant_fixed_points": 1
+  },
+  "jacobian_rank": {
+    "frac_full_rank": 1.0,
+    "frac_rank_deficient": 0.0,
+    "full_rank_value": 256,
+    "n": 63,
+    "rank_deficit_max": 0,
+    "rank_max": 256,
+    "rank_mean": 256.0,
+    "rank_min": 256
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "params_v0": {
+    "D": 5,
+    "G": 7,
+    "N": 16,
+    "T": 32,
+    "a": 3,
+    "b": 1431655765,
+    "p": 2147483647
+  },
+  "phase": "8B_state_map",
+  "runtime_s": 14.72,
+  "seed": 80020,
+  "toy_exhaustive": [
+    {
+      "cycle_length_distribution": {
+        "1": 1,
+        "2": 1
+      },
+      "image_fraction": 0.6,
+      "image_size": 3,
+      "injective": false,
+      "max_preimage_multiplicity": 3,
+      "n_states": 5,
+      "neighbor_degeneracy": "N=1: all 4 neighbors are the same cell; diffusion term vanishes (lap=0).",
+      "num_cycles": 2,
+      "num_fixed_points": 1,
+      "num_functional_components": 2,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 1,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "p": 5
+      },
+      "preimage_count_distribution": {
+        "0": 2,
+        "1": 2,
+        "3": 1
+      },
+      "surjective": false,
+      "unreachable_outputs": 2
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 3
+      },
+      "image_fraction": 0.7142857142857143,
+      "image_size": 5,
+      "injective": false,
+      "max_preimage_multiplicity": 3,
+      "n_states": 7,
+      "neighbor_degeneracy": "N=1: all 4 neighbors are the same cell; diffusion term vanishes (lap=0).",
+      "num_cycles": 3,
+      "num_fixed_points": 3,
+      "num_functional_components": 3,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 1,
+        "T": 1,
+        "a": 3,
+        "b": 4,
+        "p": 7
+      },
+      "preimage_count_distribution": {
+        "0": 2,
+        "1": 4,
+        "3": 1
+      },
+      "surjective": false,
+      "unreachable_outputs": 2
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 1,
+        "2": 1,
+        "4": 2
+      },
+      "image_fraction": 1.0,
+      "image_size": 11,
+      "injective": true,
+      "max_preimage_multiplicity": 1,
+      "n_states": 11,
+      "neighbor_degeneracy": "N=1: all 4 neighbors are the same cell; diffusion term vanishes (lap=0).",
+      "num_cycles": 4,
+      "num_fixed_points": 1,
+      "num_functional_components": 4,
+      "one_round_is": "bijection",
+      "params": {
+        "D": 5,
+        "N": 1,
+        "T": 1,
+        "a": 3,
+        "b": 7,
+        "p": 11
+      },
+      "preimage_count_distribution": {
+        "1": 11
+      },
+      "surjective": true,
+      "unreachable_outputs": 0
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 1,
+        "2": 2
+      },
+      "image_fraction": 0.6923076923076923,
+      "image_size": 9,
+      "injective": false,
+      "max_preimage_multiplicity": 3,
+      "n_states": 13,
+      "neighbor_degeneracy": "N=1: all 4 neighbors are the same cell; diffusion term vanishes (lap=0).",
+      "num_cycles": 3,
+      "num_fixed_points": 1,
+      "num_functional_components": 3,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 1,
+        "T": 1,
+        "a": 3,
+        "b": 8,
+        "p": 13
+      },
+      "preimage_count_distribution": {
+        "0": 4,
+        "1": 6,
+        "2": 2,
+        "3": 1
+      },
+      "surjective": false,
+      "unreachable_outputs": 4
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 1,
+        "2": 40
+      },
+      "image_fraction": 0.1296,
+      "image_size": 81,
+      "injective": false,
+      "max_preimage_multiplicity": 81,
+      "n_states": 625,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 41,
+      "num_fixed_points": 1,
+      "num_functional_components": 41,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "p": 5
+      },
+      "preimage_count_distribution": {
+        "0": 544,
+        "1": 16,
+        "27": 8,
+        "3": 32,
+        "81": 1,
+        "9": 24
+      },
+      "surjective": false,
+      "unreachable_outputs": 544
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 11,
+        "2": 12,
+        "4": 4
+      },
+      "image_fraction": 0.453561016243232,
+      "image_size": 1089,
+      "injective": false,
+      "max_preimage_multiplicity": 11,
+      "n_states": 2401,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 27,
+      "num_fixed_points": 11,
+      "num_functional_components": 27,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 4,
+        "p": 7
+      },
+      "preimage_count_distribution": {
+        "0": 1312,
+        "1": 600,
+        "10": 4,
+        "11": 1,
+        "2": 72,
+        "3": 292,
+        "4": 28,
+        "5": 34,
+        "6": 6,
+        "7": 24,
+        "8": 8,
+        "9": 20
+      },
+      "surjective": false,
+      "unreachable_outputs": 1312
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 11,
+        "2": 26,
+        "4": 4,
+        "8": 4
+      },
+      "image_fraction": 0.5610955535824056,
+      "image_size": 8215,
+      "injective": false,
+      "max_preimage_multiplicity": 12,
+      "n_states": 14641,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 45,
+      "num_fixed_points": 11,
+      "num_functional_components": 45,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 7,
+        "p": 11
+      },
+      "preimage_count_distribution": {
+        "0": 6426,
+        "1": 4464,
+        "11": 1,
+        "12": 2,
+        "2": 2230,
+        "3": 876,
+        "4": 344,
+        "5": 180,
+        "6": 72,
+        "7": 32,
+        "8": 4,
+        "9": 10
+      },
+      "surjective": false,
+      "unreachable_outputs": 6426
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 11,
+        "14": 8,
+        "16": 12,
+        "2": 11,
+        "22": 4,
+        "4": 12,
+        "6": 12,
+        "8": 2
+      },
+      "image_fraction": 0.6043555897902735,
+      "image_size": 17261,
+      "injective": false,
+      "max_preimage_multiplicity": 11,
+      "n_states": 28561,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 72,
+      "num_fixed_points": 11,
+      "num_functional_components": 72,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 8,
+        "p": 13
+      },
+      "preimage_count_distribution": {
+        "0": 11300,
+        "1": 10216,
+        "11": 2,
+        "2": 4396,
+        "3": 1633,
+        "4": 634,
+        "5": 242,
+        "6": 108,
+        "7": 8,
+        "8": 16,
+        "9": 6
+      },
+      "surjective": false,
+      "unreachable_outputs": 11300
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 51
+      },
+      "image_fraction": 0.12203248646397334,
+      "image_size": 293,
+      "injective": false,
+      "max_preimage_multiplicity": 70,
+      "n_states": 2401,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 51,
+      "num_fixed_points": 51,
+      "num_functional_components": 51,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 4,
+        "a": 3,
+        "b": 4,
+        "p": 7
+      },
+      "preimage_count_distribution": {
+        "0": 2108,
+        "1": 64,
+        "12": 8,
+        "14": 4,
+        "15": 4,
+        "18": 4,
+        "2": 56,
+        "20": 4,
+        "21": 4,
+        "22": 4,
+        "31": 2,
+        "4": 56,
+        "40": 8,
+        "48": 2,
+        "5": 8,
+        "57": 2,
+        "6": 16,
+        "61": 4,
+        "65": 1,
+        "7": 32,
+        "70": 2,
+        "8": 8
+      },
+      "surjective": false,
+      "unreachable_outputs": 2108
+    },
+    {
+      "cycle_length_distribution": {
+        "1": 79,
+        "2": 16
+      },
+      "image_fraction": 0.18885322040844205,
+      "image_size": 2765,
+      "injective": false,
+      "max_preimage_multiplicity": 291,
+      "n_states": 14641,
+      "neighbor_degeneracy": "N=2: roll(+1)==roll(-1); each axis contributes the other cell twice.",
+      "num_cycles": 95,
+      "num_fixed_points": 79,
+      "num_functional_components": 95,
+      "one_round_is": "neither injective nor surjective",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 4,
+        "a": 3,
+        "b": 7,
+        "p": 11
+      },
+      "preimage_count_distribution": {
+        "0": 11876,
+        "1": 628,
+        "10": 16,
+        "11": 24,
+        "12": 48,
+        "13": 40,
+        "14": 20,
+        "15": 16,
+        "16": 18,
+        "17": 12,
+        "18": 24,
+        "2": 600,
+        "20": 4,
+        "24": 16,
+        "25": 2,
+        "26": 4,
+        "28": 16,
+        "29": 12,
+        "291": 1,
+        "3": 400,
+        "30": 4,
+        "31": 4,
+        "33": 12,
+        "34": 4,
+        "36": 8,
+        "37": 2,
+        "38": 8,
+        "4": 268,
+        "41": 2,
+        "43": 6,
+        "44": 4,
+        "47": 2,
+        "5": 218,
+        "57": 4,
+        "6": 152,
+        "7": 78,
+        "8": 60,
+        "87": 4,
+        "9": 24
+      },
+      "surjective": false,
+      "unreachable_outputs": 11876
+    }
+  ]
+}

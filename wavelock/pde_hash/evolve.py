@@ -1,9 +1,14 @@
-"""Phi: the finite-field Allen-Cahn reaction-diffusion PDE round (reference).
+"""The finite-field state transformation round (reference).
 
-Pure-Python, exact modular integer arithmetic over F_p (p = 2**31 - 1). This is
-the readable reference; ``optimized.py`` reimplements the same map in NumPy
-without sharing this code, and Phase-7 parity tests require byte-identical
-agreement including intermediate-round snapshots.
+A single round of the polynomial dynamical system derived from the algebraic
+form of the Allen-Cahn reaction-diffusion equation. Pure-Python, exact modular
+integer arithmetic over F_p (p = 2**31 - 1). This is the readable reference;
+``optimized.py`` reimplements the same map in NumPy without sharing this code,
+and parity tests require byte-identical agreement including intermediate-round
+snapshots.
+
+This map is NOT known to be bijective; ``evolve_T`` is a T-round state
+transformation, not a proven permutation.
 
 One round (spec §1.1, §5), Jacobi update from pre-update psi only:
 
@@ -70,6 +75,10 @@ def evolve(state: PDEState, rounds: int) -> PDEState:
     return PDEState(cells)
 
 
-def permute(state: PDEState) -> PDEState:
-    """Apply exactly Phi_P^T (T rounds) — one permutation call."""
+def evolve_T(state: PDEState) -> PDEState:
+    """Apply exactly the T-round state transformation (T rounds, spec §7).
+
+    Named ``evolve_T`` rather than ``permute`` because the map is not known to
+    be bijective.
+    """
     return evolve(state, spec.T)
