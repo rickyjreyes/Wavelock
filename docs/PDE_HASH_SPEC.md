@@ -445,5 +445,26 @@ are normative for v0; any spec/constant change that alters them is a version
 bump.
 
 ```
-(to be populated by the reference implementation in the Phase-6 commit)
+IV cells:      IV[0,0]=88   IV[0,1]=99   IV[15,15]=301
+
+Final digests (32 bytes, hex):
+  H_PDE("")                = d12c29be1429775e6dcc9ff3e29d9bca96865c0179a99b9bcee58581bf118820
+  H_PDE(0x00)              = 170c1a577110c752fd581d3e1dc025397bf69d3a545f6d7f11a8626776511f1d
+  H_PDE(0x01)              = 372d58536ab6d0ee1c032fcef516114ae735acce0dc9fa992aeeb6febb758d3b
+  H_PDE(0xff)              = d3ed7292fc678f5fbd28099e3125166352d9d4aa04f7b655ffaaa536bbed2db3
+  H_PDE("abc")             = e6231beb61a76e304a5292473a955a970b74b25f55027ca6f0cc34a1cd21985d
+  H_PDE("WaveLock")        = 5109e4c0d3effe338c4b1b35555aac8db35f2754753afea961cd768a04937cb2
+  H_PDE(0x00 * 192)        = 0479a893bc5a2be6c7e0afcae70f57f48f2fa75cde6a51fdef612b83b27b9a51
+  H_PDE(0x00 * 193)        = 718b717932b9e4b4d320198001afd4907c6abeaedc50a9b24e32623bfeb0fba3
+
+Intermediate snapshots for m="abc" (256 BE-uint32 = 1024 bytes; first 16 bytes shown):
+  S_iv[:16]       = 00000058 00000063 00000079 00000069
+  S_absorb0[:16]  = 006362b9 00000064 00000079 00000069
+  S_perm0[:16]    = 594910ca 2154623a 6a67148e 2b42d20c
+  S_final[:16]    = 7846bc94 6ce90edf 4d73aa4b 25b5ac8c
+  S_squeeze1[:16] = 0d6becc3 7c5d2227 1a3109df 2f5c9023
 ```
+
+Full 1024-byte intermediate snapshots and all final vectors are pinned in
+`pde_audit/vectors.json`. Both the pure-Python reference and the NumPy
+implementation reproduce every value above byte-for-byte.
