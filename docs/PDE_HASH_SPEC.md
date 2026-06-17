@@ -97,8 +97,28 @@ tag = b"WaveLock-PDE-256-v0"                       # 19 bytes
 IV[i,j] = ( 1 + i*N + j + tag[(i*N + j) mod len(tag)] ) mod p
 ```
 
-Every IV cell is a small, explicitly computable constant. (Test vectors below
-pin `IV[0,0]`, `IV[0,1]`, `IV[N-1,N-1]`.)
+Every IV cell is a small, explicitly computable constant. `tag[k]` is the
+unsigned byte value (0–255) at position `k` of the ASCII bytes
+`b"WaveLock-PDE-256-v0"`. (Test vectors in §9 pin `IV[0,0]`, `IV[0,1]`,
+`IV[N-1,N-1]`.)
+
+### 2.2 Cell regions and named cells (normative)
+
+The flat (row-major) index of lattice cell `(i,j)` is `idx = i·N + j`, with
+`i,j ∈ {0,…,N−1}` and `N = 16`, so flat indices run `0…255`. The regions are
+fixed by flat index:
+
+| Name | Flat indices | Purpose |
+|---|---|---|
+| **rate** `R` | `0 … 63` | message absorption (§3.4) |
+| **capacity** `C` | `64 … 255` | hidden state; never written by message absorption |
+| `cap0` | `64` | block-counter injection (§3.5) |
+| `cap1` | `65` | finalization domain injection (§3.5) |
+
+These are the only named cells. `cap0` and `cap1` are the first two capacity
+cells; the absorption write of §3.4 touches only rate cells `0…63`, so the
+counter (`cap0`) and finalization (`cap1`) injections never collide with a
+message write.
 
 ---
 
@@ -140,37 +160,54 @@ produce distinct padded streams, and the empty message has a valid, defined
 padded image (one `0x01` byte → pad to a block → length block). Empty-input
 output is therefore well defined.
 
-### 3.4 Absorption schedule (sponge)
+### 3.4 Block construction and absorption schedule (sponge)
+
+After padding (§3.3), the padded byte stream has length `192·B` for some
+`B ≥ 2`. It is cut into `B` consecutive **byte-blocks** of 192 bytes each, in
+order. Block `k` (`k = 0…B−1`) is converted to 64 field elements by §3.2
+packing: element `c` of block `k` (`c = 0…63`) is
+`elem(P[192k+3c], P[192k+3c+1], P[192k+3c+2])`, where `P` is the padded stream
+and `P[·]` is an unsigned byte. The **last block** (`k = B−1`) is exactly the
+dedicated length block of §3.3 step 3.
 
 ```
-S ← IV
-for k, block in enumerate(blocks):              # blocks are 64 field-elements each
-    for c in 0..63:                             # add into the 64 rate cells
-        S[rate[c]] = ( S[rate[c]] + block[c] ) mod p
-    S = inject_counter(S, k)                    # §3.5
-    S = Φ_P^T(S)                                # T PDE rounds
+S ← IV                                          # §2.1
+for k in 0 … B-1:
+    block ← pack_block(P, k)                    # 64 field elements, §3.2
+    for c in 0 … 63:                            # add into the 64 rate cells 0..63
+        S[c] ← ( S[c] + block[c] ) mod p
+    inject_counter(S, k)                        # §3.5 (mutates S[cap0])
+    if k == B-1:                                # final/length block only
+        inject_finalize(S)                      # §3.5 (mutates S[cap1])
+    S ← Φ_P^T(S)                                # T PDE rounds, §1.1 + §5
 return S
 ```
 
 Every message bit influences `S`: each bit sits in a distinct 24-bit field
 element added into a rate cell, then `Φ` diffuses it across the lattice over
 `T` rounds before the next block. Absorption is **additive into existing
-cells**, not a copy-and-truncate of the first bytes — all blocks are processed.
+cells**, not a copy-and-truncate of the first bytes — all `B` blocks are
+processed, and the final `Φ_P^T` runs after the length block so the length and
+domain constant fully diffuse before squeezing.
 
-### 3.5 Counter injection (order matters, repeated blocks don't cancel)
+### 3.5 Counter and finalization injection (order/repeat/domain)
 
-Before each `Φ` call, the block index `k` is injected into a fixed **capacity**
-cell, multiplicatively-then-additively so that identical blocks at different
-positions diverge and a repeated block cannot additively cancel:
+Both injections are exact modular additions into named capacity cells (§2.2):
 
 ```
-inject_counter(S, k):  S[cap0] = ( S[cap0] + (k+1)·g ) mod p
+inject_counter(S, k):   S[cap0] ← ( S[cap0] + (k + 1)·g ) mod p     # cap0 = 64,  g = 7
+inject_finalize(S):     S[cap1] ← ( S[cap1] + d ) mod p             # cap1 = 65,  d = D_TAG
 ```
 
-with fixed generator `g = 7` and `cap0` = first capacity cell (index 64). The
-final length block additionally adds a domain constant `d = 0x57 4C 50 44`
-(`"WLPD"` as a 32-bit int, reduced mod p) into `cap1`, giving domain separation
-without any hash.
+- `inject_counter` runs once per block, with the 0-based block index `k`, so an
+  identical byte-block at a different position injects a different value into
+  `cap0`; a repeated block therefore cannot additively cancel and block order is
+  significant.
+- `inject_finalize` runs **only** on the last block (`k = B−1`, the length
+  block), adding the fixed domain constant `D_TAG` (§7) into `cap1`. This is the
+  sole domain-separation mechanism and uses no conventional hash.
+- `g·(k+1)` and `d` are reduced mod `p`; with `g = 7` and the maximum practical
+  `k`, the product is computed as `((k+1) % p) * g % p`.
 
 ---
 
@@ -181,21 +218,44 @@ canonical cell-pair comparison ("sign of a field difference"), interleaving
 further PDE evolution so the squeeze is itself part of the dynamics:
 
 ```
-out_bits = []
-while len(out_bits) < 256:
-    for t in 0..63:                                  # 64 bits per squeeze round
-        a_cell, b_cell = SQUEEZE_PAIRS[t]            # fixed disjoint cell pairs
-        out_bits.append( 1 if S[a_cell] > S[b_cell] else 0 )
-    if len(out_bits) < 256:
-        S = Φ_P^T(S)                                 # re-permute between squeeze blocks
-return pack_msb_first(out_bits[:256])
+out_bits = []                                        # list of 0/1 ints, append order = bit order
+while len(out_bits) < output_bits:                   # output_bits = 256 for v0
+    for t in 0 … 63:                                 # 64 bits per squeeze round
+        a_cell, b_cell = SQUEEZE_PAIRS[t]            # fixed disjoint cell-index pair
+        out_bits.append( 1 if S[a_cell] > S[b_cell] else 0 )   # strict >; tie ⇒ 0
+    if len(out_bits) < output_bits:
+        S ← Φ_P^T(S)                                 # re-permute between squeeze rounds
+return pack_msb_first(out_bits[:output_bits])
 ```
 
-`SQUEEZE_PAIRS` is a fixed list of 64 disjoint `(a_cell, b_cell)` index pairs
-covering all 128 cells of two designated halves (specified as a constant table
-in `spec.py`). With 64 bits per squeeze round and 256 output bits, exactly 4
-squeeze rounds run (3 intermediate `Φ_P^T` re-permutations). Output bytes are
-packed MSB-first; endianness is fixed (see §6).
+**`SQUEEZE_PAIRS` (normative).** A fixed list of 64 disjoint index pairs:
+
+```
+SQUEEZE_PAIRS[t] = (t, t + 128)        for t = 0 … 63
+```
+
+i.e. cell `t` (rate region, flat indices `0…63`) is compared against cell
+`t+128` (capacity region, flat indices `128…191`). All 128 referenced cells are
+distinct, so each squeeze round reads 64 disjoint comparisons → 64 bits. The
+comparison is the integer order of the two residues in `[0, p)`; a tie
+(`S[a]==S[b]`) yields `0`.
+
+**Bit count and rounds.** With 64 bits per squeeze round and `output_bits =
+256`, exactly **4** squeeze rounds run, with **3** intermediate `Φ_P^T`
+re-permutations (the loop re-permutes only when more bits are still needed, so
+no `Φ` runs after the final round's bits are produced). `output_bits` must be a
+positive multiple of 64 for v0.
+
+**`pack_msb_first` (normative).** The `output_bits` bits are packed into
+`output_bits/8` bytes, MSB-first: `out_bits[0]` is bit 7 (the most significant
+bit) of byte 0, `out_bits[7]` is bit 0 of byte 0, `out_bits[8]` is bit 7 of
+byte 1, and so on:
+
+```
+output_bytes[i] = Σ_{r=0}^{7}  out_bits[8·i + r] · 2^(7−r)
+```
+
+For `output_bits = 256` this yields the 32-byte digest.
 
 **Why comparison, not parity/truncation.** Comparing two field elements in
 `[0, p)` yields a near-balanced bit when values are well-mixed and avoids the
@@ -206,23 +266,43 @@ Phase 5 / `pde_audit/`.
 
 ---
 
-## 5. Exact update order (normative)
+## 5. Modular arithmetic semantics and exact update order (normative)
 
-For determinism, the order is fixed and MUST be followed by every
+**Modular semantics.** Every value held in any cell, and every intermediate
+named below, is the unique mathematical residue in `[0, p)`. "`x mod p`" means
+that residue. Subtraction is computed as `(x + (p − (y mod p))) mod p` so no
+intermediate is ever negative. Multiplication of two residues is `< 2⁶²` and is
+reduced immediately; cubing is two reduce-after-multiply steps
+(`t ← ψ·ψ mod p`, `R ← a·(ψ·((b + (p − t)) mod p) mod p) mod p`). An
+implementation MAY use Mersenne folding (`x = (x & p) + (x >> 31)`, repeated
+until `< 2³¹`, then one conditional subtract) **iff** it yields this exact
+residue; the residue, not the fold, is normative.
+
+**Per-cell round (normative form).** For every cell `(i,j)`, using only
+pre-update values `ψ`:
+
+```
+t       = ψ[i,j]·ψ[i,j]                     mod p
+react   = a · ( ψ[i,j] · ((b + (p − t)) mod p) mod p )   mod p
+lap     = ( ψ[(i+1)%N, j] + ψ[(i−1)%N, j]
+          + ψ[i, (j+1)%N] + ψ[i, (j−1)%N]
+          + (p − 4)·ψ[i,j] )                mod p
+ψ'[i,j] = ( ψ[i,j] + (D·lap mod p) + react ) mod p
+```
+
+**Update order.** The order is fixed and MUST be followed by every
 implementation:
 
-1. Compute `ψ²` for all cells (reduced), then `R(ψ)` for all cells, using the
-   **pre-update** `ψ` (Jacobi, not Gauss–Seidel — all cells updated from the
-   same old state).
-2. Compute `L(ψ)` for all cells using the **pre-update** `ψ` and the toroidal
-   neighbor rule of §1.1.
-3. Form `ψ' = (ψ + D·L + R) mod p` for all cells simultaneously.
-4. Rate cells are written by absorption (§3.4) *before* step 1 of the first
-   round in each permutation call; counter injection (§3.5) happens between the
-   absorption write and the first `Φ` round.
+1. For all cells, compute `react` and `lap` from the **pre-update** `ψ` only
+   (Jacobi, not Gauss–Seidel — no cell sees another cell's new value).
+2. Form `ψ'` for all cells simultaneously, then replace `ψ ← ψ'`.
+3. One execution of steps 1–2 is one PDE round; `Φ_P^T` applies it `T` times.
+4. Within a permutation call, rate cells are written by absorption (§3.4)
+   *before* the first round; counter/finalization injection (§3.5) happens
+   between the absorption write and the first round.
 
 Neighbor indexing: `(i±1) mod N`, `(j±1) mod N`. Row-major flat index of cell
-`(i,j)` is `i*N + j`.
+`(i,j)` is `i·N + j`.
 
 ---
 
@@ -256,15 +336,18 @@ All constants are fixed small integers chosen for the field, **not** derived
 from any digest:
 
 ```
-D = 5          # diffusion coefficient
-a = 3          # reaction gain
-b = 1431655765 # ≈ (p+1)/3·2 ... a fixed mid-field bistable offset, in [0,p)
-g = 7          # counter generator
-d = 0x574C5044 # "WLPD" domain constant (reduced mod p)
-T = 32         # rounds per permutation (provisional)
+p     = 2147483647   # 2^31 − 1, the field modulus
+N     = 16           # lattice side (256 cells)
+D     = 5            # diffusion coefficient
+a     = 3            # reaction gain
+b     = 1431655765   # fixed mid-field bistable offset, in [0, p)
+g     = 7            # counter generator (inject_counter)
+D_TAG = 1464619076   # 0x574C5044 = ASCII "WLPD"; already < p, no reduction needed
+T     = 32           # PDE rounds per permutation Φ_P^T (provisional)
 ```
 
-`D, a, b, g, d, T` are provisional v0 values. The audit (`pde_audit/`) will
+`D_TAG` is the constant `d` referenced in §3.5. `D, a, b, g, D_TAG, T` are
+provisional v0 values. The audit (`pde_audit/`) will
 sweep them and record every regime tried, including failures (Phase 8/10). Any
 change to these constants bumps the version (`v0.1`, …) and regenerates test
 vectors.
@@ -281,18 +364,38 @@ defined in v0.
 
 ---
 
-## 9. Deterministic test vectors (to be pinned by the reference impl)
+## 9. Deterministic test vectors
 
-The reference implementation will emit and freeze the following (placeholders
-filled in when `wavelock/pde_hash/reference.py` lands; committed as
-`pde_audit/vectors.json`):
+The reference implementation pins exact values for all of the following into
+`pde_audit/vectors.json` (and §13 of this document is updated with the same
+values once `wavelock/pde_hash/reference.py` lands). Every vector is a fixed
+function of this spec alone and MUST match byte-for-byte between the pure-Python
+reference and the NumPy implementation.
 
-- `IV[0,0]`, `IV[0,1]`, `IV[15,15]` — IV sanity.
+**State-snapshot encoding.** A lattice-state snapshot is recorded as the 256
+flat-ordered residues (`idx = i·N + j`, `idx = 0…255`) packed big-endian as 256
+× 4-byte unsigned integers (1024 bytes), then hex-encoded **for the vector file
+only**. (This hex is a faithful serialization of the integer state for test
+bookkeeping; it is *not* part of the primitive and is never fed back into it.)
+
+**Final-output vectors** (`H_PDE(m)` → 32 bytes, hex):
 - `H_PDE(b"")` — empty message.
 - `H_PDE(b"\x00")`, `H_PDE(b"\x01")`, `H_PDE(b"\xff")` — single bytes.
-- `H_PDE(b"abc")`, `H_PDE(b"WaveLock")`.
-- A message exactly one block long (192 bytes) and one byte over (193 bytes).
-- These vectors MUST match between the pure-Python and NumPy implementations.
+- `H_PDE(b"abc")`, `H_PDE(b"WaveLock")` — structured inputs.
+- `H_PDE(192·b"\x00")` (exactly one byte-block of message) and
+  `H_PDE(193·b"\x00")` (one byte into a second block) — padding boundary.
+
+**Intermediate-state vectors** (for `m = b"abc"`, fully reproducible):
+- `IV[0,0]`, `IV[0,1]`, `IV[15,15]` — scalar IV cells.
+- `S_iv` — snapshot of `S` immediately after `S ← IV` (before any absorption).
+- `S_absorb0` — snapshot after block 0's rate write + `inject_counter(·,0)`,
+  **before** the first `Φ` round.
+- `S_perm0` — snapshot after the first `Φ_P^T` (post block 0).
+- `S_final` — snapshot of `S` after the full absorption loop, **before** squeeze.
+- `S_squeeze1` — snapshot after the first intermediate `Φ_P^T` inside squeeze.
+
+These intermediate snapshots let Phase 7 compare the two implementations at
+round granularity (not only final output), catching shared-bug masking.
 
 ---
 
@@ -330,3 +433,17 @@ WaveLock-PDE-256-v0 is an **experimental nonlinear PDE digest candidate** and a
 claim of production suitability**. Any positive statement will be phrased as
 *empirical resistance under the attacks tested* and will distinguish observed
 attack cost from a lower bound and from a proof of one-wayness.
+
+---
+
+## 13. Pinned test vectors (generated)
+
+The exact values below are emitted by `wavelock/pde_hash/reference.py`, verified
+identical from `wavelock/pde_hash/optimized.py`, and mirrored in
+`pde_audit/vectors.json`. They are filled in by the implementation commit and
+are normative for v0; any spec/constant change that alters them is a version
+bump.
+
+```
+(to be populated by the reference implementation in the Phase-6 commit)
+```
