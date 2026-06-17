@@ -49,10 +49,10 @@ def linear_ca(m: bytes, steps: int = 64) -> bytes:
 
 
 def mod_linear(m: bytes) -> bytes:
-    words = np.zeros(8, dtype=np.uint64)
+    words = np.zeros(4, dtype=np.uint64)
     arr = np.frombuffer(_b256_pad(m), dtype=np.uint8)
     for i, byte in enumerate(arr):
-        words[i % 8] = (words[i % 8] * np.uint64(131) + np.uint64(int(byte))) % np.uint64(4294967291)
+        words[i % 4] = (words[i % 4] * np.uint64(131) + np.uint64(int(byte))) % np.uint64(4294967291)
     return words.astype("<u8").tobytes()
 
 
