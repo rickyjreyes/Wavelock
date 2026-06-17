@@ -242,6 +242,38 @@ def mod_rank(matrix: np.ndarray, p: int) -> int:
     return rank
 
 
+def mod_rank_np(matrix: np.ndarray, p: int) -> int:
+    """Rank over F_p via NumPy int64 Gaussian elimination (p prime, p < 2**31).
+
+    Much faster than mod_rank for large matrices. Intermediates stay < 2**62
+    (factor*row with factor,row < p), so int64 is exact.
+    """
+    M = (np.asarray(matrix, dtype=np.int64) % p).copy()
+    rows, cols = M.shape
+    rank = 0
+    pr = 0
+    for col in range(cols):
+        # pivot: first nonzero at/below pr
+        nz = np.nonzero(M[pr:, col] % p)[0]
+        if nz.size == 0:
+            continue
+        piv = pr + int(nz[0])
+        if piv != pr:
+            M[[pr, piv]] = M[[piv, pr]]
+        inv = pow(int(M[pr, col]), p - 2, p)
+        M[pr] = (M[pr] * inv) % p
+        factors = M[:, col].copy()
+        factors[pr] = 0
+        mask = factors != 0
+        if mask.any():
+            M[mask] = (M[mask] - np.outer(factors[mask], M[pr])) % p
+        pr += 1
+        rank += 1
+        if pr == rows:
+            break
+    return rank
+
+
 def hamming_bytes(a: bytes, b: bytes) -> int:
     return sum(bin(x ^ y).count("1") for x, y in zip(a, b))
 
