@@ -143,3 +143,142 @@ annealing / genetic preimage, second-preimage, state-recovery underdetermination
   attempted. This is a limitation, **not** a "pass."
 
 <!-- 8G, 8I, Part III filled below after their runs complete -->
+
+### 8G — Preimage / second-preimage (artifact: `phase8g_preimage.json`)
+- **Brute-force truncated preimage at normative T=32 is ~generic:** n=8 → 120
+  evals (2⁸=256), n=12 → 12 642 (2¹²=4096), n=16 → 47 381 (2¹⁶=65 536). Within
+  the tested range (≤16 bits) cost tracks 2ⁿ.
+- **Reduced rounds are weak:** at T=4, 12-bit preimages are found in ~3 evals
+  and 16-bit in 313 (≪ 2ⁿ) — residual output bias from under-diffusion (cf. 8A).
+  T=8 shows mild residual bias at small truncations (n=12 → 428). This is a
+  reduced-round result; it does not affect T=32 in the tested range.
+- **Local search does not beat blind sampling:** against a 32-bit target (T=8),
+  best Hamming distances were hill-climb 6, simulated-annealing 6, genetic 5,
+  **random baseline 5** — the truncated objective has no exploitable gradient.
+- **Second-preimage** (16-bit, T=8) found in 145 760 evals (~2× generic);
+  20-bit not found within 2·10⁵ budget.
+- **State recovery is hugely underdetermined:** 0 of 4 000 random states match a
+  fixed pattern of the 64 squeeze-comparison bits (the squeeze exposes 64 bits
+  of a ~7 936-bit state).
+- **Meet-in-the-middle** was not implemented: the sponge-like construction has
+  no clean known-plaintext state split (the message writes only 64 rate cells
+  while the hard step is inverting `evolve_T`), so a standard MITM is not
+  formulable here; documented as such rather than claimed passed.
+
+### 8I — Parameter study (artifact: `phase8i_parameter_sweep.json`)
+- Predeclared 19-regime grid (one axis at a time around v0). **Every regime with
+  T ≥ 8** shows avalanche HD ≈ 127–129, low bias, **Jacobian full-rank fraction
+  1.00**, no short cycles, and 16-bit collision ratios scattered around 1
+  (generic). **T = 4 is under-diffused** (HD 113.9, higher bias, collision ratio
+  0.26). Behaviour is robust across the tested `D ∈ {1,2,3,5,7,11}`,
+  `a ∈ {1,2,3,5,7}`, `b ∈ {1, p/4, p/3, p/2, 2p/3}`.
+- **No regime collapsed or cycled.** v0 sits in a stable region with margin
+  above the T≈8 diffusion threshold. (Per the mandate, v0 is unchanged; any
+  future tuning would be a new version with new vectors.)
+
+### Part III — Baselines (artifact: `partIII_baselines.json`)
+| function | avalanche HD | max bit bias | hashes/s |
+|---|---|---|---|
+| truncation | 0.8 | 0.090 | 3.9M |
+| xor_fold | 1.0 | 0.097 | 59k |
+| linear_ca | 2.0 | 0.057 | 949 |
+| mod_linear | 15.5 | **0.500** | 3.1k |
+| pde_T1 (reduced) | 20.0 | 0.494 | 2.3k |
+| **pde_T32 (candidate)** | **128.0 ± 8.0** | **0.029** | **97** |
+| sha256 (ext ref) | 128.1 ± 8.0 | 0.024 | 1.57M |
+| blake2b (ext ref) | 127.1 ± 8.0 | 0.035 | 1.39M |
+
+The weak controls all fail avalanche/bias badly. The candidate matches SHA-256/
+BLAKE2b on these *statistical surrogates* — **which is NOT evidence of equivalent
+security** — but is **~16 000× slower** than SHA-256 in this unoptimized NumPy
+implementation.
+
+## 10. Limitations
+
+- **Scale of testing.** Collisions were measured only on **truncated** outputs
+  (≤28 bits at T=32); preimages only to ≤16-bit truncation at T=32. Full
+  128-/256-bit behaviour is **extrapolated, not observed**.
+- **Algebraic tooling.** Only z3 (weak at nonlinear integer arithmetic) was
+  available; **no Gröbner-basis / dedicated F_p solver**. Algebraic inversion
+  was demonstrated to fail beyond the tiniest toys, but a stronger solver could
+  reach further; full N=16 algebraic inversion was not attempted.
+- **Toy degeneracy.** Toy collapse evidence is dominated by N=1/N=2 neighbor
+  degeneracy and is **not extrapolated** to N=16.
+- **Local/heuristic search** explored a tiny fraction of the message space.
+- **Statistical power.** Distinguisher/squeeze tests used thousands of samples;
+  rare biases below that resolution would be missed.
+- **Performance.** The reference/optimized implementations are unoptimized
+  Python/NumPy; throughput (97 h/s) is far below conventional hashes.
+- **No proof.** Nothing here bounds any attack from below.
+
+## 11. Runtime and hardware
+
+Linux x86_64, 4 vCPU, Python 3.11.15 / NumPy 2.4.6 / scikit-learn 1.9.0 /
+z3 4.16.0. Approx. wall-clock: 8A 190 s, 8B 15 s, 8C 84 s, 8D 194 s, 8E 93 s,
+8F 722 s, 8G 2 311 s, 8H 25 s, 8I 264 s, baselines 48 s. Cross-impl 10k parity
+(post-corrections) 610 s.
+
+## 12. Reproducibility commands
+
+```bash
+python -m pde_audit.avalanche          # 8A   (seed 80010)
+python -m pde_audit.state_map          # 8B   (seed 80020)
+python -m pde_audit.squeeze_analysis   # 8C   (seed 80030)
+python -m pde_audit.distinguishers     # 8D   (seed 80040)
+python -m pde_audit.symmetry_attacks   # 8E   (seed 80050)
+python -m pde_audit.collision_scaling  # 8F   (seed 80060)
+python -m pde_audit.preimage_attacks   # 8G   (seed 80070)
+python -m pde_audit.algebraic_analysis # 8H   (seed 80080)
+python -m pde_audit.parameter_sweep    # 8I   (seed 80100)
+python -m pde_audit.baselines          # III  (seed 80090)
+python -m pde_audit.run_phase8         # all + artifacts/INDEX.json
+python -m pytest pde_audit/ -c pde_audit/pytest.ini -m "not slow"
+```
+
+## 13. Raw artifact index
+
+`pde_audit/artifacts/`: `phase8a_avalanche.json`, `phase8b_state_map.json`,
+`phase8c_squeeze.json`, `phase8d_distinguishers.json`, `phase8e_symmetry.json`,
+`phase8f_collision_scaling.json`, `phase8g_preimage.json`,
+`phase8h_algebraic.json`, `phase8i_parameter_sweep.json`,
+`partIII_baselines.json`, `INDEX.json`. Deterministic vectors:
+`pde_audit/vectors.json`.
+
+## 14. Verdict
+
+### Unresolved experimental candidate
+
+Across a broad adversarial suite, **no practical structural attack succeeded
+against the normative T = 32 primitive**: avalanche is full (mean HD 127.9), the
+squeeze is unbiased (max |z| 2.97, zero ties), no classifier distinguished
+outputs from uniform or recovered input properties (after correcting a
+train/test-leakage artifact), lattice symmetry produced no usable collision,
+truncated collisions and preimages tracked generic (birthday / 2ⁿ) cost, the
+one-round Jacobian was full-rank everywhere sampled with no short cycles, the
+map has no affine relations, and SMT inversion failed beyond the tiniest toys.
+
+This is **not** a security claim. The evidence is broad in category but
+**shallow in scale** (truncated outputs only; toy algebraic systems only; no
+Gröbner tool), and meaningful open items remain — the **all-zero fixed point**,
+the **strong many-to-one collapse of toy systems** (not extrapolated), the
+**reduced-round bias** at T ≤ 8, and **~16 000× slower** throughput than
+SHA-256. No security proof or lower bound exists. Per the conservative rubric,
+the absence of a break in finite testing supports at most
+**Unresolved experimental candidate** — not "Promising".
+
+> **Observed attack cost is not a lower bound and is not a proof of one-wayness,
+> collision resistance, or cryptographic security.**
+
+## 15. On Design B
+
+Design A reached an honest *unresolved* state with no break, so proceeding to
+**Design B (the exact fixed-point translation of the original curvature-feedback
+dynamics) is warranted — but with two revisions informed by Phase 8**, not
+unchanged: (1) adopt the **exact-integer / finite-field discretization
+discipline** that made Design A bit-reproducible and algebraically analyzable,
+rather than float chaos; (2) **instrument the same audit suite from the start**,
+with special attention to the contraction / fixed-point and singularity risks
+that the curvature feedback (division by ψ, `log ψ²`) is expected to face — the
+all-zero fixed point and toy-collapse mechanisms seen here make state-collapse
+the first thing to measure. Design B is **not** started in this task.
+
