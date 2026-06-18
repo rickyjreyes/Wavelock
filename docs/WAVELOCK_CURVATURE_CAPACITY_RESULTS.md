@@ -33,7 +33,47 @@ restricted-model theorem) and **not** "rejected" (no decisive break was found).
 
 ---
 
-## 20-point final report
+## Phase CC-1 Final Conclusion (2026-06-18)
+
+### Verdict: Experimental (unchanged)
+
+Phase CC-1 deepens and confirms the Phase 1 verdict. Five new modules, six new
+artifacts, 31 additional tests (113 total), and five new documents were added.
+
+**Key Phase CC-1 findings:**
+
+1. **Complete Phase 8J family (47 states)**: All 46 nonzero zero-collapse states
+   (r=1: 8, r=2: 36, r=4: 2) plus the zero fixed point were enumerated, all
+   verified, and all produce **distinct trajectory digests** (47/47, min HD 98).
+   This supersedes the Phase 1 result of 9 representative states (min HD 116).
+
+2. **Cancellation structure proved**: j(u,v) = j(u',v) with u' = −(1+γv)/η − u
+   is a **provable 2-to-1 map** for every (u,v). Confirmed for 500/500 sampled
+   pairs. No digest collision found by this pairing (200 trials; wave evolution
+   breaks the cancellation).
+
+3. **Candidate B identified**: Linear injection (ETA=0) also achieves 47/47
+   separation (min HD 105) and avoids the 2-to-1 weakness. Adopting Candidate B
+   is a spec-level trade-off (less algebraic degree vs no provable 2-to-1 flaw).
+
+4. **Full joint coupled-round non-injectivity confirmed**: At p=3, N=2 (6561
+   joint states): 5562 coupled collisions found. At p=5, N=2 (390,625 states):
+   375,073 coupled collisions. The coupled round is NOT injective on the full
+   joint domain at toy scale. NOT extrapolated to N=16.
+
+5. **No shortcut demonstrated**: Backward computation, MITM, cycle detection,
+   low-degree solve, and 2-to-1 injection exploit — none yielded a practical
+   shortcut. All absences are bounded, not proved.
+
+6. **Protocol defined**: Four prover/verifier protocol variants (A–D) defined
+   and claim-separated: path binding for eigenmode family (confirmed) ≠
+   trajectory uniqueness (unresolved) ≠ hardness (unproved).
+
+**Merge recommendation (Part XII):** See §"PR #19 Merge Recommendation" below.
+
+---
+
+## 25-point final report
 
 **1. Exact statement recovered from the P-vs-NP and curvature work.**
 The repository's "inevitability" material asserts a *constraint claim*: no
@@ -164,7 +204,48 @@ implemented, no practical attack within budgets, curvature metrics defined and
 measured — but **no lower-bound theorem**, and curvature growth is statistical/
 diagnostic, not a proven hardness driver.
 
-**19. Precise security claims that ARE allowed.**
+**19. (Phase CC-1) Complete Phase 8J family and full-family binding.**
+All 47 zero-preimage states enumerated and verified. 47/47 produce distinct
+trajectory digests, min pairwise HD 98 (vs 116 for the 9 representatives in
+Phase 1). This is the strongest separation result to date. Artifact:
+`phase8j_full_collision_family.json`, `full_family_path_binding.json`.
+
+**20. (Phase CC-1) Accumulator algebraic structure.**
+j(u,v) is degree-2 in u; the 2-to-1 pairing j(u,v)=j(u',v) is proved for all
+(u,v) (500/500 confirmed). Degree-growth upper bound: heuristically exceeds p−1
+by round 4 (Fermat caps it; Gröbner result unavailable). No fixed point or
+2-cycle found within budget. No digest collision found by 2-to-1 exploit.
+Documented in `docs/CC_CORE_ACCUMULATOR_ALGEBRA.md`.
+
+**21. (Phase CC-1) Candidate comparison.**
+Candidate B (η=0, linear injection) achieves 47/47 separation (min HD 105) and
+is injective in u for all v with (1+γv)≠0 mod p. Trade-off: lower algebraic
+degree, no 2-to-1 weakness. Adopting Candidate B requires a spec revision.
+
+**22. (Phase CC-1) Full joint coupled-round enumeration.**
+At p=3, N=2 (joint space 6561): 5562 coupled collisions. At p=5, N=2 (390,625):
+375,073 coupled collisions. The coupled round is demonstrably non-injective on
+the full (ψ,C) domain at toy scale. N=2 degeneracy dominates; not extrapolated.
+
+**23. (Phase CC-1) Shortcut computation audit.**
+Six candidate shortcuts (skip wave, backward inversion, MITM, cycle detection,
+low-degree solve, 2-to-1 exploit) audited. None demonstrated. Per-cell scalar
+backward inversion is solvable (quadratic has roots) but requires the coupled
+256-variable system, not attempted. No cycle found in 1000 steps.
+
+**24. (Phase CC-1) Prover/verifier protocol and claim separation.**
+Four protocol variants (A: plain digest, B: trajectory-state, C: prefix-binding,
+D: interactive sketch) defined with explicit soundness/ZK status (all unproved).
+Three claims formally separated: path binding for eigenmode family (confirmed),
+trajectory uniqueness (unresolved), hardness (unproved).
+
+**25. (Phase CC-1) 113 tests, all passing.**
+New: `test_phase_cc1.py` (31 tests). Full suite: 113 tests in <15s. CI updated.
+Artifacts: `phase8j_full_collision_family.json`, `full_family_path_binding.json`,
+`accumulator_algebraic_attacks.json`, `accumulator_comparison.json`,
+`shortcut_computation.json`, `reduced_exhaustive_cc1.json`.
+
+**Precise security claims that ARE allowed.**
 - "Every representative Design A eigenmode collision (terminal wave state 0) maps
   to a *distinct* CC-Core-v0 trajectory digest (verified, enumerated family)."
 - "The wave round inside CC-Core-v0 is byte-identical to the frozen Design A
@@ -177,7 +258,7 @@ diagnostic, not a proven hardness driver.
 - "Curvature magnitude is convention-dependent and is a diagnostic, not an
   invariant."
 
-**20. Precise claims that remain FORBIDDEN.**
+**26. Precise claims that remain FORBIDDEN.**
 - "provably secure" / "collision-resistant" / "one-way" (no proof, no lower bound).
 - "P versus NP proves security" (no such result; the inequality is unproved).
 - "heat makes inversion impossible" (interpretive only; reversible embedding).
@@ -188,24 +269,26 @@ diagnostic, not a proven hardness driver.
 
 ---
 
-## Decision-criteria checklist (Part XIV)
+## Decision-criteria checklist (Phase 1 Part XIV, updated for Phase CC-1)
 
 | Reject if… | Observed? |
 |---|---|
-| simple eigenmodes collapse the *digest* | **No** — separated (9/9). |
-| accumulator permits additive / sign cancellation | **No** found (odd-in-u + position weights); but η·u² gives a per-cell ≤2-to-1 in u (documented; not a digest break). |
-| trajectories merge via a low-degree relation | none found at digest level; toy coupled round has residual (N=2-degenerate) collisions. |
-| curvature growth only visual/statistical | **Yes (diagnostic only)** — this keeps it out of "supported", into "experimental". |
+| simple eigenmodes collapse the *digest* | **No** — separated (47/47, min HD 98). |
+| accumulator permits additive / sign cancellation | **Structural 2-to-1 in u proved** (η·u² term); no digest collision found by this means (200 trials). Documented limitation. |
+| trajectories merge via a low-degree relation | none found at digest level; full joint coupled round has many toy-scale collisions (not extrapolated). |
+| curvature growth only visual/statistical | **Yes (diagnostic only)** — keeps it out of "supported", into "experimental". |
 | no curvature↔attack link | **Yes** — none established. |
-| thermal argument = Landauer only | **Yes** — interpretive; explicitly not used as a proof. |
+| thermal argument = Landauer only | **Yes** — interpretive; not used as a proof. |
 | forward execution exponential | **No** — polynomial. |
-| reduced models reveal easy lifting / broad collapse | partial — toy non-injectivity persists; not extrapolated. |
-| security relies on unproved P-vs-NP | would-be, so **no such claim is made**. |
+| reduced models reveal easy lifting / broad collapse | **Confirmed**: full joint (ψ,C) enumeration at p=3/p=5 finds thousands of coupled collisions. N=2 degenerate; not extrapolated. |
+| security relies on unproved P-vs-NP | **No such claim is made**. |
 
-Two reject-triggers (curvature is statistical-only; no curvature↔attack link)
-are *present*, which is exactly why the verdict is **Experimental** rather than
-conditionally supported — the construction is retained for further study, with no
-security claim.
+Two reject-triggers remain (curvature is statistical-only; no curvature↔attack link).
+Phase CC-1 adds a third finding: **full joint coupled-round collisions at toy scale**
+(not a rejection, because N=2 degeneracy is acknowledged and not extrapolated, but
+it weakens the toy-scale injectivity story from Phase 1's C-fixed-slice result).
+
+The verdict remains **Experimental**.
 
 ## Limitations
 
@@ -213,15 +296,62 @@ security claim.
   truncations; preimage/lower-bound behaviour at 128/256 bits **extrapolated, not
   observed**.
 - No z3 / Gröbner / SAT solver installed → algebraic inversion at N=16 untested.
-- Coupled-round injectivity unresolved; toy evidence is N=2-degenerate.
+- Coupled-round injectivity unresolved; full joint toy enumeration shows collisions;
+  not extrapolated to N=16.
 - Curvature functionals are lifting-convention dependent.
-- Unoptimized implementation (49 h/s).
+- Unoptimized implementation (~40 digests/s for trajectory_digest).
 - **No proof. Nothing here bounds any attack from below.**
+- η·u² injection is a provable 2-to-1 weakness; Candidate B avoids it but has
+  not been formally analyzed at the same depth as Candidate A.
+
+## PR #19 Merge Recommendation (Phase CC-1 Part XII)
+
+**Recommendation: DO NOT merge as-is. Retain as draft for further research.**
+
+Rationale:
+
+| Criterion | Status |
+|---|---|
+| Design A (frozen primitive) preserved | ✓ confirmed (all tests) |
+| Phase 8J/8K findings preserved | ✓ unchanged |
+| No forbidden primitive | ✓ (AST guard passes) |
+| CC-Core-v0 implemented and audited | ✓ |
+| All 113 tests pass | ✓ |
+| Path binding for eigenmode family | ✓ (47/47 distinct, min HD 98) |
+| No shortcut demonstrated | ✓ (bounded) |
+| Provable 2-to-1 weakness in injection | documented; not resolved |
+| Coupled round injective (full joint) | ✗ (toy-scale collisions found) |
+| Lower bound on attack cost | ✗ (unproved) |
+| Trajectory uniqueness at N=16 | unresolved |
+| Candidate B evaluated | ✓ (avoids 2-to-1; same separation) |
+
+The branch is **safe to merge** in a pure research/documentation sense: it does
+not touch the frozen Design A primitive, all existing tests pass, and the new
+analysis is honest about limitations. However, the **security gaps are material**:
+
+1. The coupled round is demonstrably non-injective at toy scale (full joint domain),
+   which is a stronger negative finding than Phase 1's C-fixed-slice result.
+2. The η·u² injection has a provable 2-to-1 weakness that Candidate B avoids.
+3. No lower bound exists on inversion cost.
+
+Merge only after at least one of:
+- Injectivity of the coupled round is proved or disproved at N=16 (Gröbner/algebraic
+  geometry computation, or an explicit collision at N=16 is found).
+- The 2-to-1 η injection is either removed (adopt Candidate B) or shown not to
+  yield a digest collision under the full protocol.
+- A restricted-model theorem establishes a lower bound in any model.
+
+Until one of these conditions is met, the PR should remain a **draft, open for
+review and further experiment**.
 
 ## Reproduce
 
 ```bash
-python -m curvature_audit.run_audit          # all artifacts + INDEX.json (~6 min)
-python -m curvature_audit.eigenmode_attacks  # the central separation result
+python -m curvature_audit.run_audit          # all artifacts + INDEX.json (~8 min)
+python -m curvature_audit.eigenmode_attacks  # central separation result
+python -m curvature_audit.phase_cc1_family   # complete 47-state family + binding
+python -m curvature_audit.accumulator_algebraic_attacks  # algebraic attacks
+python -m curvature_audit.accumulator_comparison         # candidate A vs B
+python -m curvature_audit.reduced_exhaustive_cc1         # full joint toy enumeration
 python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
 ```

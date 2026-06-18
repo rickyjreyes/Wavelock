@@ -12,7 +12,10 @@ import time
 
 from . import _common as C
 from . import (curvature_metrics, eigenmode_attacks, path_collision,
-               resource_bounds, scaling, reduced_models)
+               resource_bounds, scaling, reduced_models,
+               phase_cc1_family, accumulator_algebraic_attacks,
+               accumulator_comparison, shortcut_computation,
+               reduced_exhaustive_cc1)
 
 MODULES = [
     ("curvature_metrics", curvature_metrics, "curvature_metrics_demo.json"),
@@ -21,6 +24,13 @@ MODULES = [
     ("resource_bounds", resource_bounds, "resource_bound_analysis.json"),
     ("scaling", scaling, "curvature_scaling.json"),
     ("reduced_models", reduced_models, "reduced_models.json"),
+    # Phase CC-1 modules
+    ("phase_cc1_family", phase_cc1_family, "phase8j_full_collision_family.json"),
+    ("accumulator_algebraic_attacks", accumulator_algebraic_attacks,
+     "accumulator_algebraic_attacks.json"),
+    ("accumulator_comparison", accumulator_comparison, "accumulator_comparison.json"),
+    ("shortcut_computation", shortcut_computation, "shortcut_computation.json"),
+    ("reduced_exhaustive_cc1", reduced_exhaustive_cc1, "reduced_exhaustive_cc1.json"),
 ]
 
 
