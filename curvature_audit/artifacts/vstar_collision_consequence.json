@@ -1,0 +1,63 @@
+{
+  "artifact": "vstar_collision_consequence",
+  "classification": "reachable but harmless in tested cases",
+  "collision_attempt_single_cell": {
+    "collision_found": false,
+    "digest_collisions": 0,
+    "digest_distinct": 64,
+    "n_trials": 64,
+    "note": "changing only the singular cell's bytes changes the digest every time, because those bytes inject into C at absorption (G*elem) and alter neighbouring psi_1 values injected at round 1. No collision."
+  },
+  "consequence_summary": "The singular hit erases the hit cell's round-0 WAVE injection (j_B=0), but NOT the message information: (1) the same rate bytes inject G*elem into C at absorption; (2) psi_0[cell] perturbs neighbouring psi_1 values that are injected at round 1; (3) the hit cell's injection is nonzero again at round 1. No digest collision was produced by single-cell perturbation or by the cubic-root same-neighbour construction.",
+  "cubic_root_pair_attempt": {
+    "all_roots": [
+      282252,
+      32893217,
+      2114308178
+    ],
+    "collision": false,
+    "in_window_roots": [
+      282252
+    ],
+    "message_window": [
+      133,
+      16777348
+    ],
+    "n_in_window": 1,
+    "n_roots": 3,
+    "note": "fewer than 2 message-reachable roots: cannot form a same-neighbour singular pair; no collision possible by this construction."
+  },
+  "description": "Security consequence of the round-1 v_star singular hit",
+  "limitations": [
+    "tests target the one confirmed witness and its single-cell neighbourhood",
+    "no multi-singular-event alignment was achievable (Part VII: none found)",
+    "absence of a collision here is bounded evidence, not a proof"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "21a918c98b082132af48a7cce731b93545fc048c",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "next_round_sensitivity": {
+    "note": "at round 1 the hit cell value v_star acts as 'u' (earlier state) and is multiplied by (1+GAMMA*psi_2); the injection is generically nonzero, so sensitivity is restored the very next round.",
+    "round1_injection_at_hit_cell": 645319554,
+    "round1_injection_nonzero": true
+  },
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "runtime_s": 2.48,
+  "seed": 114000,
+  "singular_event": {
+    "hit_cell": 20,
+    "message_byte_C_injection_at_hit_cell": 1974833,
+    "message_entered_C_directly_at_absorption": true,
+    "note": "round-0 wave-injection j_B at the hit cell is exactly 0 (erased), but the SAME message bytes injected G*elem into C[cell] at absorption, so the information is NOT erased from the commitment.",
+    "psi1_hit_is_vstar": true,
+    "round0_injection_at_hit_cell": 0,
+    "round0_injection_is_zero": true
+  },
+  "witness_message_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000074e04fea20a000000000000000000000000000000000000000000000000000000000000000000000000000000000000da00ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+}
