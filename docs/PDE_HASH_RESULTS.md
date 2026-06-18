@@ -220,16 +220,22 @@ implementation.
 - **Jacobian:** full rank (256/256) at *every* collision state, including the
   two distinct checkerboard states (±s) which share an identical Jacobian and
   both map to zero — **a direct refutation of "full-rank ⇒ injective"**.
-- **The state transformation is therefore NOT globally injective** and is not
-  globally one-way at these structured points. It must not be called
-  collision-resistant or globally one-way.
-- **Message-level reachability: not lifted.** Absorption controls only 64/256
-  cells; the **189 capacity cells `67..255` are never injected** and hold fixed
-  IV values (`< ~300`) that cannot equal `±s` (`~10⁸`). So no structured
-  collision state is reachable as the pre-first-round state for any message
-  (exact structural reason), and a 50 000-message search found no message whose
-  pre-squeeze state is zero or structured. **No end-to-end message collision or
-  message preimage of zero was demonstrated.**
+- **Layered consequence (corrected wording, Phase 8K):** global injectivity of
+  the state transformation is **False**; internal state-collision resistance is
+  **Broken**; internal preimage resistance **for the specific target zero** is
+  **Broken**. **Generic arbitrary-target state inversion remains Unresolved** —
+  do not call the transformation "globally one-way" or "not one-way" without the
+  target qualifier.
+- **Message-level reachability (corrected, Phase 8K):**
+  - *Direct first-block reachability:* **Impossible (proven).** Cells `67..255`
+    of `U_0` equal fixed IV values (`< ~300`) that cannot match the eigenmode
+    amplitudes `±s` (`~10⁸`); ≥1 uncontrolled cell always mismatches.
+  - *Later-block (k>0) pre-round reachability:* **Unresolved.** Those cells then
+    hold the previous block's `evolve_T` output, which depends on earlier blocks.
+  - *Pre-squeeze zero / structured-state reachability:* **not found** in bounded
+    search, **not proven impossible**.
+  - *Full message collision / preimage:* **not demonstrated.** See Phase 8K
+    (`PDE_HASH_MULTIBLOCK_REACHABILITY.md`).
 
 ## 10. Limitations
 
@@ -285,33 +291,48 @@ Deterministic vectors: `pde_audit/vectors.json`.
 ## 14. Verdict
 
 ### Message digest: Unresolved experimental candidate
-### State transformation: constructively non-injective (NOT globally injective / one-way)
+### State transformation: constructively non-injective (layered table below)
 
-These are **two layers** and the rubric is applied to each.
+These are **two layers** and the rubric is applied to each. Layered status
+(Phase 8J + 8K):
 
-**Internal state transformation — corrected finding (Phase 8J).** A constructive
-full-parameter collision was found: an explicit family of ≥47 structured
-Laplacian-eigenstate states maps exactly to the all-zero state after one round,
-and therefore after `evolve_T`. The state transformation is **not globally
-injective** and must not be called collision-resistant or globally one-way. (The
-earlier statement that "no structural attack succeeded" applied to random/
-statistical testing of the digest; it did **not** cover this mathematically
-targeted family, which random sampling could never reach. Sampled full-rank
-Jacobians showed only local non-singularity, not global injectivity.)
+| Property | Result |
+|---|---|
+| Global injectivity of the state transformation | **False** |
+| Internal state collision resistance | **Broken** |
+| Internal preimage resistance for target zero | **Broken** |
+| Generic arbitrary-target state inversion | **Unresolved** |
+| Direct first-block eigenmode reachability | **Impossible** (proven) |
+| Multi-block eigenmode reachability | **Unresolved** |
+| Full message collision resistance | **Unresolved** |
+| Full message preimage resistance | **Unresolved** |
+
+**Internal state transformation (Phase 8J).** A constructive full-parameter
+collision was found: an explicit family of ≥47 structured Laplacian-eigenstate
+states maps exactly to the all-zero state after one round, and therefore after
+`evolve_T`. So global injectivity is **false**, internal state-collision
+resistance is **broken**, and preimage resistance **for the target zero** is
+**broken**. Generic arbitrary-target inversion is **unresolved** — the map is
+not described as "globally one-way" or "not one-way" without that qualifier.
+(The earlier "no structural attack succeeded" applied to random/statistical
+testing of the digest; it did not cover this mathematically targeted family.
+Sampled full-rank Jacobians showed only local non-singularity, not global
+injectivity.)
 
 **Complete message digest — Unresolved experimental candidate.** No end-to-end
-collision between distinct valid messages, and no message-level preimage of the
-zero state, has been demonstrated. The structured internal collisions are **not
-reachable from message absorption**: only 64 of 256 cells are message-
-controlled, and the 189 capacity cells `67..255` are pinned to fixed IV values
-that no eigenmode state can match (exact structural reason; a 50 000-message
-search also found nothing). Combined with the earlier results — full avalanche
-(HD 127.9), unbiased squeeze, no distinguisher (after correcting a train/test
-leakage artifact), generic truncated collision/preimage cost, no affine
-relations — and with the standing caveats (shallow test scale, no Gröbner tool,
-reduced-round bias at T≤8, ~16 000× slower than SHA-256, **no proof**), the
-digest sits at **Unresolved experimental candidate**, now carrying the explicit
-companion finding: *the internal state transformation is constructively
+collision between distinct valid messages, and no message preimage of the zero
+state, has been demonstrated. **Only direct first-block reachability is proven
+impossible** (cells `67..255` of `U_0` are fixed IV values that cannot match the
+eigenmode amplitudes); **multi-block reachability is unresolved** — those cells
+hold prior evolved state after the first block (Phase 8K measures the
+differential controllability and attempts lifting). A 50 000-message search
+found nothing, which is not a proof of unreachability. Combined with the earlier
+results — full avalanche (HD 127.9), unbiased squeeze, no distinguisher (after
+correcting a train/test leakage artifact), generic truncated collision/preimage
+cost, no affine relations — and the standing caveats (shallow test scale, no
+Gröbner tool, reduced-round bias at T≤8, ~16 000× slower than SHA-256, **no
+proof**), the digest sits at **Unresolved experimental candidate**, carrying the
+explicit companion finding: *the internal state transformation is constructively
 non-injective with simple algebraic preimages of zero.*
 
 > **Observed attack cost is not a lower bound and is not a proof of one-wayness,

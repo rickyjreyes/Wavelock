@@ -17,14 +17,22 @@ state after a single round. This was independently re-derived and verified by
 **element-by-element state equality** in the pure-Python reference round, the
 optimized NumPy round, the parameterized audit harness, and `evolve_T`.
 
-Consequence: **the state transformation is NOT globally injective** (and not
-globally one-way at these structured points). However, **no end-to-end message
-collision or message-level preimage of zero was demonstrated**: message
-absorption controls only 64 of 256 state cells, and the 189 capacity cells
-`67..255` are pinned to fixed IV-derived values that no structured collision
-state can match. The complete digest verdict therefore remains *Unresolved
+Consequence: **the state transformation is NOT globally injective**, its
+**internal state-collision resistance is broken**, and its **internal preimage
+resistance for the specific target zero is broken** (explicit, simple algebraic
+preimages exist). **Generic arbitrary-target state inversion remains
+unresolved** — non-injectivity and an easy preimage of *zero* do not establish
+that the map is invertible (or hard to invert) for arbitrary targets.
+
+However, **no end-to-end message collision or message-level preimage of zero was
+demonstrated.** Message absorption controls only 64 of 256 state cells; the 189
+capacity cells `67..255` are not written by the current block's injection.
+Reachability splits into layers (see §7), of which only **direct first-block
+reachability is proven impossible**; multi-block reachability is **unresolved**,
+not proven impossible. The complete digest verdict therefore remains *Unresolved
 experimental candidate*, now carrying this explicit internal-non-injectivity
-finding.
+finding. See `PDE_HASH_MULTIBLOCK_REACHABILITY.md` (Phase 8K) for the layered
+reachability audit.
 
 ## 2. Independent derivation (recomputed, not trusted)
 
@@ -122,13 +130,18 @@ The **189 capacity cells `67..255` receive no injection ever.**
   All 189 uncontrolled cells mismatch the required `±s` pattern, so **no
   structured collision state is reachable as the pre-first-round state for any
   message** — an exact structural reason, not a failed search.
-- **Multi-block / pre-final-round:** cells `67..255` then hold the previous
-  block's `evolve_T` output, which is not controllable and would have to equal
-  `±s·σ` in 189 coordinates simultaneously (≈ `p^−189`); no steering mechanism is
-  known.
+- **Multi-block / later-block pre-round:** for `k>0`, cells `67..255` of `S_k`
+  hold the **previous block's `evolve_T` output**, which *does* depend on earlier
+  message blocks. Whether earlier blocks can steer those 189 coordinates onto an
+  eigenmode pattern is **UNRESOLVED** — it is **not** proven impossible. The
+  earlier "no steering mechanism is known / ≈p^−189" remark was an unquantified
+  heuristic; the Phase 8K audit (`PDE_HASH_MULTIBLOCK_REACHABILITY.md`) measures
+  the actual differential controllability rank of those coordinates by block
+  count and attempts algebraic/differential/heuristic lifting.
 - **Bounded search:** 50 000 sequential messages produced **no** pre-squeeze
   zero state and **no** final-absorbed structured-collision state (exact state
-  equality). Absence of a hit is reported with its budget; it is not a proof.
+  equality). Absence of a hit is reported with its budget; **it is not a proof of
+  unreachability.**
 - The all-zero pre-squeeze state, *if reachable*, squeezes to the fixed digest
   `00…00` (all comparisons tie). No message reaching it was found.
 
@@ -139,12 +152,26 @@ zero probability of landing on a Laplacian sign-eigenvector with the exact QR
 amplitude, so the duplicate-search and Jacobian-sampling in 8B could not
 encounter them. This attack is *mathematically targeted*, not statistical.
 
-## 8. Verdict impact
+## 8. Verdict impact (layered)
+
+| Property | Result |
+|---|---|
+| Global injectivity of the state transformation | **False** |
+| Internal state collision resistance | **Broken** |
+| Internal preimage resistance for target zero | **Broken** |
+| Generic arbitrary-target state inversion | **Unresolved** |
+| Direct first-block eigenmode reachability | **Impossible** (proven, §7) |
+| Multi-block eigenmode reachability | **Unresolved** |
+| Full message collision resistance | **Unresolved** |
+| Full message preimage resistance | **Unresolved** |
 
 - **State transformation:** *constructively non-injective*, with simple
-  algebraic preimages of the all-zero state. It must **not** be described as
-  collision-resistant or globally one-way.
+  algebraic preimages of the **specific target zero**. It must **not** be
+  described as collision-resistant; and while it is not globally one-way *for the
+  target zero*, generic arbitrary-target inversion is **unresolved** — do not
+  call it "not one-way" without that qualifier.
 - **Message digest:** remains **Unresolved experimental candidate** — no
-  message-level collision or message preimage of zero was demonstrated, for the
-  exact structural reason in §7. This is recorded as a separate, explicit
-  finding rather than upgraded to "Broken".
+  message-level collision or message preimage of zero was demonstrated. Only
+  direct first-block reachability is proven impossible; multi-block lifting is
+  unresolved (Phase 8K). Recorded as a separate, explicit finding, not upgraded
+  to "Broken".

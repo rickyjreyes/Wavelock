@@ -60,6 +60,16 @@
     "python": "3.11.15"
   },
   "note": "assembled from existing phase artifacts (phases not re-run)",
+  "reachability_layers": {
+    "direct_first_block_eigenmode_reachability": "Impossible (proven)",
+    "full_message_collision_resistance": "Unresolved",
+    "full_message_preimage_resistance": "Unresolved",
+    "generic_arbitrary_target_state_inversion": "Unresolved",
+    "global_injectivity_state_transformation": "False",
+    "internal_preimage_resistance_target_zero": "Broken",
+    "internal_state_collision_resistance": "Broken",
+    "multi_block_eigenmode_reachability": "Unresolved"
+  },
   "verdict_digest": "Unresolved experimental candidate",
-  "verdict_state_transformation": "Constructively non-injective (NOT globally injective/one-way)"
+  "verdict_state_transformation": "Constructively non-injective; internal collision & target-zero preimage resistance BROKEN; generic arbitrary-target inversion UNRESOLVED"
 }
