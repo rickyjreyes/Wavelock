@@ -355,3 +355,114 @@ python -m curvature_audit.accumulator_comparison         # candidate A vs B
 python -m curvature_audit.reduced_exhaustive_cc1         # full joint toy enumeration
 python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
 ```
+
+---
+
+# Phase CC-2 — Candidate B Promotion, Full Re-Audit, Restricted Binding (2026-06-18)
+
+**Versions:** `CC-Core-v0-A` (frozen baseline, `wavelock/curvature_capacity`) and
+`CC-Core-v1-B` (`wavelock/curvature_capacity_v1`). Design A and all Phase 8J/8K/CC-1
+results are preserved unchanged. PR #19 remains a draft.
+
+## Three-layer claim separation (Part XII) — no conclusion crosses a layer
+
+- **Layer 1 — Path preservation.** Candidate B retains every distinction the
+  terminal wave state loses: all 47 Phase 8J zero-collapse states map to distinct
+  Candidate B digests (min HD 105). ✔ supported (exhaustive over the known family).
+- **Layer 2 — Algebraic binding.** Candidate B removes Candidate A's *generic*
+  2-to-1 injection; j_B is injective in u for every v except the single hyperplane
+  v_star (measure 1/p), which is not broadly reachable and not path-erasing. No
+  low-complexity collision family was found. *Restricted* binding is proved
+  (sign-pair separation, injectivity off-hyperplane); *general* binding is not.
+- **Layer 3 — Hardness.** Unresolved for both candidates. **No hardness claim is
+  made.** Removing a Layer-2 weakness does not establish Layer-3 hardness.
+
+## Final report (23 points)
+
+1. **Candidate B equation.** `j_B(u,v) = u + GAMMA·u·v = u·(1 + 11·v) mod p`
+   (ETA = ZETA = 0); full transition `C_{t+1}[x] = MU·cd + A_C·cd² + W_t(x)·j_B + rho_t`.
+2. **Singular value.** `v_star = −GAMMA⁻¹ mod p = 195225786` (where `1+11·v ≡ 0`).
+3. **Is v_star reachable?** Not broadly: 0 hits in 1,280,000 random wave-output
+   coordinates; 0 of 47 family states; 0 transits over T rounds from 400 states;
+   v_star is not a fixed point. **Constructible** for one round only, by the unique
+   constant state `c = 357959172` (the sole GF(p) root of `F(c)=v_star`), giving a
+   full-lattice collapse for that single round.
+4. **Coordinate / global path erasure?** **None.** Perturbing the full-collapse
+   constant state changed the digest in 256/256 trials; a singular round zeroes only
+   that round's injection at that cell, while the cell still enters C at adjacent
+   rounds and via diffusion. No erasure.
+5. **Full 47-state separation.** 47/47 distinct Candidate B digests. ✔
+6. **Minimum pairwise Hamming distance.** 105 / 256 (Candidate A: 98).
+7. **A vs B structural comparison.** A is generically 2-to-1 in u (everywhere);
+   B is injective in u except on one measure-1/p hyperplane. A's injection zero set
+   is a parabola (~p points); B's is `{u=0}∪{v=v_star}` (2p−1 points).
+8. **Injection multiplicity.** A: 2-to-1 for every v (proved). B: 1-to-1 for all v
+   except v_star (collapse there).
+9. **Algebraic-degree comparison.** Injection degree in u: A = 2, B = 1. **But the
+   trajectory degree in u₀ is identical** ([4,12,36,108,…]): the shared cross-term
+   γ·u·v (degree 4, since v=F(ψ) is degree 3) and the shared self-square A_C·cd²
+   dominate. B is not lower-degree where it matters.
+10. **Reduced-model collision comparison.** Joint coupled-map image size and max
+    preimage multiplicity comparable at p∈{3,5,7,11,13}; at p=11 B is injective on
+    the psi-slice (maxmult 1) vs A's 2. B is no worse, sometimes better.
+11. **Fixed points and cycles.** None found for either candidate (accumulator
+    fixed-point and two-cycle search, budget 3000).
+12. **Low-degree collision families found.** None (one-round, structured, and
+    singular-line searches all negative within budget).
+13. **Algebraic solver results.** z3 proves UNSAT for `j_B(a,v)=j_B(b,v) ∧ a≠b` at
+    fixed v≠v_star (computer-assisted injectivity). One-round coupled 2×2 collision
+    and preimage over the real prime: z3 timeout (UNKNOWN — **not** a security result).
+14. **Shortcut-computation results.** No exact or partial shortcut. Trajectory
+    degree identical to A; linear predictor ~50%; no blockwise factorization; MITM
+    inversion degree (2, from shared A_C·cd²) unchanged. Shortcut resistance no worse.
+15. **Restricted theorem / exhaustive result.** [theorem] j_B injective in u off
+    v_star; [theorem] F is odd ⇒ first-round sign-pair separation = 2·s·σ[x] ≠ 0 at
+    every cell, independent of the wave output; [exhaustive finite verification]
+    47/47 digest separation. General binding/hardness: not proved.
+16. **Prover/verifier protocol version.** `CC-Core-v1-B` is the provisional
+    experimental candidate (survived the singular audit); distinct D_TAG/VERSION
+    domain-separate it from `CC-Core-v0-A`; verifiers reject version mismatch.
+17. **Test count.** 181 fast tests pass (adds Candidate A frozen regression and
+    32 Candidate B tests).
+18. **CI status.** Green locally; new isolated jobs for Design A preservation,
+    Candidate A frozen regression, Candidate B parity/vectors, singular-hyperplane,
+    restricted binding, full-family binding, domain separation, forbidden-primitive
+    guard. Heavy solver/exhaustive runs stay out of CI.
+19. **Allowed claims.** B removes A's *generic* 2-to-1 injection (proved); B is
+    injective in u off a single measure-1/p hyperplane (proved + z3); B separates
+    all 47 Phase 8J states (min HD 105); B's shortcut resistance and reduced-model
+    multiplicity are no worse than A; first-round sign-pair separation is structural.
+20. **Forbidden claims.** "provably secure", "collision-resistant", "one-way",
+    "forces full execution", "curvature-capacity security", "256-bit security" — none
+    is proved and none is claimed.
+21. **Does Candidate B dominate Candidate A?** **Experimentally yes on Layer 1–2,
+    not on Layer 3.** B meets every "prefer B" decision criterion: preserves all 47
+    paths; the singular hyperplane is tightly restricted (unreachable in bounded
+    search, not path-erasing); no new low-degree collision family; reduced-model
+    multiplicity no worse; shortcut resistance no worse; and it removes A's generic
+    2-to-1 weakness. The single residual is that global unreachability of v_star
+    under the message protocol is **not proved** (bounded evidence only).
+22. **PR #19 disposition.** **Remain a draft (research-only).** Do NOT merge to
+    master. Both candidates are retained: Candidate A frozen for comparison,
+    Candidate B as the provisional experimental candidate. If the team wants it on
+    master, merge **research-only** with the explicit "no security claim" labeling;
+    do not split.
+23. **Next research bottleneck.** (a) Prove or refute global unreachability of
+    v_star under the normative message-absorption protocol (currently bounded
+    search only). (b) Lift the restricted sign-pair binding to a digest-level
+    binding statement beyond the finite 47-state family. (c) Layer-3 hardness — a
+    genuine lower bound on second-preimage cost — remains untouched for both
+    candidates and is the ultimate open problem.
+
+## FINAL VERDICT (Phase CC-2)
+
+### Candidate B preferred experimentally: known Candidate A weakness removed, general hardness unresolved
+
+Candidate B (`CC-Core-v1-B`) removes Candidate A's proved generic 2-to-1 injection
+and replaces it with a single measure-1/p singular hyperplane that is not broadly
+reachable and provably not path-erasing in bounded testing; it preserves all 47
+known path distinctions (min HD 105 ≥ A's 98), is no worse on reduced-model
+multiplicity or shortcut resistance, and admits a restricted first-round sign-pair
+binding **theorem**. This is a Layer-1/Layer-2 preference only. **No Layer-3
+hardness is claimed for either candidate.** The one residual open item is a proof
+(or refutation) of v_star's global unreachability under the message protocol.
