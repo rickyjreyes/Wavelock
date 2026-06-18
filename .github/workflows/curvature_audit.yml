@@ -53,5 +53,7 @@ jobs:
         run: python -m pytest curvature_audit/test_candidate_b.py::TestFullFamilySeparation -c curvature_audit/pytest.ini -q
       - name: CC-2 domain separation + frozen Design A guard
         run: python -m pytest curvature_audit/test_candidate_b.py -c curvature_audit/pytest.ini -q -k "domain or distinct_d_tag or design_a or zero_trajectory"
+      - name: CC-3 singular reachability (round-0 unreachable, witness replay, harmless hit, protocol, doc hygiene)
+        run: python -m pytest curvature_audit/test_cc3_reachability.py -c curvature_audit/pytest.ini -q
       - name: Full curvature_audit fast tests (excludes slow searches)
         run: python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
