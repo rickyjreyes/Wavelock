@@ -9,7 +9,8 @@
     "phase8f_collision_scaling.json",
     "phase8g_preimage.json",
     "phase8h_algebraic.json",
-    "phase8i_parameter_sweep.json"
+    "phase8i_parameter_sweep.json",
+    "phase8j_eigenmode_collisions.json"
   ],
   "headline": {
     "8A_meanHD_T32": 127.91917067307692,
@@ -35,6 +36,14 @@
     },
     "8H_affine_relation": false,
     "8I_regimes": 20,
+    "8J_constructive_zero_preimages": 47,
+    "8J_distinct_patterns_by_r": {
+      "1": 8,
+      "2": 36,
+      "4": 2
+    },
+    "8J_message_lift_found": false,
+    "8J_state_transformation_globally_injective": false,
     "III_candidate": {
       "avalanche_mean_hd": 128.05,
       "avalanche_std_hd": 8.01,
@@ -51,5 +60,6 @@
     "python": "3.11.15"
   },
   "note": "assembled from existing phase artifacts (phases not re-run)",
-  "verdict": "Unresolved experimental candidate"
+  "verdict_digest": "Unresolved experimental candidate",
+  "verdict_state_transformation": "Constructively non-injective (NOT globally injective/one-way)"
 }

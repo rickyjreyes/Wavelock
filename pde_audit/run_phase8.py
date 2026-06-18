@@ -19,7 +19,8 @@ import time
 from . import _harness as H
 from . import (avalanche, state_map, squeeze_analysis, distinguishers,
                symmetry_attacks, collision_scaling, preimage_attacks,
-               algebraic_analysis, parameter_sweep, baselines)
+               algebraic_analysis, parameter_sweep, baselines,
+               eigenmode_collisions)
 
 PHASES = {
     "avalanche": avalanche.main,
@@ -32,6 +33,7 @@ PHASES = {
     "algebraic": algebraic_analysis.main,
     "parameter": parameter_sweep.main,
     "baselines": baselines.main,
+    "eigenmode": eigenmode_collisions.main,
 }
 
 
@@ -86,6 +88,12 @@ def _extract_summary(name, res):
             return {"n_regimes": len(res["rows"])}
         if name == "baselines":
             return {"candidate": res["rows"]["pde_T32_candidate"]}
+        if name == "eigenmode":
+            return {
+                "constructive_zero_preimages":
+                    res["part2_tile_enumeration"]["constructive_zero_preimage_count_one_round"],
+                "message_lift_found": res["part4_reachability"]["search"]["found"],
+            }
     except Exception as e:  # pragma: no cover
         return {"summary_error": str(e)}
     return {}
