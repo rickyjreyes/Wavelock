@@ -1,0 +1,83 @@
+{
+  "affine_probe": {
+    "A_affine_fraction": 0.95,
+    "B_affine_fraction": 0.875,
+    "interpretation": "Fraction of trials where the tracked accumulator cell is affine (2nd difference 0) in one injected wave cell after 2 coupled rounds. The high fraction is dominated by cells NOT yet reached by the perturbation in 2 rounds (Laplacian distance > 2 => unaffected => trivially affine). It is NOT evidence of a shortcut: the symbolic degree-growth probe shows the full-round degree in u0 is high and identical for A and B ([4,12,36,108,...]). A and B are comparable here.",
+    "rounds_tested": 2
+  },
+  "artifact": "candidate_b_shortcuts",
+  "blockwise_composition": {
+    "classification": "no asymptotic improvement",
+    "reason": "Each block runs T=32 coupled rounds with round-dependent rho_t and W_t; the round index continues across blocks (ri is not reset). The per-block map is not a fixed function (it depends on the global round index), so blocks do not compose as a fixed monoid action. No blockwise shortcut.",
+    "result": "no cheap factorization"
+  },
+  "classification_summary": {
+    "affine_factor_extraction": "failed (not affine even at 2 rounds)",
+    "blockwise_composition": "no asymptotic improvement",
+    "checkpoint_elimination": "no asymptotic improvement",
+    "direct_polynomial_composition": "infeasible (degree grows via shared self-square)",
+    "linear_predictor": "no shortcut (~50% accuracy)",
+    "low_rank_spectral": "not applicable (nonlinear)",
+    "mitm_accumulator": "no asymptotic improvement (degree-2 inversion shared)",
+    "symbolic_recurrence_compression": "no asymptotic improvement (self-square shared)",
+    "transfer_operator_composition": "no asymptotic improvement"
+  },
+  "description": "Shortcut-computation audit for Candidate B (lower injection degree)",
+  "limitations": [
+    "linear predictor uses parity features and a least-squares proxy; a more powerful learner was not attempted",
+    "affine probe is over 2 reduced rounds (full T=32 degree is far higher)",
+    "no Groebner shortcut attempted at full scale (infeasible)"
+  ],
+  "linear_predictor_attack": {
+    "A_linear_predictor_accuracy": 0.4998,
+    "B_linear_predictor_accuracy": 0.4986,
+    "interpretation": "Linear (parity-feature) predictor accuracy near 0.5 for both candidates => no linear shortcut from psi0 bits to digest bits. Classification: no asymptotic improvement.",
+    "n_test": 300,
+    "n_train": 600,
+    "random_baseline": 0.5
+  },
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "e77f4116d9801abe880cdc6d9d52c8f5700b8da0",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "mitm_cost_estimate": {
+    "classification": "no asymptotic improvement",
+    "degree": "2 in C (A_C*cd^2); identical to Candidate A -- B does NOT lower the backward-inversion degree",
+    "forward_state_bits": "512 cells * 31 bits ~ 15872 bits internal state",
+    "mitm_requires": "inverting Phi_t^(B): given C_{t+1} and (psi_t,psi_{t+1}), solve MU*cd + A_C*cd^2 + W*j + rho = C_{t+1} for C (a 256-variable degree-2 system via the Laplacian coupling)",
+    "note": "B's lower INJECTION degree (linear in u) does not lower the backward C-inversion degree, which is set by the shared A_C*cd^2 self-square. MITM is no easier for B than for A."
+  },
+  "runtime_s": 50.7,
+  "seed": 100000,
+  "symbolic_degree_growth": {
+    "interpretation": "Both candidates' accumulator degree in u0 is dominated by the wave round (degree 3 per round) and the C self-square (A_C*cd^2, identical in both). The injection degree difference (B linear vs A quadratic in u) does NOT make B's overall degree grow dramatically slower: the high-degree contributions (wave + self-square) are shared. B is not obviously easier to shortcut via reduced degree.",
+    "max_rounds": 4,
+    "per_candidate": [
+      {
+        "candidate": "A",
+        "degree_in_u0_per_round": [
+          4,
+          12,
+          36,
+          108
+        ]
+      },
+      {
+        "candidate": "B",
+        "degree_in_u0_per_round": [
+          4,
+          12,
+          36,
+          108
+        ]
+      }
+    ],
+    "solver": "sympy"
+  },
+  "verdict": "Candidate B's lower injection degree (1 vs 2 in u) does NOT yield a shortcut: the high-degree contributions (wave round degree 3, accumulator self-square A_C*cd^2 degree 2 in C) are shared with Candidate A and dominate. No exact or partial shortcut was found. Shortcut resistance is no worse than Candidate A."
+}
