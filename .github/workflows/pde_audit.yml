@@ -1,0 +1,40 @@
+name: pde_audit
+
+# Fast, isolated CI for the hash-free PDE digest audit (wavelock/pde_hash +
+# pde_audit only). Deliberately does NOT run the legacy WaveLock test suite or
+# any long/slow search; multi-minute and multi-hour analyses stay out of PR CI.
+
+on:
+  push:
+    branches:
+      - research/pde-eigenmode-collision-audit
+      - research/hash-free-pde-core
+    paths:
+      - 'wavelock/pde_hash/**'
+      - 'pde_audit/**'
+      - '.github/workflows/pde_audit.yml'
+  pull_request:
+    paths:
+      - 'wavelock/pde_hash/**'
+      - 'pde_audit/**'
+      - '.github/workflows/pde_audit.yml'
+  workflow_dispatch:
+
+jobs:
+  audit-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal deps (no cryptographic packages)
+        run: python -m pip install --upgrade pip numpy pytest
+      - name: Forbidden-primitive guard
+        run: python -m pytest pde_audit/test_forbidden_imports.py -c pde_audit/pytest.ini -q
+      - name: Phase 8J exact eigenmode-collision regression tests
+        run: python -m pytest pde_audit/test_eigenmode_collisions.py -c pde_audit/pytest.ini -q
+      - name: Phase 8K reduced deterministic + trace-parity tests
+        run: python -m pytest pde_audit/test_multiblock_reachability.py -c pde_audit/pytest.ini -q
+      - name: pde_audit fast tests (excludes slow searches)
+        run: python -m pytest pde_audit/ -c pde_audit/pytest.ini -m "not slow" -q
