@@ -14,6 +14,7 @@ import pytest
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 PKG_DIRS = [
     os.path.join(ROOT, "wavelock", "curvature_capacity"),
+    os.path.join(ROOT, "wavelock", "curvature_capacity_v1"),
     os.path.join(ROOT, "curvature_audit"),
 ]
 
