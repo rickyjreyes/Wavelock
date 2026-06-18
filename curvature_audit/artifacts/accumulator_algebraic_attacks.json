@@ -1,0 +1,190 @@
+{
+  "artifact": "accumulator_algebraic_attacks",
+  "cancellation_family": {
+    "algebraic_condition": "j(u,v) = j(u',v) iff u=u' OR u+u' = -(1+GAMMA*v)*ETA_inv mod p. This is a provable 2-to-1 structure in the u-injection (for fixed v and fixed C). An attacker who can freely choose psi_t can pair u with its cancellation partner; this does NOT directly yield a state-level collision because the wave field evolution is not free (F is not injective, but psi_t -> psi_{t+1} is fixed by F, not by the attacker). The structural weakness is documented; no bypass is demonstrated.",
+    "all_pairs_found": true,
+    "cancellation_pairs_found": 500,
+    "examples": [
+      {
+        "j": 863617239,
+        "u": 320298543,
+        "u_prime": 1113965931,
+        "v": 452443814
+      },
+      {
+        "j": 755862770,
+        "u": 1511074601,
+        "u_prime": 1416019833,
+        "v": 1030899658
+      },
+      {
+        "j": 467133517,
+        "u": 2077807723,
+        "u_prime": 601181725,
+        "v": 347985711
+      },
+      {
+        "j": 206143733,
+        "u": 424093058,
+        "u_prime": 501953606,
+        "v": 662613290
+      },
+      {
+        "j": 1001394323,
+        "u": 1505047999,
+        "u_prime": 1266043445,
+        "v": 1215266828
+      }
+    ],
+    "impact_on_digest": "The 2-to-1 u-injection is a known limitation (documented in spec). It means distinct wave states with u + u' = C_cancel can produce the same injection j, but the wave round itself is already non-injective (Phase 8J); the accumulator is designed to RECOVER separation, not to be independently injective. The separation test (Parts I/II) confirms 47/47 distinct digests for the known collision family.",
+    "samples": 500
+  },
+  "degree_growth": {
+    "cap_note": "Over F_p, degree is at most p-1=2147483646 by Fermat; the heuristic bound saturates the cap by round 3-4.",
+    "interpretation": "The degree bound grows rapidly (tripling each wave round), rapidly exceeding p-1=2^31-2, at which point Fermat reduction caps the effective degree at p-1. In the scalar model the output C_T is a polynomial of degree >>p in the input psi_0, meaning it is NOT representable as a low-degree polynomial over Z_p. However, this is an UPPER BOUND -- the true degree after Fermat reduction could be much lower. A Gr\u00f6bner/algebraic-geometry computation would be needed for a tight bound; those solvers are unavailable here.",
+    "model": "scalar upper bound (ignore Laplacian coupling; each cell independent)",
+    "rounds": [
+      {
+        "C_next_degree_bound": 4,
+        "injection_j_degree_bound": 4,
+        "psi_next_degree_bound": 3,
+        "psi_t_degree_bound": 1,
+        "t": 0
+      },
+      {
+        "C_next_degree_bound": 16,
+        "injection_j_degree_bound": 12,
+        "psi_next_degree_bound": 9,
+        "psi_t_degree_bound": 3,
+        "t": 1
+      },
+      {
+        "C_next_degree_bound": 52,
+        "injection_j_degree_bound": 36,
+        "psi_next_degree_bound": 27,
+        "psi_t_degree_bound": 9,
+        "t": 2
+      },
+      {
+        "C_next_degree_bound": 160,
+        "injection_j_degree_bound": 108,
+        "psi_next_degree_bound": 81,
+        "psi_t_degree_bound": 27,
+        "t": 3
+      },
+      {
+        "C_next_degree_bound": 484,
+        "injection_j_degree_bound": 324,
+        "psi_next_degree_bound": 243,
+        "psi_t_degree_bound": 81,
+        "t": 4
+      },
+      {
+        "C_next_degree_bound": 1456,
+        "injection_j_degree_bound": 972,
+        "psi_next_degree_bound": 729,
+        "psi_t_degree_bound": 243,
+        "t": 5
+      },
+      {
+        "C_next_degree_bound": 4372,
+        "injection_j_degree_bound": 2916,
+        "psi_next_degree_bound": 2187,
+        "psi_t_degree_bound": 729,
+        "t": 6
+      },
+      {
+        "C_next_degree_bound": 13120,
+        "injection_j_degree_bound": 8748,
+        "psi_next_degree_bound": 6561,
+        "psi_t_degree_bound": 2187,
+        "t": 7
+      }
+    ]
+  },
+  "description": "Direct algebraic attacks on the CC-Core-v0 accumulator Phi_t",
+  "equations": {
+    "accumulator": "C_next[x] = MU*(C + D_C*Lap(C))[x] + A_C*(C + D_C*Lap(C))[x]^2 + W_t(x)*j(psi_t[x], psi_{t+1}[x]) + rho_t  mod p",
+    "injection_j": "j(u,v) = u + GAMMA*u*v + ETA*u^2 + ZETA*v  mod p",
+    "u_pairing": "j(u,v) = j(u',v) iff u=u' OR u+u' = -(1+GAMMA*v)/ETA mod p"
+  },
+  "eta_pairing_attack": {
+    "digest_collisions_found": 0,
+    "examples": [
+      {
+        "digest_equal": false,
+        "hamming": 125,
+        "u": 795986056,
+        "u_prime": 1060596966,
+        "v": 1124694792,
+        "wave_round_equal": false
+      },
+      {
+        "digest_equal": false,
+        "hamming": 144,
+        "u": 853318238,
+        "u_prime": 1748479504,
+        "v": 1220115417,
+        "wave_round_equal": false
+      },
+      {
+        "digest_equal": false,
+        "hamming": 114,
+        "u": 279527729,
+        "u_prime": 552837243,
+        "v": 968553803,
+        "wave_round_equal": false
+      }
+    ],
+    "interpretation": "Replacing psi[0,0] with its u-pairing partner changes the wave round output (since F depends on all cells, not just u). The pairing cancels j at cell 0 for the NOMINAL (u,v) pair, but v = F(psi)[0,0] changes when psi[0,0] changes, breaking the cancellation globally. No digest collisions found; the structural 2-to-1 in j(u,v) does not yield digest collisions because the wave evolution is not controllable.",
+    "n_trials": 200,
+    "wave_round_equalities_found": 0
+  },
+  "fixed_points": {
+    "budget": 5000,
+    "candidates_checked": 5000,
+    "fixed_point_example": null,
+    "fixed_point_found": false,
+    "note": "A fixed point of Phi_t with respect to the accumulator (not the full coupled round) would require the accumulator to reproduce itself. The round-dependent constant rho_t differs across t so a fixed point of the *full multi-round* trajectory is far more constrained. No fixed point found within budget."
+  },
+  "limitations": [
+    "All searches are bounded; no finding is a proof of absence",
+    "One-round collision search fixes psi=0 (worst case, zero injection)",
+    "Degree growth is a heuristic scalar upper bound, not a Groebner result",
+    "The u^2 pairing is a provable structural property (documented in spec)"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "bb96765ef2fa760482a325e95c57ccc8bccb6377",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "one_round_collisions": {
+    "checked": 6000,
+    "constant_field_collision": null,
+    "constant_field_collision_found": false,
+    "note": "With psi=0 the injection term vanishes and the accumulator is a polynomial map in C. No collision found within budget; not a proof of injectivity. Constant-field search checks whether distinct constant inputs produce identical constant outputs (would be a structural flaw).",
+    "random_budget": 6000,
+    "random_collision": null,
+    "random_collision_found": false
+  },
+  "runtime_s": 9.54,
+  "seed": 92000,
+  "summary": {
+    "collision_found": false,
+    "eta_2to1_is_structural": true,
+    "eta_2to1_yields_digest_collision": false,
+    "fixed_point_found": false,
+    "two_cycle_found": false
+  },
+  "two_cycles": {
+    "budget": 3000,
+    "candidates_checked": 3000,
+    "note": "Two-cycles of the accumulator over the first two rounds searched. None found within budget.",
+    "two_cycle_example": null,
+    "two_cycle_found": false
+  }
+}

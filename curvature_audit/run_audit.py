@@ -1,0 +1,83 @@
+"""Run the full curvature-capacity audit suite and write artifacts/INDEX.json.
+
+This is the MEDIUM/heavy runner; it is NOT the fast CI path. CI runs the small
+regression tests in curvature_audit/test_*.py instead.
+
+    python -m curvature_audit.run_audit
+"""
+
+from __future__ import annotations
+
+import time
+
+from . import _common as C
+from . import (curvature_metrics, eigenmode_attacks, path_collision,
+               resource_bounds, scaling, reduced_models,
+               phase_cc1_family, accumulator_algebraic_attacks,
+               accumulator_comparison, shortcut_computation,
+               reduced_exhaustive_cc1,
+               candidate_b_singular_hyperplane, candidate_b_full_family,
+               candidate_a_vs_b, candidate_b_reduced_joint_map,
+               candidate_b_algebraic_solver, candidate_b_shortcuts,
+               vstar_one_round_preimages, vstar_message_solver,
+               vstar_bounded_exhaustive, vstar_guided_search,
+               vstar_collision_consequence)
+
+MODULES = [
+    ("curvature_metrics", curvature_metrics, "curvature_metrics_demo.json"),
+    ("eigenmode_attacks", eigenmode_attacks, "eigenmode_attacks.json"),
+    ("path_collision", path_collision, "path_commitment_attacks.json"),
+    ("resource_bounds", resource_bounds, "resource_bound_analysis.json"),
+    ("scaling", scaling, "curvature_scaling.json"),
+    ("reduced_models", reduced_models, "reduced_models.json"),
+    # Phase CC-1 modules
+    ("phase_cc1_family", phase_cc1_family, "phase8j_full_collision_family.json"),
+    ("accumulator_algebraic_attacks", accumulator_algebraic_attacks,
+     "accumulator_algebraic_attacks.json"),
+    ("accumulator_comparison", accumulator_comparison, "accumulator_comparison.json"),
+    ("shortcut_computation", shortcut_computation, "shortcut_computation.json"),
+    ("reduced_exhaustive_cc1", reduced_exhaustive_cc1, "reduced_exhaustive_cc1.json"),
+    # Phase CC-2 modules (Candidate B)
+    ("candidate_b_singular_hyperplane", candidate_b_singular_hyperplane,
+     "candidate_b_singular_hyperplane.json"),
+    ("candidate_b_full_family", candidate_b_full_family,
+     "candidate_b_full_family_binding.json"),
+    ("candidate_a_vs_b", candidate_a_vs_b, "candidate_a_vs_b.json"),
+    ("candidate_b_reduced_joint_map", candidate_b_reduced_joint_map,
+     "candidate_b_reduced_joint_map.json"),
+    ("candidate_b_algebraic_solver", candidate_b_algebraic_solver,
+     "candidate_b_algebraic_solver.json"),
+    ("candidate_b_shortcuts", candidate_b_shortcuts, "candidate_b_shortcuts.json"),
+    # Phase CC-3 modules (singular reachability)
+    ("vstar_one_round_preimages", vstar_one_round_preimages,
+     "vstar_one_round_preimages.json"),
+    ("vstar_message_solver", vstar_message_solver, "vstar_message_solver.json"),
+    ("vstar_bounded_exhaustive", vstar_bounded_exhaustive,
+     "vstar_bounded_exhaustive.json"),
+    ("vstar_guided_search", vstar_guided_search, "vstar_guided_search.json"),
+    ("vstar_collision_consequence", vstar_collision_consequence,
+     "vstar_collision_consequence.json"),
+]
+
+
+def main():
+    t0 = time.perf_counter()
+    index = {"suite": "curvature_capacity_audit", "metadata": C.env_metadata(),
+             "modules": {}}
+    for name, mod, artifact in MODULES:
+        print(f"== {name} ==", flush=True)
+        ts = time.perf_counter()
+        res = mod.main()
+        index["modules"][name] = {
+            "artifact": artifact,
+            "runtime_s": round(time.perf_counter() - ts, 2),
+            "phase": res.get("phase"),
+        }
+    index["total_runtime_s"] = round(time.perf_counter() - t0, 2)
+    path = C.save_artifact("INDEX.json", index)
+    print("wrote", path, f"total {index['total_runtime_s']}s", flush=True)
+    return index
+
+
+if __name__ == "__main__":
+    main()

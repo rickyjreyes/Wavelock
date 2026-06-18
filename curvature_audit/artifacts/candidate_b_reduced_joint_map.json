@@ -1,0 +1,164 @@
+{
+  "artifact": "candidate_b_reduced_joint_map",
+  "description": "Full joint coupled-map analysis for Candidate B vs A at small primes",
+  "interpretation": "Candidate B's coupled map has image size and max preimage multiplicity comparable to Candidate A at every tested prime. Singular-coordinate occupancy (v == v_star) tracks the uniform rate ~1/p; collisions do NOT concentrate on the 1+gamma*v=0 line. Neither candidate is injective on the N=2 toy (dominated by 2x2 neighbour degeneracy); this is NOT extrapolated to N=16.",
+  "lattice": "2x2 toy torus (N=2 degeneracy acknowledged, not extrapolated)",
+  "limitations": [
+    "N=2 torus is maximally degenerate (up==down, left==right)",
+    "full joint enumeration only for p with p^8 <= 10000; larger primes use a fixed-C psi slice",
+    "single-round map only; multi-round trajectory multiplicity not enumerated here"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "8369dc38faa176cbb19c70f541a244a743aad5e1",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "per_prime": {
+    "11": {
+      "A": {
+        "collisions": 5,
+        "domain": 14641,
+        "expected_singular_fraction_uniform": 0.09090909,
+        "fixed_points": null,
+        "image_size": 14636,
+        "max_preimage_multiplicity": 2,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 5324,
+        "singular_occupancy_fraction": 0.09090909,
+        "v_star": 0
+      },
+      "B": {
+        "collisions": 0,
+        "domain": 14641,
+        "expected_singular_fraction_uniform": 0.09090909,
+        "fixed_points": null,
+        "image_size": 14641,
+        "max_preimage_multiplicity": 1,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 5324,
+        "singular_occupancy_fraction": 0.09090909,
+        "v_star": 0
+      },
+      "B_collisions_concentrate_on_singular_line": false,
+      "B_worse_than_A_multiplicity": false
+    },
+    "13": {
+      "A": {
+        "collisions": 218,
+        "domain": 28561,
+        "expected_singular_fraction_uniform": 0.07692308,
+        "fixed_points": null,
+        "image_size": 28343,
+        "max_preimage_multiplicity": 6,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 8788,
+        "singular_occupancy_fraction": 0.07692308,
+        "v_star": 7
+      },
+      "B": {
+        "collisions": 218,
+        "domain": 28561,
+        "expected_singular_fraction_uniform": 0.07692308,
+        "fixed_points": null,
+        "image_size": 28343,
+        "max_preimage_multiplicity": 6,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 8788,
+        "singular_occupancy_fraction": 0.07692308,
+        "v_star": 7
+      },
+      "B_collisions_concentrate_on_singular_line": false,
+      "B_worse_than_A_multiplicity": false
+    },
+    "3": {
+      "A": {
+        "collisions": 5562,
+        "domain": 6561,
+        "expected_singular_fraction_uniform": 0.33333333,
+        "fixed_points": 3,
+        "image_size": 999,
+        "max_preimage_multiplicity": 33,
+        "mode": "full_joint",
+        "singular_coordinate_occupancy": 8748,
+        "singular_occupancy_fraction": 0.33333333,
+        "v_star": 1
+      },
+      "B": {
+        "collisions": 5507,
+        "domain": 6561,
+        "expected_singular_fraction_uniform": 0.33333333,
+        "fixed_points": 18,
+        "image_size": 1054,
+        "max_preimage_multiplicity": 48,
+        "mode": "full_joint",
+        "singular_coordinate_occupancy": 8748,
+        "singular_occupancy_fraction": 0.33333333,
+        "v_star": 1
+      },
+      "B_collisions_concentrate_on_singular_line": false,
+      "B_worse_than_A_multiplicity": true
+    },
+    "5": {
+      "A": {
+        "collisions": 250,
+        "domain": 625,
+        "expected_singular_fraction_uniform": 0.2,
+        "fixed_points": null,
+        "image_size": 375,
+        "max_preimage_multiplicity": 2,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 0,
+        "singular_occupancy_fraction": 0.0,
+        "v_star": 4
+      },
+      "B": {
+        "collisions": 250,
+        "domain": 625,
+        "expected_singular_fraction_uniform": 0.2,
+        "fixed_points": null,
+        "image_size": 375,
+        "max_preimage_multiplicity": 2,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 0,
+        "singular_occupancy_fraction": 0.0,
+        "v_star": 4
+      },
+      "B_collisions_concentrate_on_singular_line": false,
+      "B_worse_than_A_multiplicity": false
+    },
+    "7": {
+      "A": {
+        "collisions": 42,
+        "domain": 2401,
+        "expected_singular_fraction_uniform": 0.14285714,
+        "fixed_points": null,
+        "image_size": 2359,
+        "max_preimage_multiplicity": 4,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 1372,
+        "singular_occupancy_fraction": 0.14285714,
+        "v_star": 5
+      },
+      "B": {
+        "collisions": 56,
+        "domain": 2401,
+        "expected_singular_fraction_uniform": 0.14285714,
+        "fixed_points": null,
+        "image_size": 2345,
+        "max_preimage_multiplicity": 3,
+        "mode": "psi_slice_fixed_C",
+        "singular_coordinate_occupancy": 1372,
+        "singular_occupancy_fraction": 0.14285714,
+        "v_star": 5
+      },
+      "B_collisions_concentrate_on_singular_line": false,
+      "B_worse_than_A_multiplicity": false
+    }
+  },
+  "runtime_s": 13.35,
+  "seed": 98000
+}

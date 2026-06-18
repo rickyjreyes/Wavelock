@@ -1,0 +1,86 @@
+{
+  "artifact": "vstar_message_solver",
+  "description": "Solver-assisted valid-message reachability of v_star (z3)",
+  "equations": {
+    "c_constant": 357959172,
+    "psi0_rate": "psi_0[c] = (iv[c] + b0 + 256*b1 + 65536*b2) mod p, b_i in [0,255]",
+    "v_star": 195225786,
+    "wave_round": "F(psi)[x] = psi[x] + D*Lap(psi)[x] + A*psi[x]*(B-psi[x]^2) mod p"
+  },
+  "limitations": [
+    "round-1 single-coordinate is one wave round only; full T=32 trajectory is beyond solver reach and is handled by exhaustive/guided search",
+    "UNKNOWN results are timeouts, not unreachability proofs",
+    "task E ignores CAP-cell injection (bounded probe of the rate-controlled slab)"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "1fb5eae3d222e2a033fcac82d8442b0c40521531",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "runtime_s": 0.25,
+  "seed": 111000,
+  "summary": {
+    "any_witness_found": true,
+    "round0_c_reachable": false,
+    "round0_vstar_reachable": false,
+    "round1_full_constant": "unsat",
+    "round1_single_coord_vstar": "sat"
+  },
+  "task_A_round0_rate_vstar": {
+    "cell": 0,
+    "expected": "unsat",
+    "result": "unsat",
+    "runtime_s": 0.002,
+    "target": 195225786
+  },
+  "task_B_round0_rate_c": {
+    "cell": 0,
+    "expected": "unsat",
+    "result": "unsat",
+    "runtime_s": 0.001,
+    "target": 357959172
+  },
+  "task_C_round0_fixed_vstar": {
+    "cell": 100,
+    "expected": "unsat",
+    "fixed_value": 146,
+    "note": "coordinate is never written by absorption; holds the IV constant.",
+    "result": "unsat",
+    "target": 195225786
+  },
+  "task_D_round1_rate_vstar": {
+    "cell": 20,
+    "degree": 3,
+    "equations": 1,
+    "neighbors": [
+      20,
+      4,
+      36,
+      19,
+      21
+    ],
+    "replay_matches_vstar": true,
+    "replay_note": "psi_1[cell] depends only on psi_0 at cell and its 4 rate neighbors, so the isolated witness replays exactly through the normative protocol: a VALID message reaches v_star at one coordinate at round 1.",
+    "replay_psi1_cell_value": 195225786,
+    "replay_total_vstar_cells_round1": 1,
+    "result": "sat",
+    "runtime_s": 0.116,
+    "timeout_ms": 60000,
+    "variables": 15,
+    "witness_message_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000074e04fea20a000000000000000000000000000000000000000000000000000000000000000000000000000000000000da00ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "task_E_round1_full_constant": {
+    "degree": 3,
+    "equations": 256,
+    "note": "psi_1 = c*1 from a message-reachable psi_0 (rate cells free, 67..255 fixed at IV). UNSAT => not reachable in one round; UNKNOWN => timeout (not a security result).",
+    "result": "unsat",
+    "runtime_s": 0.0,
+    "timeout_ms": 60000,
+    "variables": 64
+  }
+}

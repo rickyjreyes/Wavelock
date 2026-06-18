@@ -1,0 +1,79 @@
+{
+  "artifact": "accumulator_comparison",
+  "avalanche": {
+    "candidate_a": {
+      "max_hamming": 151,
+      "mean_hamming": 127.22,
+      "min_hamming": 113
+    },
+    "candidate_b": {
+      "max_hamming": 143,
+      "mean_hamming": 127.96,
+      "min_hamming": 108
+    },
+    "expected_random": 128,
+    "interpretation": "A single-cell perturbation in psi should change ~128 output bits (the random expectation). Both candidates are compared; any systematic difference (consistently lower Hamming) would indicate weaker diffusion.",
+    "n_msgs": 80
+  },
+  "candidates": {
+    "A": {
+      "ETA": 13,
+      "j_formula": "j_A(u,v) = u + GAMMA*u*v + ETA*u^2 + ZETA*v",
+      "known_weakness": "2-to-1 in u (j_A(u,v)=j_A(u',v) for u+u'=-(1+GAMMA*v)/ETA)",
+      "name": "CC-Core-v0"
+    },
+    "B": {
+      "ETA": 0,
+      "j_formula": "j_B(u,v) = u + GAMMA*u*v + ZETA*v",
+      "known_weakness": "injective in u except when (1+GAMMA*v)=0 mod p (~prob 1/p)",
+      "name": "Linear-injection (ETA=0)"
+    }
+  },
+  "description": "Side-by-side comparison of CC-Core-v0 (Candidate A) vs linear-injection (Candidate B)",
+  "family_separation": {
+    "candidate_a": {
+      "all_distinct": true,
+      "distinct_digests": 47,
+      "min_pairwise_hamming": 98,
+      "name": "CC-Core-v0 (j_A = u + GAMMA*u*v + ETA*u^2 + ZETA*v)"
+    },
+    "candidate_b": {
+      "all_distinct": true,
+      "distinct_digests": 47,
+      "min_pairwise_hamming": 105,
+      "name": "Candidate B (j_B = u + GAMMA*u*v + ZETA*v, ETA=0)"
+    },
+    "interpretation": "Both candidates should separate the Design A eigenmode family, since the odd-in-u term (u itself) distinguishes +s*sigma from -s*sigma. The u^2 term (ETA) adds an extra quadratic injection but introduces the known 2-to-1 structural weakness. If Candidate B also achieves full separation, the ETA term offers no advantage for this task.",
+    "n_states": 47
+  },
+  "limitations": [
+    "Candidate B is defined only for the first CC-1 analysis phase; adopting it would require a separate spec revision and re-audit",
+    "Avalanche is measured on raw trajectory digests (not message-level)",
+    "No formal security reduction exists for either candidate"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "bb96765ef2fa760482a325e95c57ccc8bccb6377",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "runtime_s": 10.51,
+  "seed": 92000,
+  "structural_comparison": {
+    "candidate_a_is_2to1_in_u": true,
+    "candidate_a_u2_pairs_found": 500,
+    "candidate_b_is_injective_in_u": true,
+    "candidate_b_linear_ambiguity_count": 0,
+    "interpretation": "Candidate B's linear injection j_B is injective in u for all v with (1+GAMMA*v) != 0 mod p; this happens with probability ~1/p. Candidate A's quadratic injection j_A has a provable 2-to-1 structure for every (u,v). Candidate B is strictly better in this structural dimension; however, the u^2 term in A does increase the polynomial degree of the injection, which may aid nonlinearity in other respects.",
+    "samples": 500,
+    "slope_zero_probability_b": "~1/p (negligible)"
+  },
+  "verdict": {
+    "candidate_b_avoids_2to1": true,
+    "candidate_b_separates_family": true,
+    "recommendation": "Candidate B (ETA=0) achieves family separation while avoiding the provable 2-to-1 structural weakness. However, the u^2 term in A increases the polynomial degree of the injection, which is a secondary design objective. The design choice (A vs B) involves a trade-off: A has higher algebraic degree with a known 2-to-1 weakness; B is injective in u but has lower degree. This trade-off is documented; no claim of superiority is made without a formal security reduction."
+  }
+}

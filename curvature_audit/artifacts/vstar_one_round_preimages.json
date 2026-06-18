@@ -1,0 +1,137 @@
+{
+  "artifact": "vstar_one_round_preimages",
+  "constant_preimage_message_reachability": {
+    "F_of_c_is_vstar": true,
+    "any_fixed_cell_equals_c": false,
+    "c_within_rate_window": false,
+    "constant_c": 357959172,
+    "psi0_can_equal_c_times_one": false,
+    "psi0_cells_67_255_fixed_at_iv": true,
+    "rate_cell0_max_reachable": 16777303,
+    "reason": "psi_0(m) has coordinates 67..255 fixed at the IV (in [123,374]); none equals c=357959172, so psi_0(m) != c*1 for every valid message. Even cells 0..63 cannot reach c: their max is iv+2^24-1 = 16777303 < c. Thus the full-lattice singular constant is NOT valid-message reachable as the post-absorption state. Whether some psi_t (t>=1) equals c*1 is a forward-preimage question handed to the solver (Part V).",
+    "separation": {
+      "algebraically_constructible": "yes (c*1 is a valid math state, F(c*1)=v_star*1)",
+      "valid_message_reachable_as_psi0": "no (exact, by the absorption image)"
+    }
+  },
+  "description": "Exact one-round preimages F(psi)[x]=v_star over structured families",
+  "equations": {
+    "structured": "F(s*sigma)[x] = sigma[x]*g(s), g(s)=s*(1+D*lambda+A*B) - A*s^3",
+    "v_star": 195225786,
+    "wave_round": "F(psi)[x] = psi[x] + D*Lap(psi)[x] + A*psi[x]*(B - psi[x]^2) mod p"
+  },
+  "family_preimages": {
+    "checkerboard": {
+      "g_linear_coeff": 2147483609,
+      "lambda": 2147483639,
+      "roots_g_eq_minus_vstar": [
+        947462293
+      ],
+      "roots_g_eq_plus_vstar": [
+        1200021354
+      ],
+      "verified_full_state": [
+        {
+          "amplitude": "g(s)=v_star",
+          "fraction": 0.5,
+          "s": 1200021354,
+          "sigma_plus_cells_all_vstar": true,
+          "total_vstar_cells": 128
+        }
+      ]
+    },
+    "cols_stripe": {
+      "g_linear_coeff": 2147483629,
+      "lambda": 2147483643,
+      "roots_g_eq_minus_vstar": [
+        491798974
+      ],
+      "roots_g_eq_plus_vstar": [
+        1655684673
+      ],
+      "verified_full_state": [
+        {
+          "amplitude": "g(s)=v_star",
+          "fraction": 0.5,
+          "s": 1655684673,
+          "sigma_plus_cells_all_vstar": true,
+          "total_vstar_cells": 128
+        }
+      ]
+    },
+    "constant": {
+      "g_linear_coeff": 2,
+      "lambda": 0,
+      "roots_g_eq_minus_vstar": [
+        1789524475
+      ],
+      "roots_g_eq_plus_vstar": [
+        357959172
+      ],
+      "verified_full_state": [
+        {
+          "amplitude": "g(s)=v_star",
+          "fraction": 1.0,
+          "s": 357959172,
+          "sigma_plus_cells_all_vstar": true,
+          "total_vstar_cells": 256
+        }
+      ]
+    },
+    "period4_cols": {
+      "g_linear_coeff": 2147483639,
+      "lambda": 2147483645,
+      "roots_g_eq_minus_vstar": [
+        1088881990
+      ],
+      "roots_g_eq_plus_vstar": [
+        1058601657
+      ],
+      "verified_full_state": [
+        {
+          "amplitude": "g(s)=v_star",
+          "fraction": 0.5,
+          "s": 1058601657,
+          "sigma_plus_cells_all_vstar": true,
+          "total_vstar_cells": 128
+        }
+      ]
+    },
+    "rows_stripe": {
+      "g_linear_coeff": 2147483629,
+      "lambda": 2147483643,
+      "roots_g_eq_minus_vstar": [
+        491798974
+      ],
+      "roots_g_eq_plus_vstar": [
+        1655684673
+      ],
+      "verified_full_state": [
+        {
+          "amplitude": "g(s)=v_star",
+          "fraction": 0.5,
+          "s": 1655684673,
+          "sigma_plus_cells_all_vstar": true,
+          "total_vstar_cells": 128
+        }
+      ]
+    }
+  },
+  "interpretation": "As ARBITRARY mathematical states, v_star is constructible on a structured subset (the sigma=+1 cells of any sign-eigenvector family) by solving a GF(p) cubic g(s)=v_star, and on the FULL lattice by the unique constant c=357959172. But NONE of these structured/constant states is valid-message reachable as the post-absorption state psi_0, because the absorption image fixes coordinates 67..255 at small IV constants and bounds the rate cells below 2^24 << v_star. Forward reachability at rounds t>=1 is examined by solver/exhaustive/guided search (Parts V-VII).",
+  "limitations": [
+    "structured solutions are arbitrary math states, not protocol outputs",
+    "round t>=1 forward reachability is not settled here"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "0c30d7c690cdc8e7f275000b936cfd25bd0ff4b1",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "runtime_s": 0.35,
+  "seed": 110000
+}

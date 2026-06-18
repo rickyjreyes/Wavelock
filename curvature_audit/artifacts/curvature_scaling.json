@@ -1,0 +1,117 @@
+{
+  "curvature_vs_length": {
+    "blocks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "growth_fit": {
+      "better_model": "power_law",
+      "exponential_fit": {
+        "R2": 5.5507804401333516e-05,
+        "rate_a": -0.00010580835131662643
+      },
+      "power_law_fit": {
+        "R2": 0.0061203838149279655,
+        "exponent_k": -0.0031367964318261723
+      }
+    },
+    "mean_accumulator_K2": [
+      1.9985292834210586e+21,
+      1.9598585959617192e+21,
+      2.0272034768137513e+21,
+      1.8844476999241934e+21,
+      2.0141257017355949e+21,
+      1.9934915677572652e+21
+    ],
+    "n_seeds": 5,
+    "note": "accumulator curvature vs message length; the digest DESCRIPTION stays 256 bits regardless of n (constant), so trajectory-metric growth does not enlarge the signature.",
+    "var_accumulator_K2": [
+      1.2190277717767975e+40,
+      3.0782465895293804e+40,
+      1.2023688939233954e+40,
+      2.4416173982466664e+40,
+      1.6542803426600095e+40,
+      1.86384242574229e+40
+    ]
+  },
+  "curvature_vs_rounds": {
+    "max_T": 40,
+    "mean_K2_by_round": [
+      1.9265709438554512e+21,
+      2.04247357232236e+21,
+      1.9806777873809536e+21,
+      1.8559059231905821e+21,
+      2.0179278355731673e+21,
+      1.938892194310843e+21,
+      1.990480471907919e+21,
+      2.0677637901385972e+21,
+      1.8829333528214113e+21,
+      1.96777027506128e+21,
+      1.9138328768825653e+21,
+      1.8754715315552046e+21,
+      1.9284786952516796e+21,
+      2.033283758045851e+21,
+      1.918679421909542e+21,
+      1.9533614961765148e+21,
+      1.965915534402036e+21,
+      1.9419701889038913e+21,
+      1.9483625481154996e+21,
+      1.9878107280830232e+21,
+      2.0709842922108863e+21,
+      1.8760118400108543e+21,
+      1.9687622133493035e+21,
+      2.026621302282732e+21,
+      2.0240037112525066e+21,
+      2.1143065066422377e+21,
+      1.9106044305791092e+21,
+      2.0400705418464739e+21,
+      1.9844737018264394e+21,
+      1.9922585309002174e+21,
+      2.056305090326157e+21,
+      1.996810740787444e+21,
+      1.8603199119465613e+21,
+      1.8993896492896475e+21,
+      2.1975598475076538e+21,
+      1.7695372777800653e+21,
+      1.904763835826087e+21,
+      1.8564683309455196e+21,
+      2.0886263508174336e+21,
+      1.9977907584885572e+21,
+      2.0609513078116712e+21
+    ],
+    "n_seeds": 5,
+    "note": "wave curvature reaches a stationary band quickly (cf. avalanche saturating by T~8); it does NOT grow without bound -- there is no exponential curvature in T.",
+    "saturates": true
+  },
+  "interpretation": "Forward curvature saturates in T and grows at most polynomially in message length; the 256-bit description size is constant; no exponential growth of any measured quantity was found. This does NOT establish exponential attack cost (a separate, unproved quantity).",
+  "limitations": [
+    "short ranges (T<=40, blocks<=6); no extrapolation claimed",
+    "few seeds; wide CIs; curvature magnitudes are lift-convention dependent (see curvature_metrics)"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "curvature_scaling",
+  "runtime_s": 1.7,
+  "seed": 90500,
+  "separation_vs_hamming": {
+    "mean_D_Gamma_by_input_hamming": {
+      "1": 4.802593120754981e+21,
+      "16": 5.852520265541227e+21,
+      "4": 5.40907778209725e+21,
+      "64": 6.116340774375895e+21
+    },
+    "n_pairs": 60,
+    "note": "trajectory separation saturates to the same well-mixed band for input HD >= 1 (avalanche), so it does not encode a graded distance -- another reason it is a diagnostic only."
+  }
+}

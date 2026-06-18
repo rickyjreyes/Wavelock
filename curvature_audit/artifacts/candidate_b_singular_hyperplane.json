@@ -1,0 +1,120 @@
+{
+  "artifact": "candidate_b_singular_hyperplane",
+  "chosen_message_reachability": {
+    "budget": 4000,
+    "message_reaching_v_star_coordinate": null,
+    "messages_checked": 4000,
+    "note": "no chosen message within budget drove a post-absorb coordinate to V_STAR; absorb mixes through T rounds so targeting a single coordinate value is preimage-hard. Not a proof of impossibility."
+  },
+  "confirm_collapse": {
+    "j_collapses_to_zero_at_v_star": true,
+    "j_injective_in_u_off_hyperplane": true,
+    "note": "j_B(u, V_STAR)=0 for all u (confirmed); off the hyperplane the slope (1+GAMMA*v) is nonzero so j_B is injective in u.",
+    "samples": 2000,
+    "v_star": 195225786
+  },
+  "constant_field_preimage": {
+    "F_of_c": 195225786,
+    "constant_preimage_c": 357959172,
+    "note": "psi == c maps to V_STAR on ALL 256 cells (one-round full-lattice singular collapse). This zeroes the injection for ONE round; the accumulator still evolves via MU*Cd + A_C*Cd^2 + rho_t. Only this single constant state has full-lattice collapse (unique cubic root).",
+    "produces_full_lattice_v_star": true,
+    "trajectory_digest": "8d02c2602c029e38a868cf24dc77779633bce450ddba9f906f3dc8b2bccf354f"
+  },
+  "description": "Singular-hyperplane (v=V_STAR) attack audit for Candidate B",
+  "equations": {
+    "collapse": "j_B(u, V_STAR) = 0 for all u",
+    "constant_preimage": "F(c) = V_STAR with c = 357959172 (unique cubic root)",
+    "injection": "j_B(u, v) = u + GAMMA*u*v = u*(1 + GAMMA*v) mod p",
+    "v_star": "V_STAR = -GAMMA^{-1} mod p = 195225786"
+  },
+  "limitations": [
+    "chosen-message reachability is a bounded search (4000 messages)",
+    "constant-field preimage is the only exact full-lattice construction found; partial-lattice singular constructions (preimage-hard) were not exhausted",
+    "no proof that v_star is globally unreachable under the normative protocol"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "fd2d6203a19206d615f6e6fd17c4559e0c6e0614",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "multi_round_attraction": {
+    "expected_uniform": 0.0015,
+    "n_states": 400,
+    "note": "over T rounds the wave field transits V_STAR at the uniform rate; no attractor toward the singular hyperplane.",
+    "rounds_each": 32,
+    "states_ever_hitting": 0,
+    "total_coordinate_evaluations": 3276800,
+    "total_coordinate_transits_through_v_star": 0
+  },
+  "path_erasure_test": {
+    "base_is_full_collapse_constant": true,
+    "digest_changed_after_perturbation": 256,
+    "digest_unchanged_after_perturbation": 0,
+    "erasure_examples": [],
+    "note": "perturbing the full-collapse constant state changes the digest every time: the single-round injection-zeroing does NOT erase the perturbed cell's contribution, because that cell still enters the accumulator at adjacent rounds (as u at round t, as v at round t-1) and through wave-field diffusion. No path erasure observed.",
+    "path_erasure_detected": false,
+    "perturbations_tested": 256
+  },
+  "reachability_family": {
+    "n_family_states": 47,
+    "note": "the Phase 8J family collapses the wave to terminal 0 (0 != V_STAR); no family state lands on the singular hyperplane.",
+    "states_producing_v_star_coordinate": 0
+  },
+  "reachability_random": {
+    "coordinates_tested": 1280000,
+    "expected_hits_uniform": 0.000596,
+    "n_states": 5000,
+    "note": "V_STAR is hit at the uniform-random rate ~1/p per coordinate; no structural attraction observed in random states.",
+    "states_with_at_least_one_hit": 0,
+    "v_star_coordinate_hits": 0
+  },
+  "reduced_model_singular": {
+    "note": "j_B(u,v)=0 exactly on the union {u=0} U {v=v_star}; this is 2p-1 pairs out of p^2, i.e. fraction ~2/p -> 0. The singular set is a single hyperplane v=v_star (measure 1/p), same order as Candidate A's zero set. It does NOT concentrate collisions beyond measure ~1/p.",
+    "per_prime": {
+      "11": {
+        "note": "gamma == 0 mod p; skipped"
+      },
+      "13": {
+        "expected_zero_pairs": 25,
+        "j_zero_pairs": 25,
+        "on_u0_line": 13,
+        "on_v_star_line": 13,
+        "v_star": 7
+      },
+      "3": {
+        "expected_zero_pairs": 5,
+        "j_zero_pairs": 5,
+        "on_u0_line": 3,
+        "on_v_star_line": 3,
+        "v_star": 1
+      },
+      "5": {
+        "expected_zero_pairs": 9,
+        "j_zero_pairs": 9,
+        "on_u0_line": 5,
+        "on_v_star_line": 5,
+        "v_star": 4
+      },
+      "7": {
+        "expected_zero_pairs": 13,
+        "j_zero_pairs": 13,
+        "on_u0_line": 7,
+        "on_v_star_line": 7,
+        "v_star": 5
+      }
+    }
+  },
+  "runtime_s": 66.18,
+  "seed": 95000,
+  "verdict": {
+    "conclusion": "The singular hyperplane v=V_STAR is constructible (unique constant state c=357959172 maps the whole lattice to V_STAR for one round) but NOT broadly reachable (random/eigenmode/family states hit it at rate ~1/p) and does NOT cause path erasure (perturbing a full-collapse state changes the digest every time). The singular set has measure ~1/p, the same order as Candidate A's injection-zero set. No practical trajectory-commitment collision family was produced from it.",
+    "path_erasure_detected": false,
+    "singular_set_measure": "~1/p (single hyperplane), same order as Candidate A's zero set",
+    "v_star_constructible_constant_field": true,
+    "v_star_reachable_randomly": false
+  }
+}

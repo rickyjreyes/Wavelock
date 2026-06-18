@@ -1,0 +1,78 @@
+{
+  "interpretation": "In toy fields the bare wave round is heavily non-injective (Design A finding reproduced: thousands of colliding buckets). The coupled (psi,C) round REDUCES collisions by a large factor but does NOT eliminate them on the N=2 toy (tens of residual coupled collisions). The residual is dominated by N=2 neighbour degeneracy (on a 2x2 torus up==down and left==right, collapsing BOTH the wave and the accumulator Laplacian) -- the same pathology Design A documented in Phase 8B and explicitly did NOT extrapolate to N=16. So the accumulator demonstrably helps but the coupled round is NOT shown injective even at toy scale; global injectivity at N=16, p=2^31-1 remains UNRESOLVED and is not extrapolated either way. (Separately, the specific Design A eigenmode collision family IS separated at full N=16 scale: see eigenmode_attacks, 9/9 distinct digests.)",
+  "limitations": [
+    "N=2 toy is maximally neighbour-degenerate; collisions there are not representative of N=16 and are NOT extrapolated",
+    "coupled enumeration fixes a single initial C (a slice, not the full (psi,C) domain)",
+    "no z3/Groebner result if those packages are absent (see solver_availability)"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "reduced_models",
+  "runtime_s": 2.39,
+  "seed": 90600,
+  "solver_availability": {
+    "sage": false,
+    "sympy": false,
+    "z3": false
+  },
+  "toy_results": {
+    "N2_p11": {
+      "coupled_injectivity": {
+        "accumulator_restores_injectivity_on_this_slice": false,
+        "coupled_round_collisions": 180,
+        "domain": 14641,
+        "enumerated": true,
+        "note": "with a FIXED initial accumulator C, distinct psi that the bare wave round merges are separated by the (psi',C') pair iff coupled_round_collisions == 0.",
+        "wave_round_collisions": 3523
+      },
+      "wave_injectivity": {
+        "domain": 14641,
+        "enumerated": true,
+        "image_fraction": 0.5713407554128817,
+        "image_size": 8365,
+        "non_injective": true
+      }
+    },
+    "N2_p5": {
+      "coupled_injectivity": {
+        "accumulator_restores_injectivity_on_this_slice": false,
+        "coupled_round_collisions": 51,
+        "domain": 625,
+        "enumerated": true,
+        "note": "with a FIXED initial accumulator C, distinct psi that the bare wave round merges are separated by the (psi',C') pair iff coupled_round_collisions == 0.",
+        "wave_round_collisions": 135
+      },
+      "wave_injectivity": {
+        "domain": 625,
+        "enumerated": true,
+        "image_fraction": 0.4304,
+        "image_size": 269,
+        "non_injective": true
+      }
+    },
+    "N2_p7": {
+      "coupled_injectivity": {
+        "accumulator_restores_injectivity_on_this_slice": false,
+        "coupled_round_collisions": 51,
+        "domain": 2401,
+        "enumerated": true,
+        "note": "with a FIXED initial accumulator C, distinct psi that the bare wave round merges are separated by the (psi',C') pair iff coupled_round_collisions == 0.",
+        "wave_round_collisions": 671
+      },
+      "wave_injectivity": {
+        "domain": 2401,
+        "enumerated": true,
+        "image_fraction": 0.5860058309037901,
+        "image_size": 1407,
+        "non_injective": true
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+name: curvature_audit
+
+# Fast, isolated CI for the WaveLock Curvature-Capacity Core
+# (wavelock/curvature_capacity + curvature_audit only). Deliberately does NOT
+# run the legacy WaveLock suite or any long/slow search; multi-minute scaling
+# and collision searches stay out of PR CI (they live behind the runner
+# curvature_audit/run_audit.py).
+
+on:
+  push:
+    branches:
+      - research/curvature-capacity-wavelock
+    paths:
+      - 'wavelock/curvature_capacity/**'
+      - 'wavelock/curvature_capacity_v1/**'
+      - 'curvature_audit/**'
+      - '.github/workflows/curvature_audit.yml'
+  pull_request:
+    paths:
+      - 'wavelock/curvature_capacity/**'
+      - 'wavelock/curvature_capacity_v1/**'
+      - 'curvature_audit/**'
+      - '.github/workflows/curvature_audit.yml'
+  workflow_dispatch:
+
+jobs:
+  audit-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal deps (no cryptographic packages)
+        run: python -m pip install --upgrade pip numpy pytest
+      - name: Forbidden-primitive guard
+        run: python -m pytest curvature_audit/test_forbidden_imports.py -c curvature_audit/pytest.ini -q
+      - name: Reference/optimized parity + pinned vectors + exact trace
+        run: python -m pytest curvature_audit/test_parity.py -c curvature_audit/pytest.ini -q
+      - name: Design A preservation guard
+        run: python -m pytest curvature_audit/test_design_a_preserved.py -c curvature_audit/pytest.ini -q
+      - name: Eigenmode regression (Design A collapse + trajectory separation)
+        run: python -m pytest curvature_audit/test_eigenmode_regression.py -c curvature_audit/pytest.ini -q
+      - name: Phase CC-1 (complete family + algebraic attacks + claim separation)
+        run: python -m pytest curvature_audit/test_phase_cc1.py -c curvature_audit/pytest.ini -q
+      - name: CC-2 Candidate A frozen regression
+        run: python -m pytest curvature_audit/test_candidate_a_frozen.py -c curvature_audit/pytest.ini -q
+      - name: CC-2 Candidate B parity + pinned vectors + j_B equation + v_star
+        run: python -m pytest curvature_audit/test_candidate_b.py -c curvature_audit/pytest.ini -q -k "parity or pinned or jb or v_star or collapse or injective or wave_round"
+      - name: CC-2 singular-hyperplane (no path erasure) + restricted binding theorems
+        run: python -m pytest curvature_audit/test_candidate_b.py -c curvature_audit/pytest.ini -q -k "collapse_state or odd or sign_pair or injective_in_u"
+      - name: CC-2 full-family binding (47-state separation, Candidate B)
+        run: python -m pytest curvature_audit/test_candidate_b.py::TestFullFamilySeparation -c curvature_audit/pytest.ini -q
+      - name: CC-2 domain separation + frozen Design A guard
+        run: python -m pytest curvature_audit/test_candidate_b.py -c curvature_audit/pytest.ini -q -k "domain or distinct_d_tag or design_a or zero_trajectory"
+      - name: CC-3 singular reachability (round-0 unreachable, witness replay, harmless hit, protocol, doc hygiene)
+        run: python -m pytest curvature_audit/test_cc3_reachability.py -c curvature_audit/pytest.ini -q
+      - name: Full curvature_audit fast tests (excludes slow searches)
+        run: python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
