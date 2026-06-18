@@ -1,0 +1,156 @@
+{
+  "artifact": "candidate_a_vs_b",
+  "description": "Controlled Candidate A vs Candidate B comparison (identical seeds/budgets)",
+  "empirical": {
+    "avalanche": {
+      "A": {
+        "max": 154,
+        "mean": 128.59,
+        "min": 95
+      },
+      "B": {
+        "max": 150,
+        "mean": 127.6,
+        "min": 104
+      },
+      "expected_random": 128,
+      "n_msgs": 120
+    },
+    "full_family_separation": {
+      "A": {
+        "distinct": 47,
+        "min_hamming": 98
+      },
+      "B": {
+        "distinct": 47,
+        "min_hamming": 105
+      },
+      "note": "from phase8j family binding artifacts; both separate all 47."
+    },
+    "monobit_bias": {
+      "A": {
+        "bits_z_gt_3": 1,
+        "max_abs_z": 3.479
+      },
+      "B": {
+        "bits_z_gt_3": 1,
+        "max_abs_z": 3.226
+      },
+      "n_msgs": 1000
+    },
+    "path_order_sensitivity": {
+      "A_order_sensitive": 80,
+      "B_order_sensitive": 80,
+      "n_msgs": 80,
+      "note": "fraction of block-swapped pairs giving distinct digests; both should be ~all (order is bound by rho_t and W_t)."
+    },
+    "runtime_memory": {
+      "A_mean_ms": 42.245,
+      "B_mean_ms": 40.321,
+      "memory_note": "both carry two 256-cell int64 fields (~4 KiB state); identical.",
+      "n": 20
+    },
+    "truncated_collision": {
+      "A": {
+        "budget": 4000,
+        "collision_at_eval": null,
+        "expected_birthday": 4096
+      },
+      "B": {
+        "budget": 4000,
+        "collision_at_eval": null,
+        "expected_birthday": 4096
+      },
+      "nbits": 24
+    }
+  },
+  "fixed_points_and_cycles": {
+    "A": {
+      "budget": 3000,
+      "fixed_points_found": 0,
+      "two_cycles_found": 0
+    },
+    "B": {
+      "budget": 3000,
+      "fixed_points_found": 0,
+      "two_cycles_found": 0
+    }
+  },
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "e719cf6b2e101808bde8e03eb4f2de4df7146665",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "reduced_model": {
+    "3": {
+      "A": {
+        "image_size": 999,
+        "max_preimage_multiplicity": 33
+      },
+      "B": {
+        "image_size": 1054,
+        "max_preimage_multiplicity": 48
+      },
+      "mode": "full_joint"
+    },
+    "5": {
+      "A": {
+        "image_size": 15552,
+        "max_preimage_multiplicity": 256
+      },
+      "B": {
+        "image_size": 15552,
+        "max_preimage_multiplicity": 256
+      },
+      "mode": "full_joint"
+    },
+    "7": {
+      "A": {
+        "image_size": 2359,
+        "max_preimage_multiplicity": 4
+      },
+      "B": {
+        "image_size": 2345,
+        "max_preimage_multiplicity": 3
+      },
+      "mode": "psi_slice_fixed_C"
+    }
+  },
+  "runtime_s": 458.17,
+  "seed": 97000,
+  "structural": {
+    "a_eta_inverse": 1486719448,
+    "coordinate_erasure_condition": {
+      "A": "none (every (u,v) injects; fold is 2-to-1 not erasing)",
+      "B": "v == v_star erases u at that coordinate that round (measure 1/p)"
+    },
+    "injection_degree_in_u": {
+      "A": 2,
+      "B": 1
+    },
+    "injection_multiplicity_in_u": {
+      "A": "2-to-1 generically (proved: u' = -(1+GAMMA*v)/ETA - u)",
+      "B": "1-to-1 (injective) for all v with (1+GAMMA*v) != 0; collapse at v=v_star"
+    },
+    "injection_zero_set": {
+      "A": "parabola eta*u^2 + (1+gamma*v)u + zeta*v = 0 (a curve, ~p points)",
+      "B": "{u=0} U {v=v_star} (2p-1 points)"
+    },
+    "singular_hyperplane": {
+      "A": "none distinguished (2-to-1 fold everywhere)",
+      "B": "v = v_star = 195225786 (measure 1/p), constructible but not path-erasing"
+    }
+  },
+  "summary": {
+    "B_introduces_singular_hyperplane": true,
+    "B_min_hamming_higher": true,
+    "B_removes_generic_2to1": true,
+    "decision_note": "Decision is made in Part XV across all axes, not on minimum Hamming distance alone.",
+    "singular_hyperplane_path_erasing": false,
+    "singular_hyperplane_reachable": false
+  }
+}
