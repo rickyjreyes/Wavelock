@@ -15,7 +15,10 @@ from . import (curvature_metrics, eigenmode_attacks, path_collision,
                resource_bounds, scaling, reduced_models,
                phase_cc1_family, accumulator_algebraic_attacks,
                accumulator_comparison, shortcut_computation,
-               reduced_exhaustive_cc1)
+               reduced_exhaustive_cc1,
+               candidate_b_singular_hyperplane, candidate_b_full_family,
+               candidate_a_vs_b, candidate_b_reduced_joint_map,
+               candidate_b_algebraic_solver, candidate_b_shortcuts)
 
 MODULES = [
     ("curvature_metrics", curvature_metrics, "curvature_metrics_demo.json"),
@@ -31,6 +34,17 @@ MODULES = [
     ("accumulator_comparison", accumulator_comparison, "accumulator_comparison.json"),
     ("shortcut_computation", shortcut_computation, "shortcut_computation.json"),
     ("reduced_exhaustive_cc1", reduced_exhaustive_cc1, "reduced_exhaustive_cc1.json"),
+    # Phase CC-2 modules (Candidate B)
+    ("candidate_b_singular_hyperplane", candidate_b_singular_hyperplane,
+     "candidate_b_singular_hyperplane.json"),
+    ("candidate_b_full_family", candidate_b_full_family,
+     "candidate_b_full_family_binding.json"),
+    ("candidate_a_vs_b", candidate_a_vs_b, "candidate_a_vs_b.json"),
+    ("candidate_b_reduced_joint_map", candidate_b_reduced_joint_map,
+     "candidate_b_reduced_joint_map.json"),
+    ("candidate_b_algebraic_solver", candidate_b_algebraic_solver,
+     "candidate_b_algebraic_solver.json"),
+    ("candidate_b_shortcuts", candidate_b_shortcuts, "candidate_b_shortcuts.json"),
 ]
 
 
