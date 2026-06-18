@@ -1,0 +1,140 @@
+{
+  "branch": "research/pde-eigenmode-collision-audit",
+  "constants": {
+    "N": 16,
+    "T": 32,
+    "cap0": 64,
+    "cap1": 65,
+    "cap2": 66,
+    "p": 2147483647,
+    "rate": 64
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "part10_distinguisher": {
+    "max_abs_corr_proj_vs_bit": 0.0703236692173441,
+    "mean_abs_corr": 0.02034928862936616,
+    "n": 1500,
+    "note": "checkerboard-mode projection of pre-squeeze state vs output bits; high correlation would be a (weak) structural leak."
+  },
+  "part3_relaxed_one_block": {
+    "best_pre_squeeze_nonzero_coords": 256,
+    "budget": 6000,
+    "model": "A_relaxed_one_block",
+    "note": "capacity cells 67..255 fixed at IV; relaxed control of 64 rate cells is a 64-dim affine slice that generically misses the finite preimage set F^{-T}(0).",
+    "reached_zero": false
+  },
+  "part4_first_block_impossibility": {
+    "by_pattern_sample": [
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 2
+      },
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 2
+      },
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 2
+      },
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 2
+      },
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 4
+      },
+      {
+        "min_uncontrolled_mismatch": 189,
+        "r": 4
+      }
+    ],
+    "eigenmode_amplitudes": {
+      "r1": [
+        1217065103,
+        930418544
+      ],
+      "r2": [
+        1395627816,
+        751855831
+      ],
+      "r4": [
+        151946369,
+        1995537278
+      ]
+    },
+    "iv_values_at_uncontrolled_max": 368,
+    "min_uncontrolled_mismatch_over_all_variants": 189,
+    "num_eigenmode_patterns_checked": 46,
+    "proof": "Every uncontrolled cell 67..255 holds an IV value <= 368, while every eigenmode requires +/- s (s in {151946369,1217065103,1395627816,...} ~1e8-1e9). Since min mismatch over ALL symmetry/sign variants is 189 > 0, no eigenmode state can equal U_0 for any one-block message: direct first-block reachability is IMPOSSIBLE.",
+    "uncontrolled_cells": [
+      67,
+      255
+    ]
+  },
+  "part5_9_byte_search": {
+    "any_exact_lift": false,
+    "best_capacity_coord_matches_to_checker(of 189)": 0,
+    "best_digest_hamming_to_zero(min, of 256)": 98,
+    "best_pre_squeeze_nonzero_coords(min, of 256)": 256,
+    "budget": 6000,
+    "found": {
+      "digest_all_zero": null,
+      "exact_eigenmode_U": null,
+      "pre_squeeze_zero": null,
+      "structured_state": null
+    },
+    "model": "B_byte_constrained"
+  },
+  "part6_2_linearized_steering": {
+    "capacity_target_dim": 189,
+    "iters": 6,
+    "model": "A_relaxed",
+    "n_prior_blocks": 3,
+    "note": "modular-Newton on the rank-189 differential map; F_p has no valuation so a linearized step need not decrease the nonlinear residual -- convergence is the empirical question.",
+    "random_baseline_best_residual": 189,
+    "reached_capacity_target": false,
+    "residual_trajectory": [
+      189,
+      189,
+      189,
+      189,
+      189,
+      189,
+      189
+    ]
+  },
+  "part6_differential_controllability": {
+    "by_blocks": {
+      "1": {
+        "capacity_rank": 64,
+        "deficiency": 125,
+        "input_vars": 64,
+        "rank_saturated_to_189": false
+      },
+      "2": {
+        "capacity_rank": 128,
+        "deficiency": 61,
+        "input_vars": 128,
+        "rank_saturated_to_189": false
+      },
+      "3": {
+        "capacity_rank": 189,
+        "deficiency": 0,
+        "input_vars": 192,
+        "rank_saturated_to_189": true
+      }
+    },
+    "capacity_target_dim": 189,
+    "note": "Differential (local, linearized) controllability only. Full differential rank != global reachability; rank below 189 means the capacity target is locally unreachable with that many blocks."
+  },
+  "phase": "8K_multiblock_reachability",
+  "runtime_s": 175.12
+}

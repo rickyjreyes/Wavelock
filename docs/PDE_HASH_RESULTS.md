@@ -237,6 +237,30 @@ implementation.
   - *Full message collision / preimage:* **not demonstrated.** See Phase 8K
     (`PDE_HASH_MULTIBLOCK_REACHABILITY.md`).
 
+### 8K — Multi-block reachability & lifting (artifacts: `phase8k_multiblock_reachability.json`, `phase8k_reduced_lifting.json`; doc: `PDE_HASH_MULTIBLOCK_REACHABILITY.md`)
+- **Exact trace** of every block transition reproduces both normative
+  implementations byte-for-byte (parity-tested).
+- **First block:** structured-collision reachability is **impossible (proven)** —
+  all 46 eigenmodes mismatch all 189 uncontrolled capacity cells under every
+  symmetry/sign variant.
+- **Differential controllability** of the 189 capacity coords by prior blocks:
+  rank **64 → 128 → 189** at 1/2/3 blocks. So ≤2 blocks are *dimensionally*
+  unable to steer the capacity target; the obstruction vanishes at 3 blocks
+  (local rank only — not global reachability).
+- **Modular-Newton steering** exploiting the rank-189 map **does not converge**
+  (residual pinned at 189): 𝔽_p has no Hensel valuation, so a linearized step
+  need not reduce the nonlinear residual.
+- **Searches:** byte-constrained (6 000 msgs, 1–3 blocks) and relaxed one-block
+  found **no** message reaching zero or a structured state (best digest Hamming
+  distance to `00…00` was 98). Eigenmode-projection distinguisher: max |corr|
+  0.07 (none).
+- **Reduced models (mechanism):** message-preimage-of-zero is **UNSAT below
+  ≈capacity/rate blocks** (z3) and **appears at 3 blocks** (N=2,p=7: 1 msg at
+  T=1, 6 at T=2 — verified exactly); message-level collisions abundant. Internal
+  non-injectivity **lifts** in the small case. **Not extrapolated** to the
+  normative system; whether it scales is unresolved (Newton fails, search
+  infeasible, byte model blocks eigenmode rate cells).
+
 ## 10. Limitations
 
 - **Scale of testing.** Collisions were measured only on **truncated** outputs
