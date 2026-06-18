@@ -19,7 +19,8 @@ import time
 from . import _harness as H
 from . import (avalanche, state_map, squeeze_analysis, distinguishers,
                symmetry_attacks, collision_scaling, preimage_attacks,
-               algebraic_analysis, parameter_sweep, baselines)
+               algebraic_analysis, parameter_sweep, baselines,
+               eigenmode_collisions, multiblock_reachability, reduced_lifting)
 
 PHASES = {
     "avalanche": avalanche.main,
@@ -32,6 +33,9 @@ PHASES = {
     "algebraic": algebraic_analysis.main,
     "parameter": parameter_sweep.main,
     "baselines": baselines.main,
+    "eigenmode": eigenmode_collisions.main,
+    "multiblock": multiblock_reachability.main,
+    "reduced_lifting": reduced_lifting.main,
 }
 
 
@@ -86,6 +90,22 @@ def _extract_summary(name, res):
             return {"n_regimes": len(res["rows"])}
         if name == "baselines":
             return {"candidate": res["rows"]["pde_T32_candidate"]}
+        if name == "eigenmode":
+            return {
+                "constructive_zero_preimages":
+                    res["part2_tile_enumeration"]["constructive_zero_preimage_count_one_round"],
+                "message_lift_found": res["part4_reachability"]["search"]["found"],
+            }
+        if name == "multiblock":
+            return {
+                "capacity_rank_by_blocks":
+                    {k: v["capacity_rank"] for k, v in res["part6_differential_controllability"]["by_blocks"].items()},
+                "byte_search_exact_lift": res["part5_9_byte_search"]["any_exact_lift"],
+            }
+        if name == "reduced_lifting":
+            lifts = [e for e in res["exhaustive"]
+                     if not e.get("skipped") and e.get("messages_reaching_zero", 0) > 0]
+            return {"reduced_models_with_message_to_zero": len(lifts)}
     except Exception as e:  # pragma: no cover
         return {"summary_error": str(e)}
     return {}

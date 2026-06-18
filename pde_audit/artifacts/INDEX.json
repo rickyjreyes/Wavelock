@@ -9,7 +9,10 @@
     "phase8f_collision_scaling.json",
     "phase8g_preimage.json",
     "phase8h_algebraic.json",
-    "phase8i_parameter_sweep.json"
+    "phase8i_parameter_sweep.json",
+    "phase8j_eigenmode_collisions.json",
+    "phase8k_multiblock_reachability.json",
+    "phase8k_reduced_lifting.json"
   ],
   "headline": {
     "8A_meanHD_T32": 127.91917067307692,
@@ -35,6 +38,23 @@
     },
     "8H_affine_relation": false,
     "8I_regimes": 20,
+    "8J_constructive_zero_preimages": 47,
+    "8J_distinct_patterns_by_r": {
+      "1": 8,
+      "2": 36,
+      "4": 2
+    },
+    "8J_message_lift_found": false,
+    "8J_state_transformation_globally_injective": false,
+    "8K_byte_search_exact_lift": false,
+    "8K_capacity_rank_by_blocks": {
+      "1": 64,
+      "2": 128,
+      "3": 189
+    },
+    "8K_first_block_min_mismatch": 189,
+    "8K_newton_reached_capacity": false,
+    "8K_reduced_models_lift_to_zero": 2,
     "III_candidate": {
       "avalanche_mean_hd": 128.05,
       "avalanche_std_hd": 8.01,
@@ -51,5 +71,16 @@
     "python": "3.11.15"
   },
   "note": "assembled from existing phase artifacts (phases not re-run)",
-  "verdict": "Unresolved experimental candidate"
+  "reachability_layers": {
+    "direct_first_block_eigenmode_reachability": "Impossible (proven)",
+    "full_message_collision_resistance": "Unresolved",
+    "full_message_preimage_resistance": "Unresolved",
+    "generic_arbitrary_target_state_inversion": "Unresolved",
+    "global_injectivity_state_transformation": "False",
+    "internal_preimage_resistance_target_zero": "Broken",
+    "internal_state_collision_resistance": "Broken",
+    "multi_block_eigenmode_reachability": "Unresolved"
+  },
+  "verdict_digest": "Unresolved experimental candidate",
+  "verdict_state_transformation": "Constructively non-injective; internal collision & target-zero preimage resistance BROKEN; generic arbitrary-target inversion UNRESOLVED"
 }

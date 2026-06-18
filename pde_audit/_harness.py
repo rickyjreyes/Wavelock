@@ -274,6 +274,60 @@ def mod_rank_np(matrix: np.ndarray, p: int) -> int:
     return rank
 
 
+def mod_solve(A: np.ndarray, y: np.ndarray, p: int):
+    """A particular solution x to A x == y (mod p), or None if inconsistent.
+
+    Gaussian elimination over F_p; free variables set to 0. A is (m x n).
+    """
+    A = (np.asarray(A, dtype=np.int64) % p).copy()
+    y = (np.asarray(y, dtype=np.int64) % p).copy()
+    m, n = A.shape
+    aug = np.concatenate([A, y.reshape(m, 1)], axis=1)
+    pivots = []
+    r = 0
+    for c in range(n):
+        nz = np.nonzero(aug[r:, c] % p)[0]
+        if nz.size == 0:
+            continue
+        piv = r + int(nz[0])
+        if piv != r:
+            aug[[r, piv]] = aug[[piv, r]]
+        inv = pow(int(aug[r, c]), p - 2, p)
+        aug[r] = (aug[r] * inv) % p
+        for rr in range(m):
+            if rr != r and aug[rr, c] % p:
+                aug[rr] = (aug[rr] - aug[rr, c] * aug[r]) % p
+        pivots.append(c)
+        r += 1
+        if r == m:
+            break
+    # consistency: any all-zero row in A with nonzero rhs -> inconsistent
+    for rr in range(m):
+        if not aug[rr, :n].any() and aug[rr, n] % p:
+            return None
+    x = np.zeros(n, dtype=np.int64)
+    for i, c in enumerate(pivots):
+        x[c] = aug[i, n] % p
+    return x
+
+
+def matmul_mod(A: np.ndarray, B: np.ndarray, p: int) -> np.ndarray:
+    """Exact (A @ B) mod p for int matrices with entries in [0, p), p < 2**31.
+
+    Avoids int64 overflow by splitting A into 16-bit hi/lo limbs:
+      A = Ah*2**16 + Al,  Ah < 2**15, Al < 2**16, B < 2**31.
+      Ah@B terms < 2**46, summed over <=2**16 rows still < 2**62 (fits int64);
+      likewise Al@B. Recombine ((Ah@B % p) << 16 + Al@B) % p exactly.
+    """
+    A = np.asarray(A, dtype=np.int64) % p
+    B = np.asarray(B, dtype=np.int64) % p
+    Ah = A >> 16
+    Al = A & 0xFFFF
+    hi = (Ah @ B) % p
+    lo = (Al @ B) % p
+    return (((hi << 16) % p) + lo) % p
+
+
 def hamming_bytes(a: bytes, b: bytes) -> int:
     return sum(bin(x ^ y).count("1") for x, y in zip(a, b))
 
