@@ -1,20 +1,53 @@
 # WaveLock Curvature-Capacity Core — Adversarial Audit Results & Final Report
 
-**Branch:** `research/curvature-capacity-wavelock` · **Date:** 2026-06-18
-**Construction:** CC-Core-v0 (`wavelock/curvature_capacity/`, see
-`docs/WAVELOCK_CURVATURE_CAPACITY_SPEC.md`).
-**Artifacts:** `curvature_audit/artifacts/` (each records branch, commit,
-equations, parameters, seed, environment, runtime, budget, raw result,
-interpretation, limitations). Environment: Python 3.11, NumPy 2.4.6, Linux
-x86_64. z3 / sympy / Sage **not** installed (recorded limitation).
-
-> **Observed attack cost is not a lower bound and is not a proof of one-wayness,
-> collision resistance, or cryptographic security. Negative results below carry
-> their search budgets and are not proofs.**
+> **No security claim.** Observed attack cost is not a lower bound and is not a
+> proof of one-wayness, collision resistance, or cryptographic security. Negative
+> results carry their budgets and are not proofs.
 
 ---
 
-## FINAL CONCLUSION
+## Current Verdict — Phase CC-3
+
+**Branch:** `research/curvature-capacity-wavelock` · PR #19 (draft) · base `master`
+· **Date:** 2026-06-18. **Current primary experimental candidate:** `CC-Core-v1-B`
+(`wavelock/curvature_capacity_v1/`). Environment: Python 3.11, NumPy 2.4.6, with
+**z3 4.16.0 and SymPy 1.14.0 installed and used** in Phases CC-2/CC-3.
+
+1. **Verdict — Merge research-only:** Candidate B survives the protocol-level
+   singular audit; no security claim. (Merge criteria: `CC_CORE_V1` docs + below.)
+2. **Test count:** the fast suite (`curvature_audit/`, `-m "not slow"`) passes;
+   current count is recorded in `curvature_audit/artifacts/cc3_ci_status.json`.
+3. **CI status:** GitHub Actions `audit-fast` check-runs report **success** on the
+   PR head; the legacy *combined-status* API is empty by design (Actions reports
+   via check-runs, not commit statuses). Run links in `cc3_ci_status.json`.
+4. **Reachability of `v_star = 195225786`:** **unreachable at round 0** for every
+   valid message [theorem]; **reachable at one coordinate at round 1** via a
+   replay-verified 191-byte witness [computer-assisted theorem]; the hit is
+   **harmless** — only the round-0 wave-injection is zeroed while the bytes already
+   entered C at absorption, no collision found [theorem + bounded evidence];
+   multi-coordinate / full-lattice / persistent reachability **unresolved**
+   (z3 timeouts; no witness). Details: `docs/CC_CORE_V1_VSTAR_REACHABILITY.md`.
+5. **Merge recommendation:** safe to merge **research-only** (isolated code, no
+   security claim, no default/production import); **unsafe for production** (no
+   Layer-3 hardness proof). PR #19 remains a draft until merged research-only.
+6. **Allowed claims:** B removes Candidate A's generic 2-to-1 injection; B is
+   injective in u off one measure-1/p hyperplane; all 47 Phase 8J states separate
+   (min HD 105); `v_star` is round-0 unreachable (proved); the round-1 singular hit
+   is harmless in tested cases; no valid-message structural collision was found.
+7. **Forbidden claims:** "provably secure", "collision-resistant", "one-way",
+   "forces full execution", "curvature-capacity security", "256-bit security" —
+   none is proved and none is claimed.
+
+---
+
+## Historical results (superseded conclusions, preserved)
+
+The sections below record earlier-phase conclusions verbatim. **They are
+historical.** Some contain environment notes that were true at the time (e.g.
+"z3 / sympy not installed" in Phase 1 / early CC-1) but changed later — those
+notes are preserved only here, inside the phase where they were accurate.
+
+### Phase 1 historical result (environment: z3 / sympy / Sage not installed then)
 
 ### Experimental: mechanism partially supported, no proof
 
@@ -466,3 +499,102 @@ multiplicity or shortcut resistance, and admits a restricted first-round sign-pa
 binding **theorem**. This is a Layer-1/Layer-2 preference only. **No Layer-3
 hardness is claimed for either candidate.** The one residual open item is a proof
 (or refutation) of v_star's global unreachability under the message protocol.
+
+---
+
+# Phase CC-3 — Singular Reachability, Protocol Closure, Merge Readiness
+
+This section is the detailed CC-3 record; the headline is in **Current Verdict —
+Phase CC-3** at the top of this document. Design A, Phase 8J/8K, CC-Core-v0-A,
+CC-Core-v1-B pinned vectors, and all prior artifacts/limitations/claims are
+preserved unchanged.
+
+## Research-only merge criteria (Part XII)
+
+**Merge research-only is recommended iff all hold** — current status in brackets:
+- Design A untouched [✔ verified: `git diff` over `wavelock/pde_hash` empty].
+- Candidate A frozen [✔ `test_candidate_a_frozen.py`].
+- Candidate B versioning explicit [✔ `CC-Core-v1-B`, distinct D_TAG/VERSION].
+- All fast tests pass [✔ 205 fast tests].
+- Actual GitHub CI checks pass [✔ `audit-fast` check-runs success; see
+  `cc3_ci_status.json`].
+- No valid-message structural collision found [✔ none; Part VIII].
+- `v_star` either proved unreachable (bounded) or reachable without
+  erasure/collision [✔ round-0 unreachable (theorem); round-1 one-coordinate
+  reachable but harmless].
+- Code isolated, not imported by production/default APIs [✔ `curvature_capacity_v1`
+  is standalone; no default/production import].
+- README/docs state "no security claim" [✔].
+- PR labeled experimental research [✔ draft].
+
+**Do NOT merge if** (none currently true): a valid-message structural collision
+exists; singular events erase enough history to forge equal commitments;
+reference/optimized disagree; CI does not execute; protocol ambiguous; production
+imports Candidate B by default; docs overclaim.
+
+A Layer-3 hardness proof is **not** required to merge research-only; it **is**
+required before any security or production claim.
+
+## Final report (23 points)
+
+1. **Normative protocol:** `docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md` — byte messages,
+   192-byte blocks, `0x01`+zero+length-block padding, 3-byte→element packing
+   (`elem ∈ [0,2²⁴)`), shared IVs, rate-only injection (cells 0..63 + CAP), T=32
+   rounds/block with non-resetting round index, distinct `D_TAG`/`VERSION`.
+2. **Valid-message reachability:** states producible by `cc_hash_B` on byte
+   strings; arbitrary lattice states are NOT valid inputs.
+3. **One coordinate reaches `v_star`?** **Yes**, at round 1 — replay-verified
+   191-byte witness (`vstar_message_solver.json` task D).
+4. **Structured subsets reach `v_star`?** Not found by valid messages; z3 multi-cell
+   (2–4) returned UNKNOWN (timeout); annealing count 0. Unresolved.
+5. **Full lattice reaches `v_star`?** No witness; round-0 impossible (theorem);
+   one-round full-constant UNSAT. Not found.
+6. **Constant preimage `c·1` valid-message reachable?** No as `ψ_0` (theorem:
+   cells 67..255 fixed at IV, rate cells < 2²⁴ < c); no round-1 witness.
+7. **Solver results:** round-0 `v_star`/`c` UNSAT; round-1 single-coordinate SAT
+   (witness); round-1 full-constant UNSAT; multi-cell UNKNOWN.
+8. **Exhaustive bounds:** all 1-byte, 1024 two-byte, all `{0,255}` length 3–8, and
+   a structured battery → 0 incidental hits (closest centered distance 46).
+9. **Guided search:** annealing best count 0 (min distance ~4539); z3 multi-cell
+   UNKNOWN. No multi-coordinate or full-lattice singular state found.
+10. **Witness messages:** one pinned 191-byte witness (`test_cc3_reachability.py`).
+11. **Replay verification:** reference == optimized on the witness; `ψ_1[20]=v_star`
+    reproduced exactly (1 singular cell).
+12. **Effect on path sensitivity:** the hit zeroes only the round-0 wave-injection;
+    the same bytes already entered C at absorption (`C[20]+=G·elem`), and round-1
+    injection is nonzero → sensitivity restored. No erasure.
+13. **Any singular-event collision?** **No.** 0/64 single-cell perturbations
+    collide; the cell-20 cubic has one in-window root (no same-neighbour pair).
+14. **Theorem / counterexample:** round-0 unreachability [theorem]; round-1
+    reachability witness [computer-assisted theorem]; harmless hit [theorem +
+    bounded evidence]. (`docs/CC_CORE_V1_VSTAR_REACHABILITY.md`.)
+15. **Test count:** 205 fast tests pass.
+16. **GitHub Actions run status:** `audit-fast` workflow executes on PR #19 and the
+    branch; check-runs conclusion **success**. Combined-status API is empty by
+    design (Actions uses check-runs). Recorded in `cc3_ci_status.json`.
+17. **Failing/passing jobs:** `audit-fast` — passing (all steps).
+18. **Documentation cleanup:** done — this report now leads with **Current Verdict
+    — Phase CC-3**; Phase 1 / CC-1 / CC-2 conclusions moved to historical sections;
+    stale "z3 not installed" confined to the Phase-1 historical note.
+19. **Allowed claims:** see Current Verdict §6.
+20. **Forbidden claims:** see Current Verdict §7.
+21. **Safe to merge research-only?** **Yes** — all merge criteria met.
+22. **Unsafe for production?** **Yes, unsafe for production** — no Layer-3 hardness
+    proof; experimental, no security claim.
+23. **Next Layer-3 problem:** a genuine lower bound on the cost of finding a
+    second valid message with the same commitment (collision/second-preimage
+    hardness), untouched for both candidates; secondarily, resolve multi-coordinate
+    / full-lattice `v_star` reachability (currently solver-timeout UNKNOWN).
+
+## FINAL VERDICT (Phase CC-3)
+
+### Merge research-only: Candidate B survives the protocol-level singular audit; no security claim
+
+`v_star` is unreachable before the first wave round for every valid message
+(theorem) and reachable at a single coordinate at round 1 (verified witness) but
+provably harmless there (the message bytes are committed to C at absorption
+regardless; no collision found). No valid-message structural collision exists in
+any tested construction; reference and optimized agree; GitHub Actions `audit-fast`
+check-runs pass; the code is isolated with no production import and no security
+claim. PR #19 is therefore **safe to merge as research-only** and **remains unsafe
+for production** pending a Layer-3 hardness result.
