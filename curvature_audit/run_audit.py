@@ -18,7 +18,10 @@ from . import (curvature_metrics, eigenmode_attacks, path_collision,
                reduced_exhaustive_cc1,
                candidate_b_singular_hyperplane, candidate_b_full_family,
                candidate_a_vs_b, candidate_b_reduced_joint_map,
-               candidate_b_algebraic_solver, candidate_b_shortcuts)
+               candidate_b_algebraic_solver, candidate_b_shortcuts,
+               vstar_one_round_preimages, vstar_message_solver,
+               vstar_bounded_exhaustive, vstar_guided_search,
+               vstar_collision_consequence)
 
 MODULES = [
     ("curvature_metrics", curvature_metrics, "curvature_metrics_demo.json"),
@@ -45,6 +48,15 @@ MODULES = [
     ("candidate_b_algebraic_solver", candidate_b_algebraic_solver,
      "candidate_b_algebraic_solver.json"),
     ("candidate_b_shortcuts", candidate_b_shortcuts, "candidate_b_shortcuts.json"),
+    # Phase CC-3 modules (singular reachability)
+    ("vstar_one_round_preimages", vstar_one_round_preimages,
+     "vstar_one_round_preimages.json"),
+    ("vstar_message_solver", vstar_message_solver, "vstar_message_solver.json"),
+    ("vstar_bounded_exhaustive", vstar_bounded_exhaustive,
+     "vstar_bounded_exhaustive.json"),
+    ("vstar_guided_search", vstar_guided_search, "vstar_guided_search.json"),
+    ("vstar_collision_consequence", vstar_collision_consequence,
+     "vstar_collision_consequence.json"),
 ]
 
 
