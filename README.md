@@ -6,6 +6,71 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
 
 ---
 
+
+## Current research architecture
+
+WaveLock now separates three distinct layers:
+
+1. **CC-Core-v1-B — curvature/path commitment.** This is the current primary
+   experimental research core. It co-evolves an accumulator with the wavefield so
+   the commitment depends on the ordered trajectory rather than only on the
+   terminal state. Candidate B uses the linear injection
+   `j_B(u,v) = u(1 + γv) mod p`, removes Candidate A's generic 2-to-1 injection
+   weakness, and separates all 47 known Phase 8J terminal-collapse states
+   (minimum pairwise Hamming distance 105/256).
+2. **WaveLock-OTS — asymmetric one-time signatures.** This is the current
+   experimental signing layer. It provides public verification without revealing
+   `ψ★`, but every one-time key must be used exactly once.
+3. **CurvaChain — ledger and replay enforcement.** This binds canonical block
+   bodies, OTS identities, commitments, and accepted-chain replay state.
+
+`CC-Core-v1-B` is the best current realization of the original “pebble leaves a
+wake” idea, but it is **not a proven cryptographic primitive**. The Phase CC-3
+audit found:
+
+- all 47 known terminal-state collapse cases remain distinct under the path
+  commitment;
+- the singular value `v_star = -γ^-1 mod p = 195225786` is unreachable at round
+  0 under the normative message protocol;
+- a replay-verified 191-byte message reaches `v_star` at one coordinate at round
+  1, but the tested singular event did not erase the path commitment or produce
+  a structural collision;
+- 205 fast tests pass and GitHub Actions completed successfully on the research
+  branch;
+- multi-coordinate singular reachability, general binding, collision hardness,
+  second-preimage hardness, and any Layer-3 lower bound remain unresolved.
+
+The curvature-capacity research code is isolated in:
+
+```text
+wavelock/curvature_capacity/       # frozen CC-Core-v0-A baseline
+wavelock/curvature_capacity_v1/    # current CC-Core-v1-B candidate
+curvature_audit/                   # adversarial tests, artifacts, and reports
+```
+
+Primary documents:
+
+- `docs/CC_CORE_V1_SPEC.md`
+- `docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md`
+- `docs/CC_CORE_V1_VSTAR_REACHABILITY.md`
+- `docs/WAVELOCK_CURVATURE_CAPACITY_RESULTS.md`
+
+**Use classification**
+
+| Component | Current status | Intended use |
+|---|---|---|
+| `CC-Core-v1-B` | Experimental research core | Path/trajectory commitment studies |
+| WaveLock-OTS | Experimental asymmetric OTS | One-time signing tests and scoped demos |
+| CurvaChain | Prototype ledger | Local replay, persistence, and consensus experiments |
+| WLv2 / SIGv2 | Deprecated and insecure | Compatibility/testing only |
+| Ed25519 / SLH-DSA / LMS / XMSS | Established alternatives | Production security |
+
+Do not describe any WaveLock component as “provably secure,” “collision-resistant,”
+“one-way,” “256-bit secure,” or as forcing full sequential execution. No such
+general theorem has been proved.
+
+---
+
 ## ⚠️ Security notice — read this first
 
 - **Legacy WaveLock SIGv2 (`WLv2`) is DEPRECATED and INSECURE.** It signs with
@@ -126,6 +191,11 @@ pip install -e .
 
 ```text
 WaveLock/
+├─ wavelock/
+│  ├─ curvature_capacity/       # frozen CC-Core-v0-A research baseline
+│  ├─ curvature_capacity_v1/    # current CC-Core-v1-B path-commitment candidate
+│  └─ crypto/                   # OTS, replay ledger, and encryption wrappers
+├─ curvature_audit/             # adversarial audit suite and machine-readable artifacts
 ├─ chain/
 │  ├─ Block.py               # Block object (index, prev_hash, merkle, messages, nonce, hash)
 │  ├─ WaveLock.py            # CurvatureKeyPair, signing/verification helpers (WLv1 + WLv2/SIGv2)
@@ -192,10 +262,16 @@ Run the demo:
 python hello_wavelock.py
 ```
 
-Run the test suite:
+Run the ledger/crypto test suite:
 
 ```bash
 python -m pytest tests/ -v
+```
+
+Run the fast curvature-capacity audit suite:
+
+```bash
+python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
 ```
 
 ---
