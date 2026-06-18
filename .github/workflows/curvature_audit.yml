@@ -39,5 +39,7 @@ jobs:
         run: python -m pytest curvature_audit/test_design_a_preserved.py -c curvature_audit/pytest.ini -q
       - name: Eigenmode regression (Design A collapse + trajectory separation)
         run: python -m pytest curvature_audit/test_eigenmode_regression.py -c curvature_audit/pytest.ini -q
+      - name: Phase CC-1 (complete family + algebraic attacks + claim separation)
+        run: python -m pytest curvature_audit/test_phase_cc1.py -c curvature_audit/pytest.ini -q
       - name: Full curvature_audit fast tests (excludes slow searches)
         run: python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
