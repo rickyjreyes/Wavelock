@@ -165,3 +165,73 @@ These three claims are **not equivalent** and MUST NOT be conflated:
 
 All four protocols are defined for **research purposes only**. None is recommended
 for production use without a formal security proof.
+
+---
+
+# Phase CC-2 Update — Candidate B Versioning and Normative Experimental Protocol
+
+**Added:** Phase CC-2, Part XI. The four protocol variants (A–D) above are
+unchanged and remain CC-1 conclusions. This section adds explicit candidate
+versioning and selects the provisional experimental candidate.
+
+## CC-2.1 Version identifiers (mandatory)
+
+Two distinct candidates now exist and **must never be confused**:
+
+| Identifier | Package | Injection | Finalization D_TAG |
+|---|---|---|---|
+| `CC-Core-v0-A` | `wavelock/curvature_capacity` | j_A = u + γuv + ηu² + ζv | 0x57434331 ("WCC1") |
+| `CC-Core-v1-B` | `wavelock/curvature_capacity_v1` | j_B = u + γuv = u(1+γv) | 0x57434332 ("WCC2") |
+
+The distinct `D_TAG` guarantees `cc_hash` domain separation: a digest produced
+under one version is finalization-tagged and will not collide with the other by
+construction. **Every transcript MUST carry the version identifier**; a verifier
+MUST reject a transcript whose version field does not match its configured
+candidate.
+
+## CC-2.2 Provisional experimental candidate
+
+Candidate B (`CC-Core-v1-B`) **survived the singular-hyperplane audit** (Part IV:
+v_star is not broadly reachable and not path-erasing) and the full-family
+regression (Part V: 47/47 distinct, min HD 105). It therefore becomes the
+**provisional experimental candidate** for the path-commitment role, *with no
+security claim*. Candidate A remains the frozen historical baseline for
+comparison. (Final disposition: Part XV / final report.)
+
+## CC-2.3 Normative experimental protocol (version `CC-Core-v1-B`)
+
+Transcript fields: `(version = "WaveLock-CC-Core-v1", message M, digest D)`.
+
+- **Prover sends:** version identifier, M (or the agreed opening), and
+  `D = cc_hash_B(M)`.
+- **Verifier recomputes:** `D' = cc_hash_B(M)` under the `CC-Core-v1-B` spec and
+  accepts iff `version` matches AND `D' == D`.
+- **Trajectory vs commitment:** the verifier recomputes the **commitment** D only
+  (it re-runs the full coupled evolution internally, but the transcript carries
+  just the 256-bit D, not the trajectory). For the state-level protocol
+  (Variant B) the verifier may optionally be given the intermediate
+  `(ψ_t, C_t)` snapshots and check each coupled round; this is a heavier,
+  optional mode.
+- **Curvature metrics are DIAGNOSTIC, not consensus-critical.** No verifier step
+  depends on any curvature functional; they are never part of acceptance.
+
+## CC-2.4 Complexity and transcript size
+
+- **Verifier complexity:** O(blocks · T · N²) field operations =
+  ~6.55×10⁵ field ops per single-block message (same as Candidate A; B's wave +
+  accumulator costs are identical).
+- **Transcript size (commitment mode):** |M| + 32 bytes (digest) + version tag.
+- **Transcript size (trajectory mode):** additionally O(rounds · 2 · N² · 4) bytes
+  of snapshots if the optional per-round check is used.
+
+## CC-2.5 Failure conditions
+
+A verifier MUST reject when any of:
+- the version identifier is absent or does not match the configured candidate;
+- `D' ≠ D`;
+- (trajectory mode) any opened coupled round is inconsistent.
+
+## CC-2.6 Non-claims (unchanged)
+
+No soundness, binding, hiding, or zero-knowledge property is proved for any
+variant under either version. The protocol is experimental and not for production.
