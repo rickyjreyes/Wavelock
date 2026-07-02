@@ -1,0 +1,86 @@
+title: "[Security Evaluation or Reproduction] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an independent build, defensive security evaluation, regression result, fuzzing result, benchmark, proof attempt, or protocol review. Report only work performed on systems and data you are authorized to test.
+
+        Do not post private keys, credentials, live infrastructure details, sensitive third-party data, or instructions targeting deployed third-party systems.
+  - type: dropdown
+    id: result_type
+    attributes:
+      label: Result type
+      options:
+        - Exact test-suite reproduction
+        - Failed or incomplete reproduction
+        - Independent implementation
+        - Defensive property evaluation
+        - Replay-prevention regression test
+        - Canonicalization or parser consistency test
+        - Fuzzing or property-based test
+        - Performance or resource benchmark
+        - Formal statement or proof attempt
+        - Security review
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Component and version tested
+      description: Identify protocol version, file, function, specification section, test, commit, and configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: property
+    attributes:
+      label: Property or behavior evaluated
+      description: State the narrow implementation invariant, experimental hypothesis, or security property under evaluation.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Authorized test scope
+      description: Describe the local test environment, synthetic inputs, assumptions, resource limits, and stopping rule.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and exact command
+      description: Include repository commit, OS, Python and dependency versions, hardware, parameters, seeds, and command.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Quantitative result
+      description: Report the observed invariant, regression, discrepancy, timing, resource use, reproducibility status, and any minimized non-sensitive test vector.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Auditable artifacts
+      description: Link non-sensitive code, tests, logs, fixtures, machine-readable outputs, benchmark manifests, or archived releases.
+    validations:
+      required: true
+  - type: textarea
+    id: interpretation
+    attributes:
+      label: Security interpretation and limitations
+      description: State exactly what was supported, contradicted, or left unresolved. A passing test establishes only the tested property within the declared scope.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Disclosure check
+      options:
+        - label: I tested only systems and data I own or am authorized to evaluate.
+          required: true
+        - label: I removed private keys, credentials, live endpoints, and sensitive third-party information.
+          required: true
+        - label: I have not described the prototype as production-ready or provably secure.
+          required: true
