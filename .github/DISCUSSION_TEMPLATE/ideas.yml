@@ -1,0 +1,77 @@
+title: "[Security or Protocol Proposal] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a protocol change, adversarial test, proof obligation, benchmark, or safer integration. Define the exact security property and attacker model before proposing implementation.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CC-Core path commitment
+        - Collision or second-preimage analysis
+        - Sequentiality or memory-hardness research
+        - WaveLock-OTS construction
+        - Key-reuse prevention
+        - Canonical serialization or transcript binding
+        - CurvaChain replay or consensus enforcement
+        - Encryption context binding
+        - Fuzzing, property testing, or formal methods
+        - Benchmarking against established primitives
+        - API hardening or misuse resistance
+        - Documentation or machine-readable security claims
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: property
+    attributes:
+      label: Target security property
+      description: State the exact property, such as binding, collision resistance, second-preimage resistance, unforgeability, replay resistance, canonicality, or fail-closed behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: attacker
+    attributes:
+      label: Attacker model
+      description: Define attacker knowledge, oracle access, chosen inputs, compute budget, memory, parallelism, node control, and protocol position.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed method or change
+      description: Describe the construction, proof plan, test harness, mutation, benchmark, or protocol modification.
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Decisive failure conditions
+      description: State what counterexample, attack, collision, forgery, replay, downgrade, ambiguity, or performance result would reject the proposal.
+    validations:
+      required: true
+  - type: textarea
+    id: baselines
+    attributes:
+      label: Comparison baselines
+      description: Identify established primitives or standards such as Ed25519, SLH-DSA, LMS, XMSS, SHA-2/SHA-3, Argon2, or conventional authenticated ledgers as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Auditable deliverables
+      description: Specify tests, attack scripts, formal statements, vectors, fixtures, benchmarks, machine-readable artifacts, and documentation updates.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Claim discipline
+      options:
+        - label: The proposal does not describe an unproved property as established security.
+          required: true
+        - label: The proposal keeps production recommendations limited to established, independently reviewed cryptography.
+          required: true
