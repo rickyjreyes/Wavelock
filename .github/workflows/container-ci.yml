@@ -42,12 +42,26 @@ jobs:
       - name: Build CPU image
         run: docker build --quiet --tag wavelock-ci .
       - name: Smoke-test image commands
+        id: container_smoke
         shell: bash
         run: |
-          set -o pipefail
+          set +e
           {
             echo "== wavelock-cli =="
             docker run --rm wavelock-ci wavelock-cli --help
             echo "== wavelock-ots =="
             docker run --rm wavelock-ci wavelock-ots --help
-          } 2>&1 | tail -n 250
+          } > container-smoke.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 250 container-smoke.log
+          exit 0
+      - name: Upload container diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wavelock-container-smoke-${{ github.sha }}
+          if-no-files-found: error
+          path: container-smoke.log
+      - name: Enforce container smoke result
+        run: test "${{ steps.container_smoke.outputs.status }}" -eq 0
