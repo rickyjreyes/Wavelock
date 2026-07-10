@@ -13,7 +13,7 @@ COPY pyproject.toml README.md ./
 COPY wavelock ./wavelock
 
 RUN python -m pip install --upgrade pip \
-    && python -m pip install . \
+    && python -m pip install ".[blake3]" \
     && mkdir -p /app/ledger /app/commitments \
     && chown -R wavelock:wavelock /app
 
