@@ -1,0 +1,47 @@
+name: Container and core CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[blake3]" pytest
+      - name: Run fast core tests
+        run: python -m pytest tests/ -m "not slow" -q
+      - name: Smoke-test installed commands
+        run: |
+          wavelock-cli --help
+          wavelock-ots --help
+          wavelock-encrypt --help
+
+  container:
+    runs-on: ubuntu-24.04
+    needs: core-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build CPU image
+        run: docker build --tag wavelock-ci .
+      - name: Smoke-test image commands
+        run: |
+          docker run --rm wavelock-ci wavelock-cli --help
+          docker run --rm wavelock-ci wavelock-ots --help
