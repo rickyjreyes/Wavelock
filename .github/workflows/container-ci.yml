@@ -40,8 +40,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build CPU image
-        run: docker build --tag wavelock-ci .
+        run: docker build --quiet --tag wavelock-ci .
       - name: Smoke-test image commands
+        shell: bash
         run: |
-          docker run --rm wavelock-ci wavelock-cli --help
-          docker run --rm wavelock-ci wavelock-ots --help
+          set -o pipefail
+          {
+            echo "== wavelock-cli =="
+            docker run --rm wavelock-ci wavelock-cli --help
+            echo "== wavelock-ots =="
+            docker run --rm wavelock-ci wavelock-ots --help
+          } 2>&1 | tail -n 250
