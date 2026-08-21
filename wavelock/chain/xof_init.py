@@ -1,5 +1,5 @@
 """
-XOF-based initial wavefield derivation (Claim 9 best mode).
+XOF-based initial wavefield derivation.
 
 Provides deterministic ψ₀ derivation from a seed via an extendable-output
 function (XOF). The default XOF is SHAKE-256, the NIST-standardized variant
@@ -19,10 +19,9 @@ Because SHAKE-256 is a fixed standard with byte-stable output, two
 independent implementations of WaveLock (one in C, one in Python; one on
 CPU, one on GPU) will derive the same ψ₀ from the same seed.
 
-This module is opt-in. Existing users of CurvatureKeyPair with integer
-seeds continue to use np.random / cp.random for backward compatibility.
-New consensus-grade keypairs should pass `seed_bytes=...` and select the
-XOF derivation explicitly.
+The legacy backend-RNG path remains available elsewhere for backward
+compatibility with historical test vectors. New deterministic reference
+commitments should use the XOF derivation path.
 """
 
 from __future__ import annotations
@@ -85,9 +84,8 @@ def derive_psi_zero(
         Output dtype. float64 is the consensus default.
     xof : str
         Which XOF to use. Currently only "shake_256" is supported. The
-        parameter exists so the patent claim can reference "an extendable-
-        output function" generically and we can swap algorithms later
-        without API churn.
+        parameter keeps the call site algorithm-agile so additional XOFs can
+        be introduced without changing the surrounding initialization API.
 
     Returns
     -------
