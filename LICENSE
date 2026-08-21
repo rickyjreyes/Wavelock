@@ -1,0 +1,55 @@
+WAVELOCK PROPRIETARY SOURCE NOTICE
+
+Copyright (c) 2025-2026 Richard James Reyes. All rights reserved.
+
+This repository is NOT licensed as open-source software.
+
+1. RESERVATION OF COPYRIGHT RIGHTS
+
+Except for permissions, if any, that are necessarily provided through GitHub's Terms of Service for hosting, displaying, viewing, and using GitHub's platform features, no copyright license is granted by publication of this repository.
+
+Without prior written permission from the copyright owner, you may not reproduce, distribute, sublicense, sell, commercially exploit, deploy, integrate, or create derivative works from the copyrighted materials in this repository, except to the extent such activity is expressly permitted by applicable law.
+
+2. PATENT RIGHTS EXPRESSLY RESERVED
+
+No patent license, covenant not to sue, waiver, release, estoppel, exhaustion, or other patent right is granted, expressly or by implication, by:
+
+- publication or public availability of this repository;
+- access to, inspection of, cloning of, or forking of this repository;
+- source code, object code, examples, tests, demonstrations, documentation, specifications, APIs, commits, issues, discussions, or other repository materials;
+- any copyright permission that may otherwise apply; or
+- any contribution, disclosure, technical discussion, or interoperability information contained here.
+
+Making, using, selling, offering to sell, importing, manufacturing, deploying, or otherwise practicing any invention covered by a pending or issued patent claim requires a separate written patent license from the applicable rights holder unless otherwise permitted by law.
+
+Repository publication does not disclaim, surrender, dedicate to the public, narrow, waive, abandon, or otherwise limit any patent claim, patent application, continuation, divisional, continuation-in-part, reissue, foreign counterpart, priority claim, or other patent right.
+
+3. TECHNICAL STATUS IS NOT A PATENT CONCESSION
+
+Terms used in this repository such as "experimental," "prototype," "research," "deprecated," "insecure," "not production-ready," "unimplemented," "future work," "failed test," or similar engineering descriptions refer only to the technical status of particular code, experiments, or configurations.
+
+Such terms are not intended as, and shall not be construed as, admissions or legal conclusions concerning patentability, novelty, non-obviousness, utility, written description, enablement, priority, validity, enforceability, claim construction, infringement, scope, abandonment, dedication to the public, or entitlement to patent protection.
+
+Likewise, the presence or absence of a particular implementation in this repository does not establish whether any patent claim is supported, valid, enforceable, infringed, or limited in scope.
+
+4. PENDING PATENT APPLICATIONS
+
+WaveLock-related technology disclosed or implemented in this repository is the subject of pending United States patent applications, including the application identified in PATENT_NOTICE.md. See PATENT_NOTICE.md for the current repository notice.
+
+Nothing in this file expands or limits the scope of any patent application or issued patent. Patent scope is determined under applicable law from the patent record and, for issued patents, the claims as properly construed.
+
+5. THIRD-PARTY MATERIALS
+
+Third-party software, libraries, standards, or other materials included in or used by this repository remain subject to their respective licenses and rights. This notice does not restrict rights independently granted by third parties, and no third-party license grants any patent right owned by Richard James Reyes unless that grant expressly says so.
+
+6. NO TRADEMARK LICENSE
+
+No license or right to use the names, marks, logos, or branding "WaveLock," "CurvaChain," or related branding is granted by this repository except as required for truthful identification of the software or as otherwise permitted by law.
+
+7. DISCLAIMER OF WARRANTY
+
+THE MATERIALS ARE PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, ACCURACY, SECURITY, OR FITNESS FOR PRODUCTION USE.
+
+8. COMMERCIAL OR PATENT LICENSING
+
+Commercial, deployment, redistribution, derivative-work, and patent-license rights are available only by separate written agreement with the applicable rights holder.
