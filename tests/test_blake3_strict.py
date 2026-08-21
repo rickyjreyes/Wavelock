@@ -2,8 +2,9 @@
 Tests for the hardened BLAKE3 path.
 
 The previous implementation silently fell back to BLAKE2b when the blake3
-package was missing — that fallback masquerades as BLAKE3 and is a §112
-enablement gap for any patent claim that names BLAKE3 specifically.
+package was missing. That fallback masquerades as BLAKE3 even though the digest
+comes from a different algorithm, creating an interoperability and correctness
+failure.
 
 This test exercises both branches:
   - blake3 installed: hash matches the official implementation.
@@ -52,8 +53,7 @@ def test_blake3_missing_raises_not_silently_falls_back(monkeypatch):
 def test_blake3_end_to_end_through_keypair_commitment():
     # End-to-end: construct a consensus-grade keypair with BLAKE3 as the
     # secondary family, compute the commitment, and verify both halves
-    # round-trip. This is the test that lifts BLAKE3 from "primitive only"
-    # to "exercised in the commitment-generation path the patent describes."
+    # round-trip through the actual commitment-generation path.
     if not is_blake3_available():
         pytest.skip("blake3 package not installed")
 
@@ -91,8 +91,8 @@ def test_blake3_end_to_end_through_keypair_commitment():
 
 def test_blake3_dual_signature_through_keypair():
     # The signing path also has to flow through BLAKE3 when it's selected
-    # as the primary or secondary family — otherwise BLAKE3 is "selectable
-    # for commitments but never actually signed with."
+    # as the primary or secondary family — otherwise BLAKE3 is selectable
+    # for commitments but never exercised by the signing path.
     if not is_blake3_available():
         pytest.skip("blake3 package not installed")
 
