@@ -122,11 +122,10 @@ SHAKE-256 (NIST FIPS 202 XOF) with the `WL-PSI-INIT-v1` domain
 separation tag, replacing `numpy.random.seed(s); numpy.random.rand(...)`
 (Mersenne Twister).
 
-This matches the patent's Best Mode and Claim 9, which specify an
-extendable-output function for ψ₀ derivation. The pre-upgrade Mersenne
-Twister path produced backend- and library-version-bound bytes that
-were not byte-stable across implementations and therefore not a valid
-basis for cross-implementation consensus.
+This moves the canonical implementation to the byte-stable XOF initialization
+path. The pre-upgrade Mersenne Twister path produced backend- and
+library-version-bound bytes that were not byte-stable across implementations
+and therefore were not suitable for cross-implementation consensus.
 
 A new schema label `SCHEMA_V3_SHAKE = "WLv3.1"` distinguishes commitments
 produced under the SHAKE-256 regime from legacy `WLv2` commitments.
@@ -174,16 +173,14 @@ prefix in the commitment string is the authoritative discriminator.
   re-issued through the new canonical path before being treated as
   consensus-binding.
 
-### Patent-enablement effect
+### Implementation coverage
 
-- Claim 9 / Best Mode (SHAKE-256 ψ₀ derivation) is now exercised on
-  the actual canonical commitment path, not as an opt-in side branch.
+- SHAKE-256 ψ₀ derivation is now exercised on the actual canonical commitment
+  path, not only as an opt-in side branch.
 
-- Claim 8 Markush group (SHA-256, SHA3-256, BLAKE3 as disjoint hash
-  families) is now exercised end-to-end for BLAKE3 via two new tests
-  in `tests/test_blake3_strict.py`:
+- SHA-256, SHA3-256, and BLAKE3 hash-family paths are exercised end-to-end for
+  BLAKE3 via two tests in `tests/test_blake3_strict.py`:
   `test_blake3_end_to_end_through_keypair_commitment` and
   `test_blake3_dual_signature_through_keypair`. Both construct a
-  `CurvatureKeyPairV3` with `secondary_family=HashFamily.BLAKE3`,
-  generate a commitment, and round-trip it through `verify_commitment`
-  and `verify_strict`.
+  `CurvatureKeyPairV3` with `secondary_family=HashFamily.BLAKE3`, generate a
+  commitment, and round-trip it through `verify_commitment` and `verify_strict`.
