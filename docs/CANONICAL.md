@@ -1,119 +1,164 @@
-# Canonical Implementation Map
+# Canonical Reference Implementation Map
 
-This document declares which file, in which repository, is the **canonical
-implementation** of each layer of WaveLock. Examiners, licensees, and
-auditors should read this document first.
+This document identifies the current **engineering reference implementations**
+used by the WaveLock repository. It is not a patent claim chart, prosecution
+statement, legal opinion, or limitation on any pending or issued patent right.
+See `PATENT_NOTICE.md`, `LICENSE`, and `docs/PATENT_SCOPE.md`.
 
-The repo hierarchy is intentionally redundant — multiple implementations
-exist for performance and reproducibility reasons (CPU vs GPU, reference
-vs production, archival vs live). This map disambiguates which one binds.
-
----
-
-## 1. The PDE Operator F (Group I, Claims 1–4)
-
-| Layer            | Canonical file                                       | Status     |
-| ---------------- | ---------------------------------------------------- | ---------- |
-| Reference (CPU)  | `wavelock/chain/Wavelock_numpy.py`                   | Canonical  |
-| Production (GPU) | `wavelock/chain/WaveLock.py`                         | Canonical  |
-| Test harness     | `tests/scientific/test_wavelock_jacob.py` (PyTorch)  | Surrogate  |
-
-Both canonical files implement the same operator F:
-
-    F(ψ) = α · Δψ / D(ψ) + θ · ψ · Δlog(ψ² + δ) − μ · ψ
-    where  D(ψ) = ψ + ε · exp(−β · ψ²)
-
-Discrete Laplacian: −4·center + up + down + left + right with periodic
-wraparound (`np.roll` / `cp.roll`, shifts ±1 along axes 0 and 1).
-
-The PyTorch surrogate in `tests/scientific/test_wavelock_jacob.py` is a
-**research surrogate** for backprop-attack experiments only. It is NOT a
-consensus reference. Differences between the surrogate and the canonical
-operator are expected and not bugs.
-
-### Consensus rule
-
-Per `CurvatureKeyPair.__init__` in `WaveLock.py` (lines ~424–436): when
-not in `test_mode`, the GPU backend refuses to emit consensus commitments
-for any schema except WLv2. WLv3+ commitments must originate from the
-NumPy reference. This rule exists because CuPy's reduction order is not
-byte-stable across hardware generations.
+The repository is intentionally redundant: multiple implementations exist for
+performance, reproducibility, archival, and adversarial-testing purposes. This
+map identifies which implementation is currently used as the software reference
+for each layer.
 
 ---
 
-## 2. ψ₀ Derivation (Claim 9)
+## 1. Curvature-Regulated PDE Operator F
 
-| Mode       | Canonical file                          | Required for          |
-| ---------- | --------------------------------------- | --------------------- |
-| Consensus  | `wavelock/chain/xof_init.py` (SHAKE-256) | Reproducible commits  |
-| Legacy     | `np.random` / `cp.random` seeded by int  | Local-only test runs  |
+| Layer | Reference file | Engineering status |
+| --- | --- | --- |
+| Reference (CPU) | `wavelock/chain/Wavelock_numpy.py` | Canonical CPU reference |
+| Production-oriented (GPU) | `wavelock/chain/WaveLock.py` | GPU implementation |
+| Test harness | `tests/scientific/test_wavelock_jacob.py` | Research surrogate |
 
-Pass `use_xof_init=True` to `CurvatureKeyPairV3` to select the consensus
-path. The legacy path is retained for backward compatibility with
-existing tests; new commitments that must verify on independent hardware
-should use the XOF path.
+The intended operator form is:
 
----
+```text
+F(ψ) = α · Δψ / D(ψ) − θ · ψ · Δlog(ψ² + δ) − μ · ψ
+D(ψ) = ψ + ε · exp(−β · ψ²)
+```
 
-## 3. Hash Families and Dual-Hash Commitment (Claims 7–8)
+The discrete update is of the form:
 
-Canonical: `wavelock/chain/hash_families.py`.
+```text
+ψ_(t+1) = ψ_t + Δt · F(ψ_t)
+```
 
-- SHA-256: `hashlib.sha256` (CPython stdlib).
-- SHA3-256: `hashlib.sha3_256` (CPython stdlib).
-- BLAKE3: official `blake3` PyPI package. **No silent fallback.** If the
-  `blake3` package is not installed, `HashFamily.BLAKE3` raises
-  `RuntimeError`. Install with `pip install wavelock[blake3]`.
+The centered discrete Laplacian uses the four-neighbor periodic stencil in two
+dimensions (`np.roll` / `cp.roll`, shifts ±1 along axes 0 and 1).
 
-The previous BLAKE2b fallback has been removed — it produced digests that
-would have masqueraded as BLAKE3 in commitments, which is both a
-correctness hazard and a §112 enablement gap.
+The PyTorch implementation in `tests/scientific/test_wavelock_jacob.py` is a
+research surrogate for gradient-based attack experiments. Differences between
+a research surrogate and the canonical implementation should be documented as
+engineering differences rather than treated as statements about patent scope.
 
----
+### Reproducibility rule
 
-## 4. Ledger Record Merkle Root (Claim 15)
-
-Canonical: `wavelock/chain/ledger_merkle.py`.
-
-A ledger record's Merkle root binds, in fixed order:
-
-  1. The wavefield commitment string (`schema:primary_hex:secondary_hex`).
-  2. Operator parameters {α, β, θ, ε, δ}.
-  3. Kernel descriptor {kernel_version, kernel_hash}.
-  4. Curvature invariants {E_grad, E_fb, E_ent, E_tot}.
-  5. Timestamp.
-  +. Hash of the prior record (linkage).
-
-Each leaf is `SHA-256(canonical_json({"field": name, "value": value}))`.
-The internal Merkle tree is binary, with the standard duplicate-last-node
-rule for odd levels.
-
-This is distinct from `Block.calculate_merkle_root()` in
-`wavelock/chain/Block.py`, which Merkles the ordered `messages` list of a
-chain block. A ledger record's Merkle root is one of the messages stored
-in a chain block; the block then Merkles its messages on top.
+When deterministic cross-implementation commitments are required, the
+reference path should use byte-stable state initialization, canonical
+serialization, and explicit kernel metadata. GPU reduction order can vary
+across hardware generations, so consensus-style commitments should be generated
+through a byte-stable reference path or verified against published tolerances
+where the protocol expressly permits tolerances.
 
 ---
 
-## 5. Chain Block Structure (CurvaChain)
+## 2. Initial-State Derivation
 
-Canonical: `wavelock/chain/Block.py`, `wavelock/chain/CurvaChain.py`,
-`wavelock/chain/chain_utils.py`.
+| Mode | Reference file | Intended use |
+| --- | --- | --- |
+| SHAKE-256 XOF | `wavelock/chain/xof_init.py` | Cross-implementation deterministic initialization |
+| Legacy backend RNG | `np.random` / `cp.random` seeded by integer | Historical/local tests |
 
-Each block stores: `index`, `timestamp`, `previous_hash`,
-`merkle_root` (over messages), `difficulty`, `nonce`, `block_type`,
-`meta`, `block_hash` (covers all of the above).
+SHAKE-256 is used with a WaveLock domain-separation tag to derive deterministic
+`ψ₀` values from seed material. The legacy backend RNG path remains for
+backward-compatible testing and historical vectors.
 
 ---
 
-## What this map deliberately excludes
+## 3. Hash Families and Dual-Hash Commitment
 
-This repository contains the **Python implementation layer** of WaveLock.
-References in supporting analyses to a separate `wavelock-kernel/` C
-implementation (`archive/wavelock.c`, `src/wavelock_evolve.c`,
-`crypto/blake3.c`, etc.) refer to a different repository. If you are
-auditing the C layer, audit it in its own repo. The Python layer above
-is independent and self-contained.
+Canonical implementation: `wavelock/chain/hash_families.py`.
 
-Group III drift-detection apparatus (Claims 21–27) is **not implemented
-in this repo**. See `docs/PATENT_SCOPE.md` for the scope decision.
+- SHA-256: `hashlib.sha256`.
+- SHA3-256: `hashlib.sha3_256`.
+- BLAKE3: official `blake3` Python package when installed.
+
+The former BLAKE2b fallback under a BLAKE3 label was removed because it produced
+digests from a different algorithm while presenting them as BLAKE3. The current
+implementation fails closed with `RuntimeError` if BLAKE3 is selected but the
+BLAKE3 package is unavailable.
+
+This is an interoperability and correctness rule. It is not a legal conclusion
+about any patent application.
+
+---
+
+## 4. Ledger Record Merkle Root
+
+Canonical implementation: `wavelock/chain/ledger_merkle.py`.
+
+A ledger record's Merkle root binds, in fixed order, the repository's current
+record fields including:
+
+1. wavefield commitment;
+2. operator parameters;
+3. kernel descriptor;
+4. curvature invariants;
+5. timestamp; and
+6. linkage to the prior record hash.
+
+Each leaf is derived from canonical JSON and hashed before construction of the
+binary Merkle tree.
+
+This record-level Merkle root is distinct from
+`Block.calculate_merkle_root()` in `wavelock/chain/Block.py`, which binds the
+ordered `messages` list of a chain block. A record may be carried as a message
+inside a chain block, producing an intentional layered binding.
+
+---
+
+## 5. CurvaChain Block Structure
+
+Current reference files:
+
+- `wavelock/chain/Block.py`
+- `wavelock/chain/CurvaChain.py`
+- `wavelock/chain/chain_utils.py`
+
+The current block representation includes fields such as `index`, `timestamp`,
+`previous_hash`, `merkle_root`, `difficulty`, `nonce`, `block_type`, `meta`, and
+`block_hash`.
+
+---
+
+## 6. One-Time Signatures, Replay State, and Protocol Binding
+
+Current implementation work is located primarily under:
+
+- `wavelock/crypto/`
+- `wavelock/network/server.py`
+- `docs/WAVELOCK_OTS_DESIGN.md`
+- `docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`
+
+These modules experiment with public verification, one-time-use identities,
+canonical block-body binding, durable replay rejection, accepted-chain replay
+reconstruction, and authenticated protocol context.
+
+Security status labels in those files describe the tested software only. They
+do not narrow or disclaim the separate patent disclosure.
+
+---
+
+## 7. Drift Detection and Attestation
+
+The pending WaveLock patent application includes drift-detection and attestation
+embodiments. This public Python repository is not an exhaustive implementation
+of every embodiment described in the filed application.
+
+Any drift-detection implementation or validation artifact in this or another
+repository should be documented in terms of its actual code, inputs, tests, and
+measured behavior. The presence, absence, maturity, success, or failure of a
+particular repository implementation is an engineering fact and is not, by
+itself, a legal conclusion about patent support, validity, enforceability, or
+scope.
+
+---
+
+## 8. Repository Boundaries
+
+This repository contains the Python research/reference layer of WaveLock.
+References to separate C, kernel, hardware, or experimental repositories refer
+to distinct implementation trees and should be audited in their own context.
+
+No file in this engineering map grants a patent license or changes the rights
+reservation in `LICENSE` and `PATENT_NOTICE.md`.
