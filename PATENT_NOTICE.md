@@ -68,11 +68,21 @@ this repository do not narrow, disclaim, surrender, abandon, or otherwise limit
 any pending or issued patent claim or priority right.
 
 Engineering descriptions such as "experimental," "prototype," "deprecated,"
-"insecure," "not production-ready," "unimplemented," "future work," or
-similar terms describe the status of particular code or experiments only. They
-are not admissions or legal conclusions concerning patentability, written
-description, enablement, priority, validity, enforceability, claim construction,
-infringement, or claim scope.
+"insecure," "not production-ready," "unimplemented," "future work," "broken,"
+"failure," "attack," "claim broken," "no security claim," "unproved," or
+similar terms describe the status of particular code, experiments, threat models,
+or engineering assertions only. Unless a document expressly identifies a
+numbered patent claim from a filed patent application, the words "claim" or
+"claims" in research, audit, protocol, test, or security documents mean a
+technical or scientific assertion, not a patent claim.
+
+Such engineering language is not an admission, disclaimer, prosecution
+statement, or legal conclusion concerning patentability, written description,
+enablement, priority, validity, enforceability, claim construction, infringement,
+or patent scope. A security result showing that a particular implementation,
+configuration, prototype, algorithm, or threat-model assertion fails does not by
+itself establish that any patent claim is unsupported, invalid, unenforceable,
+non-infringed, abandoned, or narrowed.
 
 The presence or absence of a particular implementation in this repository does
 not establish the legal scope, support, validity, enforceability, or infringement
