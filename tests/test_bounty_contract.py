@@ -1,8 +1,11 @@
 """Executable High 1–5 contract and bounded replay/canonical binding checks."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import struct
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -13,9 +16,14 @@ from wavelock.chain.Wavelock_numpy import CurvatureKeyPairV3
 
 SEED = bytes(range(32))
 GOLDEN = {
-    16: "9e2a16c787e5ce4ca4bde68edb8df9cbde716cc25638b1c3abf4bb3b8b826b74",
-    24: "7d5924a4859661ff3a38edf0e8a7603a0587d8619084103b4ef8b3cb48b0bcc3",
-    32: "aff7f2d51d2a1a45d3558eefb9a803a2f406a7ddf531271863f55e7e76a80943",
+    16: "6983241d9dee059dd82de32b996cf68fafa451a2bbe3775a675b3e791ce992eb",
+    24: "0bf16e7bb05d2f3c3d572c60922465302cb2d8c30eecade6c8f2bc61e56b39d3",
+    32: "f0d67235e3d0e712c31598f22a51fd303ac0334ecfa9fc0a7aec16e59fed3e46",
+}
+BODY_GOLDEN = {
+    16: "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c",
+    24: "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b",
+    32: "53d7939101db324fa86ed7d0c145d25269de005224a6615e453867cd043a61ff",
 }
 
 
@@ -44,7 +52,7 @@ def test_normative_descriptor_matches_hashed_header():
     raw = cc.commit_consensus_state(SEED).canonical_bytes
     assert raw[6:10] == struct.pack(">I", len(header))
     assert raw[10:10+len(header)] == header
-    assert len(raw) == 1325
+    assert len(raw) == 1409
 
 
 @pytest.mark.parametrize("dtype", ["f4", "i8", "c16", "object"])
@@ -132,21 +140,47 @@ def test_high4_production_seed_threshold(seed):
 
 
 @pytest.mark.parametrize("length", [16, 24, 32])
-def test_high4_accepted_inputs_and_pinned_reference_parity(length):
+def test_high4_accepted_inputs_and_pinned_reference_parity(length, monkeypatch):
     seed = bytes(range(length))
     result = cc.commit_consensus_state(seed)
     assert result.commitment == cc.PROFILE + ":" + GOLDEN[length]
     assert cc.verify_consensus_commitment(result, seed)
     assert cc.verify_consensus_commitment(result.to_dict(), seed)
+    offset = 10 + struct.unpack(">I", result.canonical_bytes[6:10])[0]
+    # Preserve the original high-accuracy reference state/invariant body. The
+    # digest changes only because the descriptor now binds fixed math rules.
+    assert hashlib.sha256(result.canonical_bytes[offset:]).hexdigest() == BODY_GOLDEN[length]
+    # Independent historical NumPy evolution with the declared exp/log rules.
+    # Unmodified legacy libm is deliberately not claimed to be byte-identical.
+    monkeypatch.setattr(np, "exp", lambda a: cc._transcendental(a))
+    monkeypatch.setattr(np, "log", lambda a: cc._transcendental(a, logarithm=True))
     old = CurvatureKeyPairV3(n=4, seed=seed)
     assert cc.canonical_serialize(old.psi_star) == result.canonical_bytes
 
 
 def test_reference_error_policy_does_not_inherit_ambient_numpy_settings():
-    with np.errstate(all="raise"):
+    from decimal import localcontext, ROUND_DOWN, Inexact
+    with localcontext() as context, np.errstate(all="raise"):
+        context.prec = 3
+        context.rounding = ROUND_DOWN
+        context.traps[Inexact] = True
         artifact = cc.commit_consensus_state(SEED)
         assert artifact.commitment == cc.PROFILE + ":" + GOLDEN[32]
         assert cc.verify_consensus_commitment(artifact, SEED)
+
+
+@pytest.mark.parametrize("disabled", ["", "AVX512F", "AVX512F,AVX2,FMA3,AVX"])
+def test_reference_vectors_independent_of_simd_dispatch(disabled):
+    code = """
+import json
+from wavelock.chain.consensus_commitment import commit_consensus_state
+print(json.dumps([commit_consensus_state(bytes(range(n))).commitment for n in (16,24,32)]))
+"""
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                            text=True, timeout=30,
+                            env={**os.environ, "NPY_DISABLE_CPU_FEATURES": disabled})
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == [cc.PROFILE + ":" + GOLDEN[n] for n in (16,24,32)]
 
 
 @pytest.mark.parametrize("options", [{"backend": "cupy"}, {"backend": "numpy-fast"},
@@ -172,7 +206,7 @@ BOUND_FIELDS = [
     ("profile",), ("schema",), ("backend",), ("dtype",), ("byte_order",),
     ("array_order",), ("shape",), ("kernel_hash",), ("kernel", "version"),
     ("kernel", "steps"), ("kernel", "boundary"), ("kernel", "laplacian"),
-    ("kernel", "update"), ("kernel", "invariants"),
+    ("kernel", "update"), ("kernel", "invariants"), ("kernel", "transcendentals"),
     ("initialization", "xof"), ("initialization", "version"),
     ("initialization", "domain"), ("initialization", "length_encoding"),
     ("initialization", "mapping"), ("normalization",), ("hash",),

@@ -132,15 +132,18 @@
       "claimed_invariant": "Same input gives identical commitments in supported reference configurations",
       "enforcing_code": [
         "wavelock/chain/consensus_commitment.py:evolve_reference",
+        "wavelock/chain/consensus_commitment.py:_transcendental",
+        "wavelock/chain/consensus_commitment.py:_sum16",
         "wavelock/chain/consensus_commitment.py:canonical_serialize"
       ],
       "regression_tests": [
         "tests/test_bounty_contract.py:test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py:test_reference_vectors_independent_of_simd_dispatch",
         ".github/workflows/container-ci.yml:core-tests"
       ],
       "dry_runs": [],
       "status": "PASS",
-      "limitation": "Exact vectors exercise supported CI platforms; do not prove every NumPy build or every input deterministic."
+      "limitation": "A real CPU-dispatch mismatch was fixed by pinning exp/log rounding and reduction order. Exact vectors test the supported platforms, not every arbitrary build/input."
     },
     {
       "target": "Critical 4",

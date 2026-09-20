@@ -11,6 +11,9 @@ are not interchangeable.
   API with explicit binary64 big-endian encoding, complete metadata binding,
   nonfinite rejection, zero normalization, byte-input threshold and backend
   enforcement. Historical WLv* encodings retain their meaning.
+- Close a reproduced NumPy CPU-dispatch mismatch with bound, fixed exp/log
+  rounding and reduction order. Keep the PDE, parameters and original reference
+  vector bodies; compare the same final profile vectors in separate SIMD modes.
 - Fix a demonstrated unframed block-header ambiguity using header v2. Bind
   stable header context through existing OTS transcript-v1 metadata; retain
   historical v1 reading and reject new header downgrades on the default node.

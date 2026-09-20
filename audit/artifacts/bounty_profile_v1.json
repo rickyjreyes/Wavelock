@@ -14,7 +14,7 @@
   },
   "kernel": {
     "boundary": "periodic-roll",
-    "invariants": "numpy-gradient-edge-order-1;C-order-sums;E_grad,E_fb,E_ent,E_tot",
+    "invariants": "numpy-gradient-edge-order-1;pairwise16-v1;E_grad,E_fb,E_ent,E_tot",
     "laplacian": "((((-4*x+roll(x,+1,0))+roll(x,-1,0))+roll(x,+1,1))+roll(x,-1,1))",
     "parameters": {
       "alpha": {
@@ -40,10 +40,11 @@
       }
     },
     "steps": 50,
+    "transcendentals": "decimal80-half-even-to-binary64;exp-below-minus1000-is-zero-v1",
     "update": "psi+(dt*(alpha*lap/(psi+epsilon*exp(-beta*psi**2))-theta*(psi*lap(log(psi**2+delta))))-damping*psi)",
     "version": "WL-psi-001-reference-v1"
   },
-  "kernel_hash": "5371d69903f5991b26b58e1ec0cc6b85ebc248153df7cacbb3da5a467baffdf7",
+  "kernel_hash": "20c6a5e4f35ea8d3e3f27e7ba38ca8c6ec4f28c724e01fcda6f77dc975a35ff3",
   "normalization": "finite-only;negative-zero-to-positive-zero",
   "profile": "WL-Consensus-Commitment-v1",
   "reassociation": false,

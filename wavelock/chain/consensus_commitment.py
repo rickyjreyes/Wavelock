@@ -7,6 +7,7 @@ alone establishes encoding and hash consistency, not provenance of a runtime.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Context, Decimal, DivisionByZero, InvalidOperation, Overflow, ROUND_HALF_EVEN
 import hashlib
 import hmac
 import json
@@ -65,7 +66,8 @@ def profile_metadata():
         "boundary": "periodic-roll",
         "laplacian": "((((-4*x+roll(x,+1,0))+roll(x,-1,0))+roll(x,+1,1))+roll(x,-1,1))",
         "update": "psi+(dt*(alpha*lap/(psi+epsilon*exp(-beta*psi**2))-theta*(psi*lap(log(psi**2+delta))))-damping*psi)",
-        "invariants": "numpy-gradient-edge-order-1;C-order-sums;E_grad,E_fb,E_ent,E_tot",
+        "invariants": "numpy-gradient-edge-order-1;pairwise16-v1;E_grad,E_fb,E_ent,E_tot",
+        "transcendentals": "decimal80-half-even-to-binary64;exp-below-minus1000-is-zero-v1",
     }
     return {
         "profile": PROFILE, "schema": 1, "backend": BACKEND,
@@ -109,6 +111,36 @@ def _lap(x):
             + np.roll(x, 1, 1) + np.roll(x, -1, 1))
 
 
+def _transcendental(array, *, logarithm=False):
+    """Fixed rounding, independent of NumPy's CPU-dispatched libm kernels.
+
+    Exactly convert each binary64 input to decimal, round exp/ln to 80 decimal
+    digits (half even), then convert to binary64. The profile binds this rule.
+    A fresh explicit context cannot inherit caller precision/traps/rounding.
+    """
+    context = Context(prec=80, rounding=ROUND_HALF_EVEN, Emin=-999999,
+                      Emax=999999, capitals=1, clamp=0, flags=[],
+                      traps=[InvalidOperation, DivisionByZero, Overflow])
+    operation = context.ln if logarithm else context.exp
+    values = []
+    for scalar in array.ravel(order="C"):
+        value = _float(float(scalar))
+        if logarithm and value <= 0:
+            raise ValueError("logarithm requires positive finite input")
+        # This range is strictly below the binary64 rounding-to-zero threshold.
+        result = 0.0 if not logarithm and value < -1000 else float(operation(Decimal.from_float(value)))
+        values.append(_float(result))
+    return np.array(values, dtype=np.float64).reshape(array.shape)
+
+
+def _sum16(array):
+    """Pin the reference 16-element reduction, with no native dispatch."""
+    values = array.ravel(order="C")
+    lanes = [float(values[i]) + float(values[i+8]) for i in range(8)]
+    return (((lanes[0] + lanes[1]) + (lanes[2] + lanes[3]))
+            + ((lanes[4] + lanes[5]) + (lanes[6] + lanes[7])))
+
+
 def evolve_reference(secret_input):
     """The existing NumPy reference equation, with every parameter explicit."""
     _validate_input(secret_input)
@@ -117,8 +149,8 @@ def evolve_reference(secret_input):
     with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
         for _ in range(50):
             lap = _lap(psi)
-            fb = p["alpha"] * lap / (psi + p["epsilon"] * np.exp(-p["beta"] * psi ** 2))
-            ent = p["theta"] * (psi * _lap(np.log(psi ** 2 + p["delta"])))
+            fb = p["alpha"] * lap / (psi + p["epsilon"] * _transcendental(-p["beta"] * psi ** 2))
+            ent = p["theta"] * (psi * _lap(_transcendental(psi ** 2 + p["delta"], logarithm=True)))
             dpsi = p["dt"] * (fb - ent) - p["damping"] * psi
             psi = psi + dpsi
     return _state(psi)
@@ -129,11 +161,11 @@ def reference_invariants(state):
     p = profile_metadata()["kernel"]["parameters"]
     with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
         gx, gy = np.gradient(psi)
-        grad = float(np.sum(gx * gx) + np.sum(gy * gy))
-        fb = p["alpha"] * _lap(psi) / (psi + p["epsilon"] * np.exp(-p["beta"] * psi ** 2))
-        ent = p["theta"] * (psi * _lap(np.log(psi ** 2 + p["delta"])))
-        feedback = float(np.sum(fb * fb))
-        entropy = float(np.sum(ent * ent))
+        grad = float(_sum16(gx * gx) + _sum16(gy * gy))
+        fb = p["alpha"] * _lap(psi) / (psi + p["epsilon"] * _transcendental(-p["beta"] * psi ** 2))
+        ent = p["theta"] * (psi * _lap(_transcendental(psi ** 2 + p["delta"], logarithm=True)))
+        feedback = float(_sum16(fb * fb))
+        entropy = float(_sum16(ent * ent))
         total = float(grad + feedback + entropy)
     return dict(zip(INVARIANTS, map(_float, (grad, feedback, entropy, total))))
 

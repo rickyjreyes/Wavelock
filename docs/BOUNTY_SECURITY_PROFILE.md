@@ -54,6 +54,12 @@ conversion of GPU arrays, object arrays, integers, complex values or float32.
 Big/little-endian internal arrays, Fortran order and noncontiguous layouts are
 copied to the same logical C-order binary64 state.
 
+The reference keeps the NumPy equation and binary64 array operations, with
+fixed `exp`/`log` rounding and explicit reduction order. Raw NumPy's
+CPU-dispatched transcendentals demonstrably differ; they are not used by this
+producer. [Before/after evidence](../audit/artifacts/bounty_dispatch_after.json)
+and subprocess regressions cover the observed mismatch.
+
 The CI conformance matrix is Ubuntu 24.04/Python 3.9 and 3.12, and
 Windows/Python 3.12, using the package's NumPy dependency. All use the **same**
 three exact commitment vectors; platform-specific expectations are forbidden.
@@ -68,8 +74,9 @@ being registered; merely selecting a matching label does not attest a runtime.
    `b"WL-PSI-INIT-v1" || uint64_be(len(input)) || input`.
 2. Split into sixteen 8-byte big-endian unsigned integers. For each, retain
    the low 53 bits and divide by `2**53` as binary64. Reshape C-order to `(4,4)`.
-3. Execute 50 updates using the existing reference equation. All intermediates
-   are binary64, each NumPy operation evaluates separately in the order below;
+3. Execute 50 updates using the existing reference equation. State and array
+   intermediates are binary64; exp/log use the explicit rounding rule below.
+   Each NumPy operation evaluates separately in the order below;
    do not fuse or reassociate arithmetic. Periodic `roll(x,+1,axis)` and
    `roll(x,-1,axis)` supply the four neighbors:
 
@@ -93,6 +100,19 @@ psi  = psi + dpsi
 | damping | 0.00002 |
 
 The descriptor's `binary64` hex strings specify these constants exactly.
+`exp` and `log` have the bound rule
+`decimal80-half-even-to-binary64;exp-below-minus1000-is-zero-v1`: convert the
+binary64 operand exactly with `Decimal.from_float`, evaluate Decimal exp/ln
+rounded to 80 decimal digits with round-half-even, then convert the result to
+binary64. The fixed context has `Emin=-999999`, `Emax=999999`, `clamp=0`, and
+traps invalid operations, division by zero and overflow; it is independent of
+the caller's Decimal context. For exp inputs strictly below -1000 return
+positive zero (strictly below the binary64 underflow rounding threshold).
+Log requires a positive finite operand. This specifies a decimal-then-binary
+rounding rule, not an assertion of correctly rounded binary transcendental
+functions for every possible input. Python documents the decimal exp/ln
+rounding semantics in its [Decimal reference](https://docs.python.org/3/library/decimal.html).
+
 The kernel identifier is `WL-psi-001-reference-v1`. The kernel hash is SHA-256
 of the canonical JSON wire representation of the descriptor's `kernel` object.
 It binds the declared equation and parameters; it is not a measured executable
@@ -102,9 +122,12 @@ hash or remote attestation measurement.
    edge order 1. Compute `fb` and `ent` again on the final state. Invariants are
    `E_grad = float(sum(gx*gx) + sum(gy*gy))`,
    `E_fb = float(sum(fb*fb))`, `E_ent = float(sum(ent*ent))`, and
-   `E_tot = float((E_grad + E_fb) + E_ent)`. `sum` means NumPy sum over the
-   entire C-order array. Independent implementations must reproduce this
-   reference reduction behavior as well as `exp` and `log` rounding.
+   `E_tot = float((E_grad + E_fb) + E_ent)`. Each `sum` uses the fixed
+   `pairwise16-v1` rule: flatten C-order to `a[0:16]`, set each of eight lanes
+   `r[i] = float(a[i]) + float(a[i+8])`, then evaluate
+   `((r[0]+r[1])+(r[2]+r[3]))+((r[4]+r[5])+(r[6]+r[7]))` in binary64,
+   preserving every indicated grouping. This pins the 16-element reference
+   reduction without allowing runtime SIMD dispatch to choose another order.
 
 Overflow, invalid arithmetic and division by zero raise before emission.
 NaN and both infinities are rejected in every state element, floating metadata
@@ -131,7 +154,7 @@ NaN/Inf JSON extensions are forbidden. The registered descriptor contains no
 arbitrary user strings or free-form fields. Wire header bytes must match it
 exactly, including whitespace and scalar types.
 
-The preimage is 1325 bytes in v1. The output is the literal profile identifier,
+The preimage is 1409 bytes in v1. The output is the literal profile identifier,
 `:`, and the lowercase 64-character hex SHA-256 digest of the entire preimage.
 There is no trailing newline in either hashed preimage or commitment string.
 `validate_canonical_bytes` checks magic, exact header bytes, body length,
@@ -140,9 +163,15 @@ alternate JSON, a little-endian body and raw negative-zero bytes fail closed.
 
 | Input | SHA-256 portion of commitment |
 |---|---|
-| `bytes(range(16))` | `9e2a16c787e5ce4ca4bde68edb8df9cbde716cc25638b1c3abf4bb3b8b826b74` |
-| `bytes(range(24))` | `7d5924a4859661ff3a38edf0e8a7603a0587d8619084103b4ef8b3cb48b0bcc3` |
-| `bytes(range(32))` | `aff7f2d51d2a1a45d3558eefb9a803a2f406a7ddf531271863f55e7e76a80943` |
+| `bytes(range(16))` | `6983241d9dee059dd82de32b996cf68fafa451a2bbe3775a675b3e791ce992eb` |
+| `bytes(range(24))` | `0bf16e7bb05d2f3c3d572c60922465302cb2d8c30eecade6c8f2bc61e56b39d3` |
+| `bytes(range(32))` | `f0d67235e3d0e712c31598f22a51fd303ac0334ecfa9fc0a7aec16e59fed3e46` |
+
+Preliminary PR commits used an incomplete math descriptor and a different
+header length/hash. Those unpublished vectors are retained in
+[bounty_dispatch_before.json](../audit/artifacts/bounty_dispatch_before.json).
+The final descriptor binds the corrected math rules; body hashes for all three
+original reference vectors are preserved exactly. No released profile changed.
 
 ## Artifact, replay and authentication relationship
 

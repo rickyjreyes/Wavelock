@@ -12,6 +12,8 @@ import json
 import os
 from pathlib import Path
 import struct
+import subprocess
+import sys
 import tempfile
 
 import numpy as np
@@ -172,9 +174,10 @@ def matrix(records):
               [tests + "test_high4_production_seed_threshold", tests + "test_commitment_artifact_publishing_is_public_and_exclusive"],
               limitation="PASS covers input/output boundaries only. No preimage complexity bound is established by regression tests."),
         entry("Critical 3", "Same input gives identical commitments in supported reference configurations",
-              [commitment + "evolve_reference", commitment + "canonical_serialize"],
-              [tests + "test_high4_accepted_inputs_and_pinned_reference_parity", ".github/workflows/container-ci.yml:core-tests"],
-              limitation="Exact vectors exercise supported CI platforms; do not prove every NumPy build or every input deterministic."),
+              [commitment + "evolve_reference", commitment + "_transcendental", commitment + "_sum16", commitment + "canonical_serialize"],
+              [tests + "test_high4_accepted_inputs_and_pinned_reference_parity",
+               tests + "test_reference_vectors_independent_of_simd_dispatch", ".github/workflows/container-ci.yml:core-tests"],
+              limitation="A real CPU-dispatch mismatch was fixed by pinning exp/log rounding and reduction order. Exact vectors test the supported platforms, not every arbitrary build/input."),
         entry("Critical 4", "Replay rejects wrong metadata, parameters, input, state or invariants",
               [commitment + "verify_consensus_commitment"],
               [tests + "test_every_metadata_field_is_bound", tests + "test_replay_rejects_wrong_input_state_invariants_and_extra_fields"],
@@ -202,6 +205,39 @@ def matrix(records):
             "targets": rows}
 
 
+def dispatch_records():
+    """Retain the actually reproduced SIMD failure and pin corrected parity."""
+    code = """
+import hashlib,json,struct
+from wavelock.chain import consensus_commitment as c
+results = {}
+for n in (16,24,32):
+    artifact = c.commit_consensus_state(bytes(range(n)))
+    offset = 10 + struct.unpack('>I',artifact.canonical_bytes[6:10])[0]
+    results[str(n)] = {'commitment':artifact.commitment,
+        'body_sha256':hashlib.sha256(artifact.canonical_bytes[offset:]).hexdigest()}
+print(json.dumps(results))
+"""
+    expected_bodies = json.loads((ROOT / "artifacts/bounty_dispatch_before.json").read_text())["observations"]["default"]
+    observations = {}
+    for mode in ("", "AVX512F", "AVX512F,AVX2,FMA3,AVX"):
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                                text=True, timeout=30,
+                                env={**os.environ, "NPY_DISABLE_CPU_FEATURES": mode})
+        if result.returncode != 0:
+            raise RuntimeError("dispatch probe failed: " + result.stderr)
+        observations[mode or "default"] = json.loads(result.stdout)
+    equivalent = all(v == observations["default"] for v in observations.values())
+    preserved = all(v[n]["body_sha256"] == expected_bodies[n]["body_sha256"]
+                    for v in observations.values() for n in ("16", "24", "32"))
+    return {"profile": cc.PROFILE, "target": "Critical 3 / High 5",
+            "attempt": "identical public vectors with default, AVX512-disabled and AVX-disabled NumPy dispatch",
+            "expected": "identical commitments and preservation of original reference bodies",
+            "observations": observations, "dispatch_equivalent": equivalent,
+            "original_reference_bodies_preserved": preserved,
+            "status": "PASS" if equivalent and preserved else "FAIL"}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="rerun attempts and compare evidence without writing")
@@ -215,6 +251,13 @@ def main():
         "scope": "Thirteen enumerated easy submissions; broader unresolved targets are in bounty_contract_matrix.json.",
         "attempts": [{"file": name + ".json", "status": result["status"]} for name, result in records]}
     files[ROOT / "artifacts" / "bounty_contract_matrix.json"] = matrix(records)
+    dispatch = dispatch_records()
+    files[ROOT / "artifacts" / "bounty_dispatch_after.json"] = dispatch
+    if dispatch["status"] != "PASS":
+        failures.append("cpu_dispatch_parity")
+        for row in files[ROOT / "artifacts" / "bounty_contract_matrix.json"]["targets"]:
+            if row["target"] in ("Critical 3", "High 5"):
+                row["status"] = "FAIL"
     mismatches = []
     for path, content in files.items():
         if args.check:
@@ -223,7 +266,8 @@ def main():
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(content, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
-    print(json.dumps({"attempts": len(records), "passed": len(records)-len(failures),
+    print(json.dumps({"attempts": len(records), "passed": sum(v["status"] == "PASS" for _, v in records),
+                      "cpu_dispatch": dispatch["status"],
                       "failures": failures, "evidence_mismatches": mismatches,
                       "full_bounty_ready": False}))
     return 1 if failures or mismatches else 0

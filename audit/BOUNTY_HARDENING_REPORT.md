@@ -36,6 +36,20 @@ The new profile does not replace OTS or reinterpret WLv2.
 
 ## Confirmed vulnerabilities fixed
 
+- Final-head CI found a real **Critical 3** numerical mismatch in the initial
+  implementation: the 32-byte vector gave `aff7f2d5...` on one CPU dispatch path
+  and `be8ea373...` on another. Disabling AVX512 reproduced it locally without
+  changing NumPy versions. [Before evidence](artifacts/bounty_dispatch_before.json)
+  retains both hashes and the failed CI run. Fixed decimal-80 exp/log rounding
+  and an explicit 16-element reduction now eliminate that dispatch choice from
+  the NumPy reference path. The PDE and parameters are unchanged. The updated,
+  still-unreleased descriptor binds those math rules, so whole-preimage vectors
+  change; the **original reference state/invariant bodies remain byte-identical**.
+  [After evidence](artifacts/bounty_dispatch_after.json) and subprocess tests
+  require one common vector set across three CPU-feature settings. There are
+  no platform-specific expected hashes. NumPy's
+  [runtime dispatcher](https://numpy.org/doc/stable/reference/simd/index.html)
+  explains why selecting NumPy alone was insufficient.
 - The old serializer emits 405 bytes for each nonfinite probe, diverges on
   signed zero, uses native-endian array bytes and does not bind step count,
   damping or XOF identity. Integer 42 also emits a historical commitment.
@@ -76,9 +90,12 @@ The new profile does not replace OTS or reinterpret WLv2.
   replay locks. Two competing processes do not both consume the same OTS key;
   distinct-key sibling writers do not both append. This result says nothing
   about agreement between hosts.
-- The three exact 16/24/32-byte vectors agree with the existing NumPy evolution
-  and across the supported Linux/Windows CI jobs. This bounded experiment
-  does not establish arbitrary-build or all-input floating-point determinism.
+- NumPy alone was **not** sufficient to guarantee CPU parity: the follow-up CI
+  failure above disproved that assumption. After correction, parity with the
+  independent historical NumPy evolution is tested using the same declared
+  exp/log primitives. Historical libm output is not claimed to be byte-identical.
+  New exact vectors also preserve the original reference body hashes. Bounded
+  conformance still does not prove every arbitrary build/input deterministic.
 
 The header concatenation concern was **confirmed**, not disproven. No result
 here proves collision resistance, preimage resistance or absence of new attacks.
@@ -129,7 +146,7 @@ rediscover. Thirteen specified dry-run passes do not close these wider gaps.
 
 ## Verification and reproduction
 
-- Core/OTS suite: **420 passed, 7 skipped**, including canonicalization,
+- Core/OTS suite: **424 passed, 7 skipped**, including canonicalization,
   signer/replay crash points, subprocess races, header/history and installed
   workflow tests. Optional/skipped historical tests retain their existing gates.
 - Unchanged curvature suite: **205 passed**. Unchanged PDE suite:
@@ -137,13 +154,18 @@ rediscover. Thirteen specified dry-run passes do not close these wider gaps.
 - First implementation CI: Linux/Python 3.9, Linux/Python 3.12, Windows/Python
   3.12 and container all passed in
   [run 35531330185](https://github.com/rickyjreyes/Wavelock/actions/runs/35531330185).
-  The same jobs run on every PR update; use the PR checks for the final head.
+  Follow-up [run 35531961179](https://github.com/rickyjreyes/Wavelock/actions/runs/35531961179)
+  exposed the CPU-dispatch failure; it was retained and fixed, not rerun away.
+  The same jobs plus explicit dispatch subprocess regressions run on every PR
+  update; use the PR checks for the final head.
 - **13/13 specified submissions PASS**, independently reproducible with
   `python audit/run_bounty_contract.py --check`. Each attempt includes target,
   attempt, expected, observed and status in
   [bounty_dry_run/INDEX.json](artifacts/bounty_dry_run/INDEX.json). CI reruns and
   compares these artifacts on every supported platform. Expected signed-zero
   equality and internal-endian normalization are distinguished from rejection.
+- CPU dispatch has a separate before/after artifact; its checks preserve the
+  requested thirteen-entry dry-run index and also fail CI on a mismatch.
 
 Commands are in [RUNBOOK.md](../RUNBOOK.md). No research-suite source was
 changed. The implementation branch remains separate; `v0.2.0` is unchanged.
