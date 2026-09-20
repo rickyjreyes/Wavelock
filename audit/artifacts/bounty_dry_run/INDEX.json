@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "profile": "WL-Consensus-Commitment-v1",
+  "reproduce": "python audit/run_bounty_contract.py --check",
+  "count": 13,
+  "passed": 13,
+  "failed": 0,
+  "scope": "Thirteen enumerated easy submissions; broader unresolved targets are in bounty_contract_matrix.json.",
+  "attempts": [
+    {
+      "file": "01_integer_42.json",
+      "status": "PASS"
+    },
+    {
+      "file": "02_eight_byte_seed.json",
+      "status": "PASS"
+    },
+    {
+      "file": "03_nan.json",
+      "status": "PASS"
+    },
+    {
+      "file": "04_positive_infinity.json",
+      "status": "PASS"
+    },
+    {
+      "file": "05_negative_infinity.json",
+      "status": "PASS"
+    },
+    {
+      "file": "06_signed_zero.json",
+      "status": "PASS"
+    },
+    {
+      "file": "07_native_endian.json",
+      "status": "PASS"
+    },
+    {
+      "file": "08_metadata_substitution.json",
+      "status": "PASS"
+    },
+    {
+      "file": "09_unsupported_backend.json",
+      "status": "PASS"
+    },
+    {
+      "file": "10_alternate_profile.json",
+      "status": "PASS"
+    },
+    {
+      "file": "11_ots_replay.json",
+      "status": "PASS"
+    },
+    {
+      "file": "12_ots_body_mutation.json",
+      "status": "PASS"
+    },
+    {
+      "file": "13_public_key_substitution.json",
+      "status": "PASS"
+    }
+  ]
+}

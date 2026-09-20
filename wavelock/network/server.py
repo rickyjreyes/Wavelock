@@ -236,8 +236,9 @@ from wavelock.crypto.wavelock_ots import (
 from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger, OTSLedgerError
 
 #: Durable, reconstructable consumed-id ledger used by block acceptance. The
-#: consumed set is a function of accepted chain state (see ``index_signature``),
-#: so any node replaying accepted OTS blocks derives the same set. This is the
+#: accepted identities are reconstructable from chain state (``index_signature``).
+#: Local interrupted appends can additionally burn identities before a block
+#: reaches the chain; retain the durable replay ledger to preserve those. This is the
 #: load-bearing control that turns OTS "one-time" into an enforced invariant on
 #: this node; full Finding-D closure requires every node to run this rejection
 #: against a ledger derived from agreed chain state.

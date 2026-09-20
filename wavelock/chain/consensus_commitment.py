@@ -114,7 +114,7 @@ def evolve_reference(secret_input):
     _validate_input(secret_input)
     p = profile_metadata()["kernel"]["parameters"]
     psi = derive_psi_zero(secret_input, (4, 4), dtype=np.float64, xof="shake_256")
-    with np.errstate(over="raise", invalid="raise", divide="raise"):
+    with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
         for _ in range(50):
             lap = _lap(psi)
             fb = p["alpha"] * lap / (psi + p["epsilon"] * np.exp(-p["beta"] * psi ** 2))
@@ -127,7 +127,7 @@ def evolve_reference(secret_input):
 def reference_invariants(state):
     psi = _state(state)
     p = profile_metadata()["kernel"]["parameters"]
-    with np.errstate(over="raise", invalid="raise", divide="raise"):
+    with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
         gx, gy = np.gradient(psi)
         grad = float(np.sum(gx * gx) + np.sum(gy * gy))
         fb = p["alpha"] * _lap(psi) / (psi + p["epsilon"] * np.exp(-p["beta"] * psi ** 2))

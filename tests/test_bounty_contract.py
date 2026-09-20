@@ -1,6 +1,7 @@
 """Executable High 1–5 contract and bounded replay/canonical binding checks."""
 import hashlib
 import json
+from pathlib import Path
 import struct
 
 import numpy as np
@@ -34,6 +35,16 @@ def test_high1_canonical_layout_and_dictionary_order():
     assert cc.validate_canonical_bytes(expected)
     body_offset = len(cc.MAGIC) + 4 + struct.unpack(">I", expected[6:10])[0]
     assert expected[body_offset:body_offset+128] == struct.pack(">16d", *state.ravel(order="C"))
+
+
+def test_normative_descriptor_matches_hashed_header():
+    path = Path(__file__).resolve().parents[1] / "audit/artifacts/bounty_profile_v1.json"
+    descriptor = json.loads(path.read_text(encoding="utf-8"))
+    header = json.dumps(descriptor, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    raw = cc.commit_consensus_state(SEED).canonical_bytes
+    assert raw[6:10] == struct.pack(">I", len(header))
+    assert raw[10:10+len(header)] == header
+    assert len(raw) == 1325
 
 
 @pytest.mark.parametrize("dtype", ["f4", "i8", "c16", "object"])
@@ -129,6 +140,13 @@ def test_high4_accepted_inputs_and_pinned_reference_parity(length):
     assert cc.verify_consensus_commitment(result.to_dict(), seed)
     old = CurvatureKeyPairV3(n=4, seed=seed)
     assert cc.canonical_serialize(old.psi_star) == result.canonical_bytes
+
+
+def test_reference_error_policy_does_not_inherit_ambient_numpy_settings():
+    with np.errstate(all="raise"):
+        artifact = cc.commit_consensus_state(SEED)
+        assert artifact.commitment == cc.PROFILE + ":" + GOLDEN[32]
+        assert cc.verify_consensus_commitment(artifact, SEED)
 
 
 @pytest.mark.parametrize("options", [{"backend": "cupy"}, {"backend": "numpy-fast"},
