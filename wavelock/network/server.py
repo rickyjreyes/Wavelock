@@ -1,6 +1,7 @@
 # network/server.py
 from __future__ import annotations
 import os, socket, threading, time, json, hashlib, traceback
+from contextlib import contextmanager, nullcontext
 from typing import List, Tuple, Dict, Optional
 
 import numpy as np
@@ -30,20 +31,36 @@ HOST = "0.0.0.0"
 ###############################################################################
 
 class ChainState:
-    def __init__(self):
+    def __init__(self, *, persistent=False):
+        self.persistent = persistent
         self._lock = threading.RLock()
         self.blocks: List[Block] = []
         self.by_hash: Dict[str, Block] = {}
 
-    def load_from_disk(self, *, require_ots=False):
-        with self._lock:
-            self.blocks = load_all_blocks()
+    def _file_lock(self):
+        from wavelock.chain import chain_utils
+        from wavelock.storage.durability import exclusive_lock
+        return exclusive_lock(chain_utils.LEDGER_DIR / "chain-writer.lock") if self.persistent else nullcontext()
+
+    def load_from_disk(self, *, require_ots=False, already_locked=False):
+        with self._lock, (nullcontext() if already_locked else self._file_lock()):
+            blocks = load_all_blocks()
             if require_ots:
                 from wavelock.chain.ots_blocks import verify_ots_chain
-                if not verify_ots_chain(self.blocks):
+                if not verify_ots_chain(blocks):
                     raise OTSLedgerError("stored chain failed public OTS verification")
+            _reconstruct_consumed_ots(blocks, CONSENSUS_OTS_LEDGER)
+            self.blocks = blocks
             self.by_hash = {b.hash: b for b in self.blocks}
-            _reconstruct_consumed_ots(self.blocks, CONSENSUS_OTS_LEDGER)
+
+    @contextmanager
+    def acceptance_lock(self, cfg):
+        with self._lock, self._file_lock():
+            if self.persistent:
+                # A different local process may have advanced the tip. Reload
+                # under the writer lock before linkage/replay/append decisions.
+                self.load_from_disk(require_ots=getattr(cfg, "require_ots", True), already_locked=True)
+            yield
 
     def tip(self) -> Optional[Block]:
         with self._lock:
@@ -63,7 +80,7 @@ class ChainState:
             self.blocks.append(b)
             self.by_hash[b.hash] = b
 
-CHAIN = ChainState()
+CHAIN = ChainState(persistent=True)
 
 ###############################################################################
 # Trust / strict verification
@@ -103,6 +120,9 @@ def _extract_curvature_fields(b: Block) -> Tuple[Optional[str], Optional[str], O
     return msg, sig, com
 
 def _verify_pow_and_linkage(b: Block, cfg) -> bool:
+    if getattr(cfg, "require_ots", True) and b.header_version != 2:
+        print("Reject: new OTS acceptance requires block header version 2.")
+        return False
     if not verify_block_integrity(b):
         print("Reject: invalid block hash, Merkle root, or proof of work.")
         return False
@@ -439,17 +459,20 @@ def try_accept_block_dict(d: dict, cfg) -> bool:
     return try_accept_block(b, cfg)
 
 def try_accept_block(b: Block, cfg) -> bool:
-    # Linkage, authentication and append share one in-process critical section.
-    # Distinct keys cannot concurrently append siblings to the same local tip.
-    with CHAIN._lock:
-        if not _verify_pow_and_linkage(b, cfg):
-            return False
-        if block_requires_ots(b, cfg):
-            if not _verify_ots_block(b, cfg):
+    # One local critical section covers refreshed linkage, replay and append.
+    try:
+        with CHAIN.acceptance_lock(cfg):
+            if not _verify_pow_and_linkage(b, cfg):
                 return False
-        elif not _verify_curvature(b, cfg):
-            return False
-        CHAIN.append(b)
+            if block_requires_ots(b, cfg):
+                if not _verify_ots_block(b, cfg):
+                    return False
+            elif not _verify_curvature(b, cfg):
+                return False
+            CHAIN.append(b)
+    except (OSError, OTSLedgerError) as error:
+        print(f"Reject: durable acceptance failed: {error}")
+        return False
     print(f"Accepted Block #{b.index} | {b.hash[:12]}...")
     broadcast_inv(b.hash)
     return True

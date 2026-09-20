@@ -440,6 +440,10 @@ def _serialize_commitment_v7(psi) -> bytes:
 #               CurvatureKeyPair
 # ===========================================================
 class CurvatureKeyPair:
+    """Historical/research keypair. Production commitments use consensus_commitment."""
+    consensus_valid = False
+    operating_mode = "historical/research"
+
     def __init__(
         self,
         n: int,

@@ -22,14 +22,15 @@ that records which ``one_time_key_id`` / OTS leaf identifiers have already been
 * **Durable** — consumed identifiers are appended to a JSONL file and ``fsync``-ed
   before the in-memory set is updated, so a crash mid-accept never "loses" a
   consumption (fail-closed: if the durable write fails, the accept fails).
-* **Canonical / reconstructable** — the consumed set is exactly the set of
-  identifiers carried by already-accepted OTS blocks. A node can rebuild it by
-  replaying accepted blocks (:meth:`index_signature`), so the ledger is a
-  function of chain state rather than private host state.
+* **Reconstructable accepted identities** — a node folds identifiers from
+  verified accepted blocks into the consumed set (:meth:`index_signature`).
+  The durable ledger may also contain conservatively burned identities when
+  acceptance fails after recording consumption but before appending a block.
 * **Fail-closed** — any verification, parsing, hashing, fingerprint, Merkle, or
-  replay error rejects (returns ``False``); nothing is consumed on rejection.
+  replay error rejects (returns ``False``). An uncertain durable write may
+  consume an identity even when acceptance reports failure; never reuse it.
 * **Inter-process safe (Mythos M3)** — the whole read-check-append-fsync-update
-  critical section runs under an OS-level ``flock`` (POSIX), so two separate
+  critical section runs under ``flock`` (POSIX) or SQLite exclusion (Windows), so two separate
   ledger instances/processes sharing the same file cannot both accept the same
   OTS identity. Under the lock the file is re-scanned so a concurrent append is
   seen before the duplicate check.
@@ -51,6 +52,7 @@ import os
 import sqlite3
 import threading
 from typing import Optional
+from wavelock.storage.durability import ensure_directory, fsync_directory
 
 try:  # POSIX inter-process file locking (Mythos M3).
     import fcntl as _fcntl
@@ -136,7 +138,7 @@ class PersistentOTSReplayLedger:
         exclusive transaction supplies cross-process exclusion.
         """
         directory = os.path.dirname(os.path.abspath(self.path))
-        os.makedirs(directory, exist_ok=True)
+        ensure_directory(directory)
         if _fcntl is None:
             # SQLite supplies an OS-backed cross-process lock on Windows too.
             # This database coordinates access; JSONL remains the replay data.
@@ -182,6 +184,14 @@ class PersistentOTSReplayLedger:
                         raise OTSLedgerError(
                             f"corrupt OTS ledger line {lineno} in {self.path!r}: {e}"
                         ) from e
+                    if (not isinstance(rec, dict)
+                            or set(rec) != {"v", "one_time_key_id", "leaf_id", "transcript"}
+                            or type(rec["v"]) is not int or rec["v"] != LEDGER_VERSION
+                            or not isinstance(rec["one_time_key_id"], str) or not rec["one_time_key_id"]
+                            or any(not isinstance(rec[k], str) or len(rec[k]) != 64
+                                   or any(c not in "0123456789abcdef" for c in rec[k])
+                                   for k in ("leaf_id", "transcript"))):
+                        raise OTSLedgerError(f"malformed OTS ledger record at line {lineno}")
                     kid = rec.get("one_time_key_id")
                     leaf = rec.get("leaf_id")
                     if kid is not None:
@@ -195,13 +205,13 @@ class PersistentOTSReplayLedger:
 
     def _load(self) -> None:
         """Read the existing ledger into memory. Corruption fails closed."""
-        with self._lock:
+        with self._lock, self._interprocess_lock():
             self._scan_file_into_sets()
 
     def _append(self, kid: str, leaf: str, transcript: str) -> None:
         """Append one consumed record durably (flush + fsync). Raises on failure."""
         directory = os.path.dirname(os.path.abspath(self.path))
-        os.makedirs(directory, exist_ok=True)
+        ensure_directory(directory)
         rec = {
             "v": LEDGER_VERSION,
             "one_time_key_id": kid,
@@ -213,13 +223,15 @@ class PersistentOTSReplayLedger:
             fh.write(line)
             fh.flush()
             os.fsync(fh.fileno())
+        fsync_directory(directory)
 
     # -- queries -------------------------------------------------------------
 
     def is_consumed(self, signature: dict) -> bool:
         """True if this signature's key id OR leaf id has already been accepted."""
         kid, leaf = _ids_for(signature)
-        with self._lock:
+        with self._lock, self._interprocess_lock():
+            self._scan_file_into_sets()
             return kid in self._key_ids or leaf in self._leaf_ids
 
     # -- mutation ------------------------------------------------------------
@@ -227,7 +239,7 @@ class PersistentOTSReplayLedger:
     def accept(self, public_key: dict, message, signature: dict) -> bool:
         """Verify, then consume. Returns ``True`` only on a first valid use.
 
-        Fail-closed. Returns ``False`` (consuming nothing) on:
+        Fail-closed. Returns ``False`` on:
 
         * a non-WaveLock-OTS scheme on either object (legacy SIGv2 is never
           accepted here);
@@ -259,7 +271,8 @@ class PersistentOTSReplayLedger:
                 if kid in self._key_ids or leaf in self._leaf_ids:
                     return False
                 # Durable record BEFORE the in-memory mutation: if the fsync'd
-                # append fails we raise out and consume nothing (fail-closed).
+                # append fails we reject. A partial/uncertain write can still
+                # conservatively consume the key; it never permits reuse.
                 self._append(kid, leaf, transcript)
                 self._key_ids.add(kid)
                 self._leaf_ids.add(leaf)
@@ -272,9 +285,9 @@ class PersistentOTSReplayLedger:
         """Memory-only fold-in of an already-accepted signature's identifiers.
 
         Used when reconstructing the consumed set from accepted chain blocks at
-        startup, so the ledger stays canonical (= a function of chain state) even
-        if the JSONL cache was deleted. Does not re-verify (the block was already
-        accepted) and does not write to disk.
+        startup, so accepted identities remain consumed even if the JSONL cache
+        was deleted. This cannot recover identities burned before chain append.
+        Does not re-verify (the block was already verified) or write to disk.
         """
         if not isinstance(signature, dict):
             return

@@ -2,32 +2,12 @@
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
-import tempfile
+from wavelock.storage.durability import atomic_write
 
 
 def write_json(path, value, *, exclusive=False, private=False):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = (json.dumps(value, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    if exclusive:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600 if private else 0o644)
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(encoded)
-            stream.flush()
-            os.fsync(stream.fileno())
-        return
-    fd, temporary = tempfile.mkstemp(prefix=path.name + ".", dir=path.parent)
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(encoded)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+    encoded = (json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+    atomic_write(path, encoded, exclusive=exclusive, mode=0o600 if private else 0o644)
 
 
 def mark_secret_used(path):
