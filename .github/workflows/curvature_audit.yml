@@ -9,16 +9,19 @@ name: curvature_audit
 on:
   push:
     branches:
+      - master
       - research/curvature-capacity-wavelock
     paths:
       - 'wavelock/curvature_capacity/**'
       - 'wavelock/curvature_capacity_v1/**'
+      - 'wavelock/pde_hash/**'
       - 'curvature_audit/**'
       - '.github/workflows/curvature_audit.yml'
   pull_request:
     paths:
       - 'wavelock/curvature_capacity/**'
       - 'wavelock/curvature_capacity_v1/**'
+      - 'wavelock/pde_hash/**'
       - 'curvature_audit/**'
       - '.github/workflows/curvature_audit.yml'
   workflow_dispatch:

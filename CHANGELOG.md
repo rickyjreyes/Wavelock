@@ -5,6 +5,30 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [0.2.0] — Unreleased: supported OTS command-line workflow
+
+- The default `keygen`, `add`, `sign`, `mine`, `verify`, and `audit` commands
+  now use WaveLock-OTS. Historical SIGv2 commands are available under `legacy`.
+  Each signed block requires a fresh one-time key; verification uses public
+  material only. Signing marks the secret used before publishing its artifact
+  and preserves passphrase encryption at rest.
+- Node configuration now enforces `require_ots=true` by default, honors JSON
+  and environment overrides, and rejects unknown settings. Legacy chains must
+  be inspected explicitly; use a fresh data directory for the OTS workflow.
+- Blocks, peers, signer state, and replay state share a persistent data root
+  selected with `WAVELOCK_DATA_DIR`. Windows replay exclusion now uses a
+  SQLite lock; POSIX retains `flock`. Replay state is reconstructed from the
+  verified accepted chain on startup.
+- Acceptance checks the actual header hash, Merkle root, proof of work,
+  sequential index, and parent. Concurrent threads cannot append siblings to
+  one local tip. Deserializing malformed mining fields fails without mining.
+- Canonical block transcript version 1 is unchanged. Replay consumption and
+  block append remain separate durable writes; a crash between them can
+  consume a key without accepting its block. Cross-node consensus and a
+  reusable Merkle signing identity remain separate work.
+- Added the public-only end-to-end demo, migration instructions, and CI for
+  Python 3.9/3.12 on Linux, Python 3.12 on Windows, and the CPU container.
+
 ## [Unreleased] — WaveLock-OTS Mythos integration-layer fixes (M1/M2/M3)
 
 Claude Mythos found three integration-layer bounty blockers after the A/B/D

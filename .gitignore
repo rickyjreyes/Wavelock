@@ -60,6 +60,11 @@ users.json
 users.json.bak
 peers.json
 trusted_commitments.json
+keys/
+wl_ots_secret.json
+wl_ots_public.json
+sig.json
+signed-block*.json
 
 # Optional local chain snapshots
 curva_chain.json

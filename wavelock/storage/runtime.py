@@ -2,8 +2,11 @@ from pathlib import Path
 import os
 
 def get_runtime_dir():
+    configured = os.getenv("WAVELOCK_DATA_DIR")
     xdg = os.getenv("XDG_DATA_HOME")
-    if xdg:
+    if configured:
+        root = Path(configured).expanduser().resolve()
+    elif xdg:
         root = Path(xdg) / "wavelock"
     else:
         root = Path.home() / ".wavelock"

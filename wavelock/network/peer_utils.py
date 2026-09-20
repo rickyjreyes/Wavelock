@@ -1,7 +1,8 @@
 # chain/peer_utils.py
 import json, os, random
 
-PEERS_PATH = "peers.json"
+from wavelock.storage.runtime import PEERS_FILE
+PEERS_PATH = str(PEERS_FILE)
 
 def _parse_peer(ent):
     # Accept "host:port" OR [host, port] OR (host, port)

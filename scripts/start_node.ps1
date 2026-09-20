@@ -4,4 +4,5 @@ param(
 )
 $env:PYTHONPATH = "$PWD"
 if ($Seeds) { $env:SEEDS = $Seeds }
-python -m network.server --port $Port
+python -m wavelock.network.server --port $Port
+exit $LASTEXITCODE
