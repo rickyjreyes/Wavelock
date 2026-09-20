@@ -98,6 +98,16 @@ class Block:
 
     @staticmethod
     def from_dict(data):
+        # Deserialization must never enter the constructor's mining branch.
+        # Missing/null mining fields are malformed input, not new-block requests.
+        if not isinstance(data, dict):
+            raise ValueError("block must be an object")
+        if type(data.get("nonce")) is not int or data["nonce"] < 0:
+            raise ValueError("stored block must carry a nonnegative integer nonce")
+        if not isinstance(data.get("hash"), str) or len(data["hash"]) != 64:
+            raise ValueError("stored block must carry a 64-character hash")
+        if type(data.get("difficulty", 4)) is not int or not 0 <= data.get("difficulty", 4) <= 64:
+            raise ValueError("invalid block difficulty")
         return Block(
             index=data["index"],
             messages=data["messages"],

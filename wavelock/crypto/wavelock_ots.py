@@ -55,7 +55,6 @@ import hashlib
 import json
 import os
 import struct
-import tempfile
 import uuid
 from typing import Optional
 
@@ -550,11 +549,13 @@ def generate_ots_keypair(params: Optional[dict] = None,
 def _state_dir() -> str:
     """Directory backing the local key-state registry.
 
-    Override with ``WAVELOCK_OTS_STATE_DIR``; defaults to a per-user temp dir.
+    Override with ``WAVELOCK_OTS_STATE_DIR``; defaults to the persistent
+    ``ots-state`` directory inside the node data directory.
     """
     d = os.environ.get("WAVELOCK_OTS_STATE_DIR")
     if not d:
-        d = os.path.join(tempfile.gettempdir(), "wavelock-ots-state")
+        from wavelock.storage.runtime import RUNTIME_DIR
+        d = str(RUNTIME_DIR / "ots-state")
     return d
 
 
@@ -570,17 +571,15 @@ def _claim_one_time_key(one_time_key_id: str) -> bool:
     wins the create; the loser sees the marker already exists and is refused.
     """
     if not one_time_key_id:
-        return True  # nothing to bind on; in-memory `used` guard still applies
+        raise WaveLockOTSError("secret key is missing its one-time identity")
     path = _key_id_marker_path(one_time_key_id)
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     except FileExistsError:
         return False
-    except OSError:
-        # If we cannot use the registry at all, fall back to the in-memory guard
-        # rather than blocking signing. (Documented: registry is best-effort.)
-        return True
+    except OSError as error:
+        raise WaveLockOTSError("cannot durably claim the one-time signing key") from error
     try:
         os.write(fd, (str(one_time_key_id) + "\n").encode("utf-8"))
         os.fsync(fd)

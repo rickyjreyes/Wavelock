@@ -16,6 +16,27 @@ Existing SIGv2 signatures and keys must be treated as **compromised**.
 
 ## What to do
 
+The migration is now implemented in the main CLI. `wavelock-cli keygen`,
+`add`, `sign`, `mine`, `verify`, and `audit` use public WaveLock-OTS blocks.
+Historical commands are available explicitly as `wavelock-cli legacy ...`.
+This replaces the normal workflow; it does not make old SIGv2 signatures safe.
+
+Start a new OTS ledger and generate fresh secret material:
+
+```bash
+wavelock-cli --data-dir new-ots-node keygen --out keys/ots-1
+wavelock-cli --data-dir new-ots-node sign --secret keys/ots-1/wl_ots_secret.json --message "first OTS record" --output signed-block.json
+wavelock-cli --data-dir new-ots-node mine --signed-path signed-block.json
+wavelock-cli --data-dir new-ots-node verify
+```
+
+There is no automatic conversion of old signatures into OTS authorizations.
+Existing keys, signatures, snapshots and ledgers are not rewritten or deleted.
+To inspect the old package-local ledger, explicitly set `WAVELOCK_DATA_DIR` to
+the old checkout's `wavelock/` directory before running historical tools; keep
+that directory separate from the new OTS node. New default state is user-local,
+and both node and CLI honor `WAVELOCK_DATA_DIR`.
+
 1. **Treat existing SIGv2 signatures as legacy/insecure.** Do not rely on them
    for authenticity. They prove nothing an adversary with the published ψ★
    could not also produce.
@@ -65,11 +86,12 @@ Existing SIGv2 signatures and keys must be treated as **compromised**.
 
 The P2P server (`wavelock/network/server.py`) now:
 
-- always requires a valid signature (no trust-only acceptance);
-- rejects blocks whose proof material is unpublished;
-- rejects on any verification error (fail closed).
+- requires OTS by default (`require_ots=true`), including for otherwise generic
+  blocks; this policy is actually loaded from JSON or `WAVELOCK_REQUIRE_OTS`;
+- verifies OTS history from public material on startup;
+- checks block hash, Merkle root, linkage, index, signature and replay state;
+- rejects on verification errors without falling back to SIGv2;
+- uses one data directory for block files, replay state and peer configuration.
 
-This stops the previous fail-open behavior, but note the server still verifies
-*legacy* SIGv2 signatures, which are themselves insecure. Plan to move
-consensus verification to WaveLock-OTS (or an established signature) rather
-than relying on ψ★-based verification at all.
+Explicitly disabling `require_ots` retains the historical verification path for
+compatibility experiments. Normal OTS operation does not publish or read ψ★.

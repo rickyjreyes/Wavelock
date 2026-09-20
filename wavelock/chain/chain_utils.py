@@ -20,7 +20,7 @@ from wavelock.chain.Block import Block
 ROOT = Path(__file__).resolve().parents[1]
 
 # The real global ledger directory used by ALL nodes, tests, etc.
-LEDGER_DIR = ROOT / "ledger"
+from wavelock.storage.runtime import LEDGER_DIR
 LEDGER_DIR.mkdir(exist_ok=True)
 
 # Main rotating ledger file
@@ -153,11 +153,15 @@ def save_block_to_disk(block: Block):
     try:
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
     except PermissionError:
         # target is read-only, rotate ledger
         target = _next_ledger_path()
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
 
     lock_path = _write_lock(target)
     if os.getenv("WL_LOCK_AFTER_WRITE") == "1":
@@ -177,19 +181,7 @@ def load_all_blocks() -> list[Block]:
         with p.open("r", encoding="utf-8") as f:
             for line in f:
                 data = json.loads(line)
-                block = Block(
-                    index=data["index"],
-                    messages=data["messages"],
-                    previous_hash=data["previous_hash"],
-                    difficulty=data.get("difficulty", 4),
-                    timestamp=float(data["timestamp"]),
-                    nonce=data["nonce"],
-                    block_hash=data["hash"],
-                    merkle_root=data.get("merkle_root"),
-                    block_type=data.get("block_type", "GENERIC"),
-                    meta=data.get("meta", {}),
-                )
-                block.hash = data["hash"]   # ⭐ REQUIRED ⭐
+                block = Block.from_dict(data)
                 blocks.append(block)
 
     return blocks

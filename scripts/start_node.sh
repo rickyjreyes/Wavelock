@@ -2,4 +2,4 @@
 set -e
 export PYTHONPATH="$PWD"
 export SEEDS="${SEEDS:-}"
-python -m network.server --port "${1:-9001}"
+python -m wavelock.network.server --port "${1:-9001}"

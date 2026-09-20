@@ -48,6 +48,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import sqlite3
 import threading
 from typing import Optional
 
@@ -56,12 +57,9 @@ try:  # POSIX inter-process file locking (Mythos M3).
 except ImportError:  # pragma: no cover - Windows / non-POSIX
     _fcntl = None
 
-#: True when OS-level (inter-process) ledger locking is available. On POSIX this
-#: is ``flock``. On platforms without ``fcntl`` the ledger still serializes
-#: within a process via its ``RLock``, but it CANNOT guarantee two separate
-#: processes won't both accept the same identity — tests that assert
-#: inter-process exclusion are POSIX-only (see tests/test_ots_mythos_break.py).
-INTERPROCESS_LOCKING = _fcntl is not None
+#: Cross-process exclusion uses flock on POSIX and a SQLite exclusive
+#: transaction on Windows/non-POSIX. RLock additionally serializes each instance.
+INTERPROCESS_LOCKING = True  # flock on POSIX; SQLite lock elsewhere
 
 from wavelock.crypto.wavelock_ots import (
     SCHEME as OTS_SCHEME,
@@ -86,13 +84,14 @@ class OTSLedgerError(Exception):
 def default_ledger_path() -> str:
     """Where the consensus replay ledger lives by default.
 
-    Override with ``WAVELOCK_OTS_LEDGER``. Defaults to ``ledger/ots_replay.jsonl``
+    Override with ``WAVELOCK_OTS_LEDGER``. Defaults to ``<data-dir>/ledger/ots_replay.jsonl``
     alongside the block ledger so it travels with chain state.
     """
     p = os.environ.get("WAVELOCK_OTS_LEDGER")
     if p:
         return p
-    return os.path.join("ledger", "ots_replay.jsonl")
+    from wavelock.storage.runtime import LEDGER_DIR
+    return str(LEDGER_DIR / "ots_replay.jsonl")
 
 
 def _ids_for(signature: dict) -> tuple[str, str]:
@@ -133,15 +132,22 @@ class PersistentOTSReplayLedger:
         Uses ``flock`` on a sibling ``<path>.lock`` file so two separate
         :class:`PersistentOTSReplayLedger` instances (or processes) sharing the
         same ledger file cannot interleave their accept critical sections and
-        both accept the same OTS identity. On non-POSIX platforms without
-        ``fcntl`` this is a no-op and only the per-instance ``RLock`` applies
-        (documented; inter-process exclusion is POSIX-only).
+        both accept the same OTS identity. On platforms without fcntl, a SQLite
+        exclusive transaction supplies cross-process exclusion.
         """
-        if _fcntl is None:  # pragma: no cover - non-POSIX
-            yield
-            return
         directory = os.path.dirname(os.path.abspath(self.path))
         os.makedirs(directory, exist_ok=True)
+        if _fcntl is None:
+            # SQLite supplies an OS-backed cross-process lock on Windows too.
+            # This database coordinates access; JSONL remains the replay data.
+            connection = sqlite3.connect(self.path + ".mutex.sqlite3", timeout=30)
+            try:
+                connection.execute("BEGIN EXCLUSIVE")
+                yield
+            finally:
+                connection.rollback()
+                connection.close()
+            return
         lock_path = self.path + ".lock"
         fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
         try:

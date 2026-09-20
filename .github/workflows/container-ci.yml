@@ -15,12 +15,22 @@ concurrency:
 
 jobs:
   core-tests:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            python: "3.9"
+          - os: ubuntu-24.04
+            python: "3.12"
+          - os: windows-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
           cache: pip
       - name: Install package and test dependencies
         run: |
@@ -33,6 +43,10 @@ jobs:
           wavelock-cli --help
           wavelock-ots --help
           wavelock-encrypt --help
+          wavelockd --help
+          wavelock-miner --help
+      - name: Exercise supported OTS workflow
+        run: python hello_wavelock.py
 
   container:
     runs-on: ubuntu-24.04
@@ -46,13 +60,13 @@ jobs:
         shell: bash
         run: |
           set +e
+          status=0
           {
             echo "== wavelock-cli =="
-            docker run --rm wavelock-ci wavelock-cli --help
+            docker run --rm wavelock-ci wavelock-cli --help || status=$?
             echo "== wavelock-ots =="
-            docker run --rm wavelock-ci wavelock-ots --help
+            docker run --rm wavelock-ci wavelock-ots --help || status=$?
           } > container-smoke.log 2>&1
-          status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           tail -n 250 container-smoke.log
           exit 0
