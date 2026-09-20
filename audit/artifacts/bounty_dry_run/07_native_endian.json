@@ -1,0 +1,13 @@
+{
+  "target": "High 1",
+  "attempt": "native-endian array/wire manipulation",
+  "expected": "normalize equivalent arrays; reject substituted wire bytes",
+  "observed": {
+    "equivalent_internal_endian_normalized": true,
+    "alternate_wire_endian": {
+      "result": "reject",
+      "error": "invariants do not match the declared state"
+    }
+  },
+  "status": "PASS"
+}

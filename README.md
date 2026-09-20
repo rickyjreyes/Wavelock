@@ -216,9 +216,16 @@ Accepted blocks and the reconstructable OTS replay cache live under `ledger/`.
 Signer-use markers live under `ots-state/`. Keep backups of signing state;
 never reuse an OTS key across hosts or restored copies.
 
-Run one block writer per data directory. CLI mining writes the local ledger
-directly, so stop a node using that directory before mining and restart it
-afterward to load the new tip.
+CLI mining and node acceptance share a same-host writer lock and reload the
+tip before appending. A draft signed against an old parent is rejected: use a
+fresh key to sign for the new tip. This coordinates local writers; it does not
+provide distributed consensus or authenticated recovery from a full rollback.
+
+The new normative commitment API and its adversarial contract are described in
+[BOUNTY_SECURITY_PROFILE.md](docs/BOUNTY_SECURITY_PROFILE.md). Thirteen passing
+dry runs close the enumerated High 1–5 checks; broader attestation, drift and
+storage-tamper claims remain unresolved in the
+[hardening report](audit/BOUNTY_HARDENING_REPORT.md).
 
 ```bash
 wavelockd --port 9001

@@ -1,5 +1,6 @@
 import os, time, json, hashlib, sys
 from pathlib import Path
+from wavelock.storage.durability import atomic_write, ensure_directory, fsync_directory
 import numpy as np
 try:
     import cupy as cp
@@ -34,7 +35,7 @@ LEDGER_FILE = LEDGER_DIR / "blk00000.jsonl"
 def _write_lock(path: Path) -> Path:
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     lock = path.with_suffix(".hash")
-    lock.write_text(digest)
+    atomic_write(lock, digest.encode("ascii"), mode=0o644)
     return lock
 
 
@@ -148,7 +149,7 @@ def tamper_and_test(keypair: CurvatureKeyPair):
 def save_block_to_disk(block: Block):
     """Append block JSON to canonical rotating ledger file."""
     target = LEDGER_FILE
-    target.parent.mkdir(exist_ok=True)
+    ensure_directory(target.parent)
 
     try:
         with target.open("a", encoding="utf-8") as f:
@@ -163,6 +164,7 @@ def save_block_to_disk(block: Block):
             f.flush()
             os.fsync(f.fileno())
 
+    fsync_directory(target.parent)
     lock_path = _write_lock(target)
     if os.getenv("WL_LOCK_AFTER_WRITE") == "1":
         _set_readonly(target)

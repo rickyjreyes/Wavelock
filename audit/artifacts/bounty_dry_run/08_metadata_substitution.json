@@ -1,0 +1,9 @@
+{
+  "target": "Critical 4 / High 1",
+  "attempt": "substitute kernel step count",
+  "expected": "reject",
+  "observed": {
+    "accepted": false
+  },
+  "status": "PASS"
+}

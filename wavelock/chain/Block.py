@@ -3,6 +3,9 @@ import time
 from typing import List, Optional, Dict, Any
 import json
 
+LEGACY_HEADER_VERSION = 1
+HEADER_VERSION = 2
+
 class Block:
     def __init__(
         self,
@@ -16,7 +19,11 @@ class Block:
         merkle_root: Optional[str] = None,
         block_type: str = "GENERIC",
         meta: Optional[Dict[str, Any]] = None,
+        header_version: int = HEADER_VERSION,
     ):
+        if type(header_version) is not int or header_version not in (1, 2):
+            raise ValueError("unsupported block header version")
+        self.header_version = header_version
         self.index = index
 
         # 🔥 FIX #1 — timestamp must never change; never use "or" fallback
@@ -59,6 +66,25 @@ class Block:
 
     def calculate_hash(self, nonce: int) -> str:
 
+        if self.header_version == HEADER_VERSION:
+            if type(self.index) is not int or self.index < 0 or type(nonce) is not int or nonce < 0:
+                raise ValueError("invalid block index or nonce")
+            if type(self.difficulty) is not int or not 0 <= self.difficulty <= 64:
+                raise ValueError("invalid block difficulty")
+            if not isinstance(self.meta, dict) or not isinstance(self.block_type, str):
+                raise ValueError("invalid block metadata/type")
+            header = {
+                "header_version": HEADER_VERSION, "index": self.index,
+                "timestamp": self.timestamp, "previous_hash": self.previous_hash,
+                "merkle_root": self.merkle_root, "difficulty": self.difficulty,
+                "block_type": self.block_type, "meta": self.meta, "nonce": nonce,
+            }
+            encoded = json.dumps(header, sort_keys=True, separators=(",", ":"),
+                                 ensure_ascii=True, allow_nan=False).encode("ascii")
+            return hashlib.sha256(b"WL-BLOCK-HEADER-v2\0" + encoded).hexdigest()
+        if self.header_version != LEGACY_HEADER_VERSION:
+            raise ValueError("unsupported block header version")
+
         # 🔥 FIX #3 — JSON stable meta
         stable_meta = json.dumps(self.meta, sort_keys=True)
 
@@ -84,6 +110,7 @@ class Block:
 
     def to_dict(self):
         return {
+            "header_version": self.header_version,
             "index": self.index,
             "messages": self.messages,
             "previous_hash": self.previous_hash,
@@ -102,6 +129,14 @@ class Block:
         # Missing/null mining fields are malformed input, not new-block requests.
         if not isinstance(data, dict):
             raise ValueError("block must be an object")
+        version = data.get("header_version", LEGACY_HEADER_VERSION)
+        if type(version) is not int or version not in (1, 2):
+            raise ValueError("unsupported block header version")
+        if version == HEADER_VERSION and set(data) != {
+            "header_version", "index", "messages", "previous_hash", "difficulty",
+            "timestamp", "nonce", "hash", "merkle_root", "block_type", "meta",
+        }:
+            raise ValueError("noncanonical block header fields")
         if type(data.get("nonce")) is not int or data["nonce"] < 0:
             raise ValueError("stored block must carry a nonnegative integer nonce")
         if not isinstance(data.get("hash"), str) or len(data["hash"]) != 64:
@@ -119,4 +154,5 @@ class Block:
             merkle_root=data.get("merkle_root"),
             block_type=data.get("block_type", "GENERIC"),
             meta=data.get("meta", {}),
+            header_version=version,
         )

@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from .durability import ensure_directory
 
 def get_runtime_dir():
     configured = os.getenv("WAVELOCK_DATA_DIR")
@@ -10,16 +11,16 @@ def get_runtime_dir():
         root = Path(xdg) / "wavelock"
     else:
         root = Path.home() / ".wavelock"
-    root.mkdir(parents=True, exist_ok=True)
+    ensure_directory(root)
     return root
 
 RUNTIME_DIR = get_runtime_dir()
 
 LEDGER_DIR = RUNTIME_DIR / "ledger"
-LEDGER_DIR.mkdir(exist_ok=True)
+ensure_directory(LEDGER_DIR)
 
 COMMITMENTS_DIR = RUNTIME_DIR / "commitments"
-COMMITMENTS_DIR.mkdir(exist_ok=True)
+ensure_directory(COMMITMENTS_DIR)
 
 KEYPAIR_FILE = RUNTIME_DIR / "keypair.json"
 USERS_FILE = RUNTIME_DIR / "users.json"

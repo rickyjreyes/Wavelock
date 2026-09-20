@@ -1,0 +1,56 @@
+{
+  "array_order": "C",
+  "backend": "numpy-reference-v1",
+  "byte_order": "big",
+  "dtype": "IEEE-754-binary64",
+  "fast_math": false,
+  "hash": "SHA-256",
+  "initialization": {
+    "domain": "WL-PSI-INIT-v1",
+    "length_encoding": "uint64-big",
+    "mapping": "uint64-big-low53-div-2**53",
+    "version": 1,
+    "xof": "SHAKE-256"
+  },
+  "kernel": {
+    "boundary": "periodic-roll",
+    "invariants": "numpy-gradient-edge-order-1;pairwise16-v1;E_grad,E_fb,E_ent,E_tot",
+    "laplacian": "((((-4*x+roll(x,+1,0))+roll(x,-1,0))+roll(x,+1,1))+roll(x,-1,1))",
+    "parameters": {
+      "alpha": {
+        "binary64": "3ff8000000000000"
+      },
+      "beta": {
+        "binary64": "3f654c985f06f694"
+      },
+      "damping": {
+        "binary64": "3ef4f8b588e368f1"
+      },
+      "delta": {
+        "binary64": "3d719799812dea11"
+      },
+      "dt": {
+        "binary64": "3fb999999999999a"
+      },
+      "epsilon": {
+        "binary64": "3d719799812dea11"
+      },
+      "theta": {
+        "binary64": "3ee4f8b588e368f1"
+      }
+    },
+    "steps": 50,
+    "transcendentals": "decimal80-half-even-to-binary64;exp-below-minus1000-is-zero-v1",
+    "update": "psi+(dt*(alpha*lap/(psi+epsilon*exp(-beta*psi**2))-theta*(psi*lap(log(psi**2+delta))))-damping*psi)",
+    "version": "WL-psi-001-reference-v1"
+  },
+  "kernel_hash": "20c6a5e4f35ea8d3e3f27e7ba38ca8c6ec4f28c724e01fcda6f77dc975a35ff3",
+  "normalization": "finite-only;negative-zero-to-positive-zero",
+  "profile": "WL-Consensus-Commitment-v1",
+  "reassociation": false,
+  "schema": 1,
+  "shape": [
+    4,
+    4
+  ]
+}

@@ -41,6 +41,10 @@ jobs:
           python -m pip install -e ".[blake3]" pytest
       - name: Run fast core tests
         run: python -m pytest tests/ -m "not slow" -q
+      - name: Reproduce bounty submissions and evidence
+        run: |
+          python -c "import platform,sys,numpy; print(platform.platform(), sys.version, 'NumPy', numpy.__version__)"
+          python audit/run_bounty_contract.py --check
       - name: Smoke-test installed commands
         run: |
           wavelock-cli --help

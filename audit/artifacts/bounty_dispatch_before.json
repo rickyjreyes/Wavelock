@@ -1,0 +1,35 @@
+{
+  "commit": "457c818ab5bbe685e81aa9ec47ae635c0d13e23d",
+  "failed_ci_run": 35531961179,
+  "numpy": "2.3.5",
+  "observations": {
+    "default": {
+      "16": {
+        "commitment": "WL-Consensus-Commitment-v1:9e2a16c787e5ce4ca4bde68edb8df9cbde716cc25638b1c3abf4bb3b8b826b74",
+        "body_sha256": "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c"
+      },
+      "24": {
+        "commitment": "WL-Consensus-Commitment-v1:7d5924a4859661ff3a38edf0e8a7603a0587d8619084103b4ef8b3cb48b0bcc3",
+        "body_sha256": "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b"
+      },
+      "32": {
+        "commitment": "WL-Consensus-Commitment-v1:aff7f2d51d2a1a45d3558eefb9a803a2f406a7ddf531271863f55e7e76a80943",
+        "body_sha256": "53d7939101db324fa86ed7d0c145d25269de005224a6615e453867cd043a61ff"
+      }
+    },
+    "AVX512F": {
+      "16": {
+        "commitment": "WL-Consensus-Commitment-v1:9e2a16c787e5ce4ca4bde68edb8df9cbde716cc25638b1c3abf4bb3b8b826b74",
+        "body_sha256": "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c"
+      },
+      "24": {
+        "commitment": "WL-Consensus-Commitment-v1:7d5924a4859661ff3a38edf0e8a7603a0587d8619084103b4ef8b3cb48b0bcc3",
+        "body_sha256": "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b"
+      },
+      "32": {
+        "commitment": "WL-Consensus-Commitment-v1:be8ea373c438f77ee7e96ceba5dadcca8e4a9499902f87cfae19e17947421d55",
+        "body_sha256": "5ced7b9e3ff2983b2305f2c9c7ccecfa293637ef44844c6ac8b53d48bb7ad4d9"
+      }
+    }
+  }
+}

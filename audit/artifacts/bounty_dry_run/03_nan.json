@@ -1,0 +1,10 @@
+{
+  "target": "High 2",
+  "attempt": "NaN state injection",
+  "expected": "reject",
+  "observed": {
+    "result": "reject",
+    "error": "non-finite consensus state"
+  },
+  "status": "PASS"
+}

@@ -567,24 +567,19 @@ def _key_id_marker_path(one_time_key_id: str) -> str:
 def _claim_one_time_key(one_time_key_id: str) -> bool:
     """Atomically claim ``one_time_key_id``. True if newly claimed, else False.
 
-    Uses ``O_CREAT | O_EXCL`` so two concurrent signers race-safely: exactly one
-    wins the create; the loser sees the marker already exists and is refused.
+    Atomically publishes a fully flushed marker without replacement. Exactly
+    one concurrent signer wins; parent directory durability precedes signing.
     """
     if not one_time_key_id:
         raise WaveLockOTSError("secret key is missing its one-time identity")
     path = _key_id_marker_path(one_time_key_id)
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        from wavelock.storage.durability import atomic_write
+        atomic_write(path, (str(one_time_key_id) + "\n").encode("utf-8"), exclusive=True)
     except FileExistsError:
         return False
     except OSError as error:
         raise WaveLockOTSError("cannot durably claim the one-time signing key") from error
-    try:
-        os.write(fd, (str(one_time_key_id) + "\n").encode("utf-8"))
-        os.fsync(fd)
-    finally:
-        os.close(fd)
     return True
 
 

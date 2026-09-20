@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import time
 from typing import Optional
 
 from wavelock.chain.Block import Block
@@ -33,9 +34,10 @@ def _ots_block_transcript_payload(block_type, previous_hash, messages, meta) -> 
 
     It deliberately EXCLUDES the self-referential ``ots_auth.signature`` and
     ``ots_auth.message`` (those carry / equal the transcript itself) and the
-    mining outputs (``nonce``/``hash``) and ``timestamp``/``index`` (not signed:
-    a node may legitimately reposition an identical body, and the durable replay
-    ledger — not the index — is what prevents reuse).
+    mining outputs (``nonce``/``hash``). Header-v2 producers also include the
+    stable timestamp/index/difficulty/version in signed ``meta.block_header``;
+    historical v1 blocks did not authenticate those fields. The transcript
+    shape and domain remain version 1 for both generations.
     """
     m = dict(meta or {})
     auth = m.get("ots_auth")
@@ -105,7 +107,8 @@ def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
                            difficulty: int = 1, block_type: str = "OTS",
                            extra_meta: Optional[dict] = None,
                            allow_reuse: bool = False,
-                           mine: bool = True) -> "Block":
+                           mine: bool = True,
+                           header_version: int = 2) -> "Block":
     """Build a mined OTS block whose signature is bound to its body (M1).
 
     The signer signs :func:`canonical_ots_block_digest` of the body (messages,
@@ -115,6 +118,8 @@ def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
     from wavelock.crypto.wavelock_ots import sign_ots
 
     messages = list(messages)
+    if type(header_version) is not int or header_version not in (1, 2):
+        raise ValueError("unsupported block header version")
     if not all(isinstance(m, str) for m in messages):
         raise ValueError("block messages must be strings")
     if public_key.get("public_key_fingerprint") != secret_key.get("public_key_fingerprint"):
@@ -123,6 +128,13 @@ def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
     from wavelock.crypto.wavelock_ots import load_public_key
     public_key = load_public_key(public_key)
     base_meta = dict(extra_meta or {})
+    timestamp = str(time.time())
+    header_context = {"version": 2, "index": index, "timestamp": timestamp,
+                      "difficulty": difficulty}
+    if "block_header" in base_meta:
+        raise ValueError("block_header is reserved for authenticated header context")
+    if header_version == 2:
+        base_meta["block_header"] = header_context
     base_meta["auth_scheme"] = OTS_SCHEME
     base_meta["ots_auth"] = {"public_key": public_key}
     transcript = hashlib.sha256(
@@ -132,6 +144,8 @@ def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
     ).hexdigest()
     sig = sign_ots(secret_key, transcript, allow_reuse=allow_reuse)
     meta = build_ots_block_meta(public_key, transcript, sig)
+    if header_version == 2:
+        meta["block_header"] = header_context
     if extra_meta:
         for k, v in extra_meta.items():
             meta.setdefault(k, v)
@@ -139,7 +153,8 @@ def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
     # only the existing transcript's excluded mining fields.
     block = Block(index=index, messages=messages, previous_hash=previous_hash,
                   difficulty=difficulty, block_type=block_type, meta=meta,
-                  nonce=0, block_hash="0" * 64)
+                  nonce=0, block_hash="0" * 64, timestamp=timestamp,
+                  header_version=header_version)
     if mine:
         block.nonce, block.hash = block.mine_block()
     else:
@@ -153,6 +168,13 @@ def verify_ots_block(block: Block) -> bool:
         auth = block.meta["ots_auth"]
         if block.meta.get("auth_scheme") != OTS_SCHEME:
             return False
+        # Header v2 binds stable header fields through ordinary signed metadata.
+        # The OTS transcript function/version remains byte-for-byte v1.
+        if block.header_version == 2 or "block_header" in block.meta:
+            context = {"version": block.header_version, "index": block.index,
+                       "timestamp": block.timestamp, "difficulty": block.difficulty}
+            if _canonical_json(block.meta.get("block_header")) != _canonical_json(context):
+                return False
         message = auth["message"]
         if not isinstance(message, str):
             return False
@@ -190,14 +212,18 @@ def verify_block_integrity(block: Block, *, require_pow: bool = True) -> bool:
         return False
 
 
-def verify_ots_chain(blocks) -> bool:
+def verify_ots_chain(blocks, *, expected_tip=None) -> bool:
     """Verify linkage, hashes, public signatures and OTS uniqueness, without I/O."""
     previous = "0" * 64
+    newest_header = 1
     keys, leaves = set(), set()
     for index, block in enumerate(blocks, 1):
         if (block.index != index or block.previous_hash != previous
                 or not verify_block_integrity(block) or not verify_ots_block(block)):
             return False
+        if block.header_version < newest_header:
+            return False
+        newest_header = block.header_version
         signature = block.meta["ots_auth"]["signature"]
         kid, leaf = signature["one_time_key_id"], signature["public_key_fingerprint"]
         if kid in keys or leaf in leaves:
@@ -205,4 +231,4 @@ def verify_ots_chain(blocks) -> bool:
         keys.add(kid)
         leaves.add(leaf)
         previous = block.hash
-    return True
+    return expected_tip is None or (isinstance(expected_tip, str) and hmac.compare_digest(previous, expected_tip))

@@ -5,7 +5,25 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
-## [0.2.0] — Unreleased: supported OTS command-line workflow
+## [Unreleased] — Bounty contract hardening
+
+- Add `WL-Consensus-Commitment-v1` and a single NumPy reference producer/replay
+  API with explicit binary64 big-endian encoding, complete metadata binding,
+  nonfinite rejection, zero normalization, byte-input threshold and backend
+  enforcement. Historical WLv* encodings retain their meaning.
+- Close a reproduced NumPy CPU-dispatch mismatch with bound, fixed exp/log
+  rounding and reduction order. Keep the PDE, parameters and original reference
+  vector bodies; compare the same final profile vectors in separate SIMD modes.
+- Fix a demonstrated unframed block-header ambiguity using header v2. Bind
+  stable header context through existing OTS transcript-v1 metadata; retain
+  historical v1 reading and reject new header downgrades on the default node.
+- Flush and atomically publish signing state/artifacts, validate replay records,
+  and coordinate local chain writers. Add crash and multiprocess regressions.
+- Add the normative profile, reproducible thirteen-attempt dry run and target
+  matrix. Remote attestation, behavior-wide drift and full storage rollback
+  protection remain unresolved; this is not full-bounty readiness.
+
+## [0.2.0] — Supported OTS command-line workflow
 
 - The default `keygen`, `add`, `sign`, `mine`, `verify`, and `audit` commands
   now use WaveLock-OTS. Historical SIGv2 commands are available under `legacy`.

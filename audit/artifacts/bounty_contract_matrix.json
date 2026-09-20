@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "baseline": "v0.2.0",
+  "baseline_commit": "9430442ae93e26c192d9be1f5ee9137369f5df37",
+  "profile": "WL-Consensus-Commitment-v1",
+  "full_bounty_ready": false,
+  "status_meaning": "PASS means the stated executable boundary/regression checks pass; it is never a cryptographic security proof. FAIL identifies missing or incomplete enforcement.",
+  "targets": [
+    {
+      "target": "High 1",
+      "claimed_invariant": "One canonical encoding; alternate wire encodings rejected",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high1_canonical_layout_and_dictionary_order",
+        "tests/test_bounty_contract.py:test_high1_alternate_wire_encoding_rejected"
+      ],
+      "dry_runs": [
+        "07_native_endian",
+        "08_metadata_substitution",
+        "10_alternate_profile"
+      ],
+      "status": "PASS",
+      "limitation": null
+    },
+    {
+      "target": "High 2",
+      "claimed_invariant": "Nonfinite state, metadata and invariants rejected before emission",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_state",
+        "wavelock/chain/consensus_commitment.py:_float",
+        "wavelock/chain/consensus_commitment.py:_wire"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high2_every_state_position_rejected",
+        "tests/test_bounty_contract.py:test_high2_every_parameter_rejected",
+        "tests/test_bounty_contract.py:test_high2_every_invariant_rejected",
+        "tests/test_bounty_contract.py:test_high2_derived_overflow_and_producer_injection_rejected"
+      ],
+      "dry_runs": [
+        "03_nan",
+        "04_positive_infinity",
+        "05_negative_infinity"
+      ],
+      "status": "PASS",
+      "limitation": null
+    },
+    {
+      "target": "High 3",
+      "claimed_invariant": "Signed zeros are one logical state and one canonical representation",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_state",
+        "wavelock/chain/consensus_commitment.py:_float"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high3_signed_zero_in_state_and_invariants"
+      ],
+      "dry_runs": [
+        "06_signed_zero"
+      ],
+      "status": "PASS",
+      "limitation": null
+    },
+    {
+      "target": "High 4",
+      "claimed_invariant": "Production input is bytes of at least 16 bytes; reject demo/int/string modes",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_validate_input"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high4_production_seed_threshold",
+        "tests/test_bounty_contract.py:test_high4_accepted_inputs_and_pinned_reference_parity"
+      ],
+      "dry_runs": [
+        "01_integer_42",
+        "02_eight_byte_seed"
+      ],
+      "status": "PASS",
+      "limitation": "Length/type enforcement cannot measure actual secret entropy."
+    },
+    {
+      "target": "High 5",
+      "claimed_invariant": "Only the registered NumPy reference path can emit the normative profile",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/Wavelock_numpy.py:_serialize_commitment"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high5_unsupported_backend_or_profile",
+        "tests/test_bounty_contract.py:test_historical_modes_cannot_masquerade_as_consensus"
+      ],
+      "dry_runs": [
+        "09_unsupported_backend",
+        "10_alternate_profile"
+      ],
+      "status": "PASS",
+      "limitation": null
+    },
+    {
+      "target": "Critical 1",
+      "claimed_invariant": "Distinct high-entropy inputs should not collide under the declared profile",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:_digest"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high4_accepted_inputs_and_pinned_reference_parity"
+      ],
+      "dry_runs": [],
+      "status": "PASS",
+      "limitation": "PASS covers distinct pinned vectors and hash binding only, not a proof of collision resistance of the evolution."
+    },
+    {
+      "target": "Critical 2",
+      "claimed_invariant": "No faster-than-brute-force preimage recovery of high-entropy input",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_validate_input",
+        "wavelock/chain/consensus_commitment.py:CommitmentArtifact.to_dict"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high4_production_seed_threshold",
+        "tests/test_bounty_contract.py:test_commitment_artifact_publishing_is_public_and_exclusive"
+      ],
+      "dry_runs": [],
+      "status": "PASS",
+      "limitation": "PASS covers input/output boundaries only. No preimage complexity bound is established by regression tests."
+    },
+    {
+      "target": "Critical 3",
+      "claimed_invariant": "Same input gives identical commitments in supported reference configurations",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:evolve_reference",
+        "wavelock/chain/consensus_commitment.py:_transcendental",
+        "wavelock/chain/consensus_commitment.py:_sum16",
+        "wavelock/chain/consensus_commitment.py:canonical_serialize"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py:test_reference_vectors_independent_of_simd_dispatch",
+        ".github/workflows/container-ci.yml:core-tests"
+      ],
+      "dry_runs": [],
+      "status": "PASS",
+      "limitation": "A real CPU-dispatch mismatch was fixed by pinning exp/log rounding and reduction order. Exact vectors test the supported platforms, not every arbitrary build/input."
+    },
+    {
+      "target": "Critical 4",
+      "claimed_invariant": "Replay rejects wrong metadata, parameters, input, state or invariants",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_every_metadata_field_is_bound",
+        "tests/test_bounty_contract.py:test_replay_rejects_wrong_input_state_invariants_and_extra_fields"
+      ],
+      "dry_runs": [
+        "08_metadata_substitution"
+      ],
+      "status": "PASS",
+      "limitation": null
+    },
+    {
+      "target": "Critical 5",
+      "claimed_invariant": "Deeper semantic binding break after documented canonicalization rules hold",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes",
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment",
+        "audit/BOUNTY_SCOPE.md:Critical 5"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_contract.py:test_high1_alternate_wire_encoding_rejected",
+        "tests/test_bounty_contract.py:test_replay_rejects_wrong_input_state_invariants_and_extra_fields"
+      ],
+      "dry_runs": [],
+      "status": "PASS",
+      "limitation": "PASS records the executable boundary and severity distinction, not a proof excluding new binding attacks."
+    },
+    {
+      "target": "Critical 6",
+      "claimed_invariant": "Wrong runtime/kernel/config cannot spoof machine attestation",
+      "enforcing_code": [],
+      "regression_tests": [],
+      "dry_runs": [],
+      "status": "FAIL",
+      "limitation": "No remote runtime attestation verifier exists. Recomputing a commitment does not attest the originating process."
+    },
+    {
+      "target": "Critical 7",
+      "claimed_invariant": "Material behavior change cannot evade drift detection",
+      "enforcing_code": [],
+      "regression_tests": [],
+      "dry_runs": [],
+      "status": "FAIL",
+      "limitation": "No behavior-wide drift oracle, observation contract, or detection verifier exists."
+    },
+    {
+      "target": "Critical 8",
+      "claimed_invariant": "Ledger/record/invariant tampering always triggers verification failure",
+      "enforcing_code": [
+        "wavelock/chain/ots_blocks.py:verify_ots_chain",
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "regression_tests": [
+        "tests/test_bounty_headers.py:test_remining_header_cannot_mutate_signed_context",
+        "tests/test_bounty_headers.py:test_external_tip_detects_truncation_and_unanchored_limit_is_explicit",
+        "tests/test_bounty_durability.py",
+        "tests/test_ots_mythos_break.py"
+      ],
+      "dry_runs": [
+        "11_ots_replay",
+        "12_ots_body_mutation",
+        "13_public_key_substitution"
+      ],
+      "status": "FAIL",
+      "limitation": "Signed body/header mutation and replay checks pass. Unanchored rollback, arbitrary valid-format cache edits and hostile local storage are not fully detected."
+    }
+  ]
+}
