@@ -129,9 +129,9 @@ general theorem has been proved.
   independent of current config** and fail closed on malformed auth (M2, deleting
   `ots_replay.jsonl` no longer reopens replay); and the replay ledger's accept
   critical section is **inter-process locked (`flock` on POSIX; SQLite on Windows)** with a single authoritative
-  ledger (M3). Cross-node/global consensus enforcement remains future work. With
-  M1/M2/M3 fixed the system may be ready for a **scoped** bounty (canonical
-  verification, replay protection, OTS block acceptance) — not value transfer.
+  ledger (M3). Cross-node/global consensus enforcement remains future work.
+  [Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md) defines the offered commitment,
+  replay and authenticated-record attack surfaces.
   See `attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md` and
   `tests/test_ots_mythos_break.py`.
 
@@ -221,11 +221,12 @@ tip before appending. A draft signed against an old parent is rejected: use a
 fresh key to sign for the new tip. This coordinates local writers; it does not
 provide distributed consensus or authenticated recovery from a full rollback.
 
-The new normative commitment API and its adversarial contract are described in
-[BOUNTY_SECURITY_PROFILE.md](docs/BOUNTY_SECURITY_PROFILE.md). Thirteen passing
-dry runs close the enumerated High 1–5 checks; broader attestation, drift and
-storage-tamper claims remain unresolved in the
-[hardening report](audit/BOUNTY_HARDENING_REPORT.md).
+[Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md) covers Critical 1–5, High 1–5 and
+implemented OTS/authenticated-record checks in the public reference implementation.
+See its [reproduction guide](audit/PUBLIC_BOUNTY_REPRODUCTION_GUIDE.md) and the
+unchanged [normative profile](docs/BOUNTY_SECURITY_PROFILE.md). Remote attestation,
+behavior-wide drift and broad hostile-host rollback guarantees are not offered
+properties of this public bounty.
 
 ```bash
 wavelockd --port 9001
