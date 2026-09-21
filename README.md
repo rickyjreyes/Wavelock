@@ -1,32 +1,52 @@
-# WaveLock / CurvaChain — Dev README
+# WaveLock — Public Research & Reference Implementation
 
-This repo contains a prototype curvature-locked ledger (“CurvaChain”) and helper tooling (“WaveLock”) to sign/verify curvature commitments, run a tiny P2P node, and exercise integrity checks (Merkle root, tamper detection, persistence). It’s designed for **local development** and demo scenarios.
+WaveLock is a public research and reference implementation for deterministic
+curvature-regulated commitments, one-time public signatures, authenticated
+records, replay enforcement, and adversarial reproducibility.
 
-> Status: prototype for demos & testing. Expect rough edges and evolving APIs.
+The supported public commitment boundary is **`WL-Consensus-Commitment-v1`**.
+WaveLock-OTS provides the current public-verification signing path, and
+CurvaChain provides the local authenticated-record and replay layer used by the
+reference workflow.
+
+> **Status:** active experimental research and hardened public reference
+> implementation. [Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md) defines the
+> security properties currently offered for external attack. WaveLock is not a
+> formal cryptographic standard and should not be treated as a replacement for
+> established production cryptography.
 
 ---
 
+## Current public architecture
 
-## Current research architecture
+WaveLock separates the supported reference path from experimental research and
+historical compatibility code.
 
-WaveLock now separates three distinct layers:
+1. **`WL-Consensus-Commitment-v1` — normative public commitment profile.**
+   The reference producer fixes serialization, byte order, dtype, metadata,
+   kernel parameters, transcendental evaluation rules, reduction order, finite
+   value handling, signed-zero normalization, production input requirements,
+   and the supported NumPy reference backend. The matching verifier replays the
+   declared computation and rejects profile, metadata, state, invariant, and
+   backend mismatches.
+2. **WaveLock-OTS — asymmetric one-time signatures.** The supported signing
+   layer provides public verification without revealing `ψ★`. Every key is
+   one-time and replay state is enforced at authenticated record acceptance.
+3. **CurvaChain — authenticated records and replay enforcement.** Canonical
+   block bodies, OTS identities, commitments, chain linkage, persistent replay
+   state, and same-host writer coordination are bound into the reference node
+   workflow.
+4. **CC-Core-v1-B — curvature/path commitment research.** This remains an
+   experimental research core for trajectory-dependent commitment studies. It
+   co-evolves an accumulator with the wavefield so the research commitment
+   depends on the ordered trajectory rather than only on the terminal state.
 
-1. **CC-Core-v1-B — curvature/path commitment.** This is the current primary
-   experimental research core. It co-evolves an accumulator with the wavefield so
-   the commitment depends on the ordered trajectory rather than only on the
-   terminal state. Candidate B uses the linear injection
-   `j_B(u,v) = u(1 + γv) mod p`, removes Candidate A's generic 2-to-1 injection
-   weakness, and separates all 47 known Phase 8J terminal-collapse states
-   (minimum pairwise Hamming distance 105/256).
-2. **WaveLock-OTS — asymmetric one-time signatures.** This is the current
-   experimental signing layer. It provides public verification without revealing
-   `ψ★`, but every one-time key must be used exactly once.
-3. **CurvaChain — ledger and replay enforcement.** This binds canonical block
-   bodies, OTS identities, commitments, and accepted-chain replay state.
+### Research status of CC-Core-v1-B
 
-`CC-Core-v1-B` is the best current realization of the original “pebble leaves a
-wake” idea, but it is **not a proven cryptographic primitive**. The Phase CC-3
-audit found:
+Candidate B uses the linear injection `j_B(u,v) = u(1 + γv) mod p`, removes
+Candidate A's generic 2-to-1 injection weakness, and separates all 47 known
+Phase 8J terminal-collapse states (minimum pairwise Hamming distance 105/256).
+The Phase CC-3 audit found:
 
 - all 47 known terminal-state collapse cases remain distinct under the path
   commitment;
@@ -48,94 +68,137 @@ wavelock/curvature_capacity_v1/    # current CC-Core-v1-B candidate
 curvature_audit/                   # adversarial tests, artifacts, and reports
 ```
 
-Primary documents:
+Primary research documents:
 
 - `docs/CC_CORE_V1_SPEC.md`
 - `docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md`
 - `docs/CC_CORE_V1_VSTAR_REACHABILITY.md`
 - `docs/WAVELOCK_CURVATURE_CAPACITY_RESULTS.md`
 
-**Use classification**
+### Use classification
 
 | Component | Current status | Intended use |
 |---|---|---|
+| `WL-Consensus-Commitment-v1` | Normative public reference profile | Deterministic commitment and replay verification |
+| WaveLock-OTS | Supported experimental OTS layer | Public one-time signing and authenticated records |
+| CurvaChain | Reference ledger/replay layer | Local replay, persistence, linkage, and acceptance experiments |
 | `CC-Core-v1-B` | Experimental research core | Path/trajectory commitment studies |
-| WaveLock-OTS | Experimental asymmetric OTS | One-time signing tests and scoped demos |
-| CurvaChain | Prototype ledger | Local replay, persistence, and consensus experiments |
-| WLv2 / SIGv2 | Deprecated and insecure | Compatibility/testing only |
+| WLv2 / SIGv2 | Historical legacy design | Reproduction and migration testing only |
 | Ed25519 / SLH-DSA / LMS / XMSS | Established alternatives | Production security |
 
-Do not describe any WaveLock component as “provably secure,” “collision-resistant,”
-“one-way,” “256-bit secure,” or as forcing full sequential execution. No such
-general theorem has been proved.
+No general theorem currently establishes that WaveLock is provably secure,
+collision-resistant, one-way, 256-bit secure, or that it forces full sequential
+execution. Public Bounty v1 intentionally separates passing implementation
+regressions from cryptographic proof.
 
 ---
 
-## ⚠️ Security notice — read this first
+## Security boundary
 
-- **Legacy WaveLock SIGv2 (`WLv2`) is DEPRECATED and INSECURE.** It signs with
-  `H("SIGv2" ‖ message ‖ header ‖ ψ★)` and verifies by recomputing the same
-  hash, so **the verifier must possess ψ★ — and anyone who can verify can
-  forge.** It is a symmetric MAC, not an asymmetric signature. See
-  `attacks/WAVELOCK_THEORY_BREAK_AUDIT.md` and `docs/MIGRATION_FROM_SIGV2.md`.
-  Historical CLI tools are isolated under `wavelock-cli legacy`. The normal
-  `keygen`, `sign`, `mine`, and `verify` commands implement WaveLock-OTS.
+### Supported path
 
-- **WaveLock-OTS is the new, experimental asymmetric construction.** It is a
-  Lamport/WOTS-style one-time signature with WaveLock ψ-state binding
-  underneath (`wavelock/crypto/wavelock_ots.py`, CLI `wavelock-ots`). Key
-  guarantees:
-  - **Public verification never requires ψ★.** The public key is only
-    commitments, hashes, a Merkle root, parameters, and metadata.
-  - **The verifier cannot forge**, because it only ever sees the
-    *message-selected* secret slices (one of two per digest bit). The
-    unrevealed halves stay secret.
-  - **Strict, fail-closed verification.** The public key has an exact canonical
-    field set; `verify_ots`/`load_public_key` recompute the Merkle root from
-    `pk_commitments` and recompute a `public_key_fingerprint`, and signatures
-    have an exact canonical field set bound to that fingerprint (no malleability,
-    no key substitution). See `docs/WAVELOCK_OTS_DESIGN.md` §6a.
-  - **Keys are one-time, enforced at block acceptance.** Reuse is rejected by
-    default; signing also claims a host-local atomic key-state registry
-    (defense-in-depth only). The load-bearing control is a **durable replay
-    ledger** (`wavelock/crypto/ots_ledger.py`) wired into block acceptance: a
-    reused `one_time_key_id`/leaf is rejected when a block is accepted, so a
-    *copied* key cannot get a second OTS block accepted on a node.
-  - Seeds are ≥128-bit (default 256-bit); there are no tiny integer seeds, and
-    no ψ★/seed is exported in any public artifact.
+Normal `keygen`, `sign`, `mine`, and `verify` commands use **WaveLock-OTS** and
+the authenticated-record path. Historical SIGv2 tools are isolated under:
 
-- **WaveLock-OTS is NOT yet a formal cryptographic standard** and has no
-  security proof. **Do not use it for production funds.** For production, use
-  **Ed25519, SLH-DSA, LMS, or XMSS**. See `docs/WAVELOCK_OTS_DESIGN.md` for the
-  threat model and known limitations.
+```text
+wavelock-cli legacy ...
+```
 
-- **Known, documented limits (red-team status).** Red-team **A/B are fixed**
-  (canonical-field / Merkle / fingerprint binding, fail-closed verification).
-  **C is inherent**: reuse → total forgery is intrinsic to Lamport-style OTS
-  (never reuse a key) — the PoC is preserved as a regression test. **D is fixed
-  at the ledger/consensus layer**: OTS verification + a durable replay ledger are
-  now wired into block acceptance (`server.try_accept_block`), which rejects a
-  reused `one_time_key_id`/leaf and never accepts legacy SIGv2 where OTS is
-  required — but only *fully* closed once every accepting node runs this
-  rejection against agreed chain state; the host-local registry is
-  **defense-in-depth only**. WaveLock-OTS is still experimental and **not
-  production-ready**. See `attacks/WAVELOCK_OTS_REDTEAM.md` and
-  `docs/WAVELOCK_MERKLE_ROADMAP.md`.
+Legacy SIGv2 is retained only so earlier artifacts, attack reports, and
+migration behavior remain reproducible. It is **not part of the supported
+WaveLock security profile**. The historical design requires the verifier to
+possess `ψ★`, which makes it unsuitable as a public-key signature construction.
+See `attacks/WAVELOCK_THEORY_BREAK_AUDIT.md` and
+`docs/MIGRATION_FROM_SIGV2.md`.
 
-- **Mythos integration-layer fixes (M1/M2/M3).** A later red-team pass closed
-  three block acceptance/replay-layer blockers: OTS block signatures now bind the
-  **canonical block body** (M1, no more free-text `meta.ots_auth.message`);
-  consumed OTS identities are **reconstructed from accepted chain state
-  independent of current config** and fail closed on malformed auth (M2, deleting
-  `ots_replay.jsonl` no longer reopens replay); and the replay ledger's accept
-  critical section is **inter-process locked (`flock` on POSIX; SQLite on Windows)** with a single authoritative
-  ledger (M3). Cross-node/global consensus enforcement remains future work.
-  [Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md) defines the offered commitment,
-  replay and authenticated-record attack surfaces.
-  See `attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md` and
-  `tests/test_ots_mythos_break.py`.
+### WaveLock-OTS
 
-### WaveLock-OTS quick start
+WaveLock-OTS is a Lamport/WOTS-style one-time signature with WaveLock state
+binding underneath (`wavelock/crypto/wavelock_ots.py`, CLI `wavelock-ots`).
+The supported implementation provides:
+
+- **Public-only verification.** Public verification does not load `ψ★`, a seed,
+  or a secret key.
+- **Canonical public keys and signatures.** `verify_ots` and `load_public_key`
+  enforce exact field sets, recompute the Merkle root, recompute the public-key
+  fingerprint, and bind signatures to that fingerprint.
+- **One-time identity enforcement.** A key is consumed once. Stateful block
+  acceptance rejects reuse through the persistent replay ledger.
+- **Production input boundary.** The normative commitment producer requires raw
+  `bytes` of at least 16 bytes; 32 bytes is the default/recommended size. Byte
+  length is an input rule, not a statistical entropy measurement.
+- **No public `ψ★` or production input export.** Public commitment and OTS
+  artifacts do not expose the private wave state or producer input.
+
+One-time use is fundamental: reusing a Lamport-style OTS key can enable forgery.
+The corresponding proof-of-concept is preserved as a regression test, while the
+normal acceptance path rejects consumed identities.
+
+WaveLock-OTS remains experimental and does not carry a formal security proof.
+For high-value production signing, use established independently reviewed
+cryptography such as Ed25519, SLH-DSA, LMS, or XMSS as appropriate to the use
+case.
+
+### Authenticated-record hardening
+
+The public reference path binds the canonical block body, OTS identity,
+authenticated header context, chain linkage, and replay state. The current
+implementation includes:
+
+- canonical block-body signing;
+- consumed OTS identity reconstruction from accepted chain state;
+- fail-closed handling of malformed authentication data;
+- persistent replay records;
+- inter-process replay acceptance locking (`flock` on POSIX, SQLite on Windows);
+- same-host writer coordination and chain-tip reload before append;
+- versioned block-header encoding;
+- deterministic consensus commitment encoding and replay verification.
+
+Cross-node/global consensus, hostile-host rollback resistance, remote runtime
+attestation, and behavior-wide drift verification are not offered properties of
+this public repository.
+
+See:
+
+- [Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md)
+- [Bounty reproduction guide](audit/PUBLIC_BOUNTY_REPRODUCTION_GUIDE.md)
+- [Normative security profile](docs/BOUNTY_SECURITY_PROFILE.md)
+- `attacks/WAVELOCK_OTS_REDTEAM.md`
+- `attacks/WAVELOCK_MYTHOS_BREAK_REPORT.md`
+
+---
+
+## Public Bounty v1
+
+Public Bounty v1 exposes only security properties implemented and reproducible
+from this public repository.
+
+**Offered targets:**
+
+- Critical 1–5: commitment collision, preimage recovery, supported consensus
+  nondeterminism, computation-replay bypass, and deeper semantic binding failure;
+- High 1–5: noncanonical acceptance, NaN/Inf acceptance, signed-zero divergence,
+  production input boundary bypass, and unsupported backend admission;
+- AR-1–AR-6: implemented authenticated-record and OTS integrity/replay checks.
+
+**Withheld from the public offering:**
+
+- remote runtime/machine/kernel/configuration attestation;
+- behavior-wide drift detection;
+- broad hostile rollback, arbitrary valid-format cache tampering, and trusted
+  external-anchor guarantees.
+
+Those withheld areas are not offered security properties of Public Bounty v1.
+Private/internal WaveLock architecture is outside this repository and is not
+required to reproduce the public bounty surface.
+
+Passing regression tests means the documented implementation boundary behaves
+as expected on the tested cases. It does **not** constitute a cryptographic
+security proof.
+
+---
+
+## WaveLock-OTS quick start
 
 ```bash
 wavelock-ots ots-keygen  --out keys/
@@ -144,19 +207,19 @@ wavelock-ots ots-verify  --public keys/wl_ots_public.json --message "pay alice 5
 wavelock-ots ots-inspect --public keys/wl_ots_public.json
 ```
 
-(Each key signs **once**. Generate a fresh key per message.)
+Each key signs **once**. Generate a fresh key per message.
 
-### WaveLock-Encrypt quick start (experimental)
+## WaveLock-Encrypt quick start (experimental)
 
 `WaveLock-Encrypt v1` (`wavelock/crypto/wavelock_encrypt.py`, CLI
-`wavelock-encrypt`) is an **experimental** hybrid public-key encryption wrapper.
-It is **not a new raw cipher** — confidentiality and integrity come entirely
-from X25519 (ephemeral-static), HKDF-SHA256, and ChaCha20-Poly1305. The
-WaveLock contribution is **canonical transcript/context binding**: decryption
-fails closed if the authenticated context (purpose, ψ-commitment, block digest,
-OTS fingerprint, …) changes. See
-[`docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`](docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md).
-**Not production audited.**
+`wavelock-encrypt`) is an experimental hybrid public-key encryption wrapper.
+Confidentiality and integrity come from X25519 (ephemeral-static), HKDF-SHA256,
+and ChaCha20-Poly1305. The WaveLock contribution is canonical transcript/context
+binding: decryption fails closed if authenticated context such as purpose,
+ψ-commitment, block digest, or OTS fingerprint changes.
+
+See `docs/WAVELOCK_ENCRYPT_SECURITY_NOTE.md`. This wrapper has not received a
+production security audit.
 
 ```bash
 wavelock-encrypt keygen  --private wlenc_private.pem --public wlenc_public.pem
@@ -170,7 +233,8 @@ wavelock-encrypt decrypt --private wlenc_private.pem --input env.json --output o
 
 ## Install and run
 
-Python 3.9+ is supported. The reference workflow uses NumPy and requires no GPU.
+Python 3.9+ is supported. The normative reference workflow uses NumPy and
+requires no GPU.
 
 ```bash
 python -m pip install -e ".[blake3]" pytest
@@ -184,9 +248,9 @@ existing ledgers alone.
 
 ## Supported block workflow
 
-These normal commands now use **WaveLock-OTS**. A signature authenticates the
-canonical block body and its parent. Mining uses that existing signature;
-it does not sign a second message with the same key.
+Normal commands use **WaveLock-OTS**. A signature authenticates the canonical
+block body and its parent. Mining uses that existing signature; it does not sign
+a second message with the same key.
 
 ```bash
 wavelock-cli --data-dir demo-node keygen --out keys/demo-1
@@ -203,38 +267,32 @@ pair in a new directory for the next block. Existing key files are never
 silently overwritten. A stale signed parent requires a fresh key and signature.
 
 The signed artifact contains the public key and selected OTS slices only.
-Verification never loads a secret key, integer seed, registry, or psi snapshot.
+Verification never loads a secret key, integer seed, registry, or ψ snapshot.
 The standalone `wavelock-ots` commands remain available for detached messages;
 those detached signatures are not block authorizations.
 
 ## Node configuration and persistence
 
-CLI and node use the same `WAVELOCK_DATA_DIR` (default: the existing user data
-location, `$XDG_DATA_HOME/wavelock` or `~/.wavelock`). The CLI also accepts
-`--data-dir` before its subcommand. Set `WAVELOCK_DATA_DIR` for the node.
+CLI and node use the same `WAVELOCK_DATA_DIR` (default: `$XDG_DATA_HOME/wavelock`
+or `~/.wavelock`). The CLI also accepts `--data-dir` before its subcommand. Set
+`WAVELOCK_DATA_DIR` for the node.
+
 Accepted blocks and the reconstructable OTS replay cache live under `ledger/`.
-Signer-use markers live under `ots-state/`. Keep backups of signing state;
+Signer-use markers live under `ots-state/`. Keep backups of signing state and
 never reuse an OTS key across hosts or restored copies.
 
-CLI mining and node acceptance share a same-host writer lock and reload the
-tip before appending. A draft signed against an old parent is rejected: use a
-fresh key to sign for the new tip. This coordinates local writers; it does not
-provide distributed consensus or authenticated recovery from a full rollback.
-
-[Public Bounty v1](audit/PUBLIC_BOUNTY_V1.md) covers Critical 1–5, High 1–5 and
-implemented OTS/authenticated-record checks in the public reference implementation.
-See its [reproduction guide](audit/PUBLIC_BOUNTY_REPRODUCTION_GUIDE.md) and the
-unchanged [normative profile](docs/BOUNTY_SECURITY_PROFILE.md). Remote attestation,
-behavior-wide drift and broad hostile-host rollback guarantees are not offered
-properties of this public bounty.
+CLI mining and node acceptance share a same-host writer lock and reload the tip
+before appending. A draft signed against an old parent is rejected: use a fresh
+key to sign for the new tip. This coordinates local writers; it does not provide
+distributed consensus or authenticated recovery from complete host rollback.
 
 ```bash
 wavelockd --port 9001
 ```
 
 The node defaults to `require_ots=true`. It verifies stored OTS history on
-startup and rejects legacy SIGv2 on the normal acceptance path. Configure via
-`WAVELOCK_CONFIG` or `wavelockd --config node.json`:
+startup and rejects historical SIGv2 on the normal acceptance path. Configure
+via `WAVELOCK_CONFIG` or `wavelockd --config node.json`:
 
 ```json
 {"port": 9001, "require_ots": true}
@@ -244,41 +302,53 @@ startup and rejects legacy SIGv2 on the normal acceptance path. Configure via
 reserved for historical compatibility experiments. Unknown JSON configuration
 keys are errors. File settings override environment defaults.
 
-New OTS ledgers do not silently import or rewrite an old SIGv2 ledger. Historical
-package-local data can be inspected with the tools described in
-[the migration guide](docs/MIGRATION_FROM_SIGV2.md).
+New OTS ledgers do not silently import or rewrite an old SIGv2 ledger.
+Historical package-local data can be inspected with the migration tools in
+`docs/MIGRATION_FROM_SIGV2.md`.
 
 Replay acceptance is serialized across processes on one filesystem (POSIX
-flock or SQLite locking), and tip validation plus append are serialized within
-one node. This remains a single-node prototype: block and replay files are not
-a distributed transactional store; crash gaps can conservatively consume a key
-without a completed block. Full cross-node consensus and Merkle many-key
-signing remain on the [roadmap](docs/WAVELOCK_MERKLE_ROADMAP.md).
+`flock` or SQLite locking), and tip validation plus append are serialized within
+one node. The reference node is not a distributed transactional store; crash
+gaps can conservatively consume a key without a completed block. Cross-node
+consensus and Merkle many-key signing remain separate research/roadmap work.
+
+---
 
 ## Verification
 
+Full validation used for Public Bounty v1 includes the core/OTS, curvature, PDE,
+bounty-contract, durability, header, dry-run, CPU-dispatch, Linux, Windows, and
+container checks described in `audit/PUBLIC_BOUNTY_V1_READINESS.md`.
+
+For local verification:
+
 ```bash
-python -m pytest tests/ -m "not slow" -q
-python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
-python -m pytest pde_audit/ -c pde_audit/pytest.ini -m "not slow" -q
+python -m pytest tests/ -q
+python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -q
+python -m pytest pde_audit/ -c pde_audit/pytest.ini -q
+python audit/run_bounty_contract.py --check
+python hello_wavelock.py
 ```
 
 `tests/test_supported_workflow.py` exercises the real CLI across fresh processes,
 public-only verification, key reuse, malformed artifacts, startup replay
 reconstruction, configuration, and concurrent acceptance.
 
+---
+
 ## Research and historical tools
 
 - `wavelock/curvature_capacity_v1/`: current CC-Core-v1-B research candidate.
 - `wavelock/curvature_capacity/`: frozen Candidate A baseline.
 - `wavelock/pde_hash/`: historical hash-free PDE core and regression target.
-- `wavelock/crypto/`: OTS, replay protection and encryption wrappers.
+- `wavelock/crypto/`: OTS, replay protection, and encryption wrappers.
 - `wavelock/chain/ots_blocks.py`: shared OTS transcripts and pure public checks.
-- `wavelock-cli legacy ...`: historical SIGv2 tools, retained for reproduction.
+- `wavelock-cli legacy ...`: historical SIGv2 reproduction/migration tools.
 
-Historical SIGv2 findings remain documented and reproducible.
+Historical SIGv2 findings remain documented and reproducible without being part
+of the supported security profile.
 
-## License
+## License and patent notice
 
-Copyright © 2025 Ricky Reyes. All rights reserved.
+Copyright © 2025–2026 Ricky Reyes. All rights reserved.
 See `LICENSE` and `PATENT_NOTICE.md`.
