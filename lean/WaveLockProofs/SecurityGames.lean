@@ -54,7 +54,7 @@ theorem collision_if_same_absorbed_state
     Collision (fun m => squeeze (evolve (absorb m))) a b := by
   constructor
   · exact hne
-  · rw [heq]
+  · exact congrArg (fun state : State => squeeze (evolve state)) heq
 
 theorem collision_if_same_evolved_state
     {Msg State Mid Digest : Type*}
@@ -64,7 +64,7 @@ theorem collision_if_same_evolved_state
     Collision (fun m => squeeze (evolve (absorb m))) a b := by
   constructor
   · exact hne
-  · rw [heq]
+  · exact congrArg squeeze heq
 
 /-- Sufficient but strong *information-theoretic* conditions. For an
     unbounded byte-message domain with fixed 256-bit output these cannot
