@@ -21,7 +21,9 @@
 | Global injectivity fails if message set is larger than digest range (theorem) | `finite_output_collision` | Finite input/output with `n+1>n` | Formalized, **not** an efficient attack |
 | Digest collision from equal reachable states (theorem) | `collision_if_same_absorbed_state`, `collision_if_same_evolved_state` | **Two distinct valid messages** reach same intermediate state | Formalized conditional bridge |
 | 47-state digest separation / HD ≥ 105 (finite verification result) | None | Frozen dataset and complete replay / reflection | **Open Lean obligation**; documented exhaustive computational finding only |
-| Round-0 singular unreachability (analytical claim) | None | Exact byte range, IV, padding/counters | **Open Lean obligation** |
+| Round-0 rate-cell singular-value exclusion (restricted theorem) | `pack3_lt_2pow24`, `pack3_unique`, `firstBlockRate_below_singular`, `firstBlockRate_no_wrap` | IV < 375; 3 bytes in [0,255] | Formalized for rate cells; CAP cells and full protocol remain open |
+| Exact two-digit counter arithmetic (theorem) | `counterDigits_injective` | Natural-number digits, prior to field reduction | Formalized, with field encoding bound still open |
+| At least two padded blocks; no first-block finalization tag (theorem) | `paddedBlockCount_at_least_two`, `firstBlock_not_last` | Normative marker, zero-fill and length-block rule | Formalized integer-level count |
 | Normative reference vectors (implementation regression) | None | Byte-exact Python model and certificate | **Open Lean obligation** |
 | One-wayness, second-preimage resistance, collision resistance | None | Security parameter family, distribution and attacker model, explicit reduction or quantitative bound | **Open research questions** |
 | Sequential work lower bound / no shortcut | None | Restricted computational cost model or complexity assumption | **Open research question** |
@@ -34,7 +36,7 @@ A proof of `candidateB_injective` establishes a **single-coordinate** algebraic 
 ## Remaining work for #37
 
 1. Retrieve the immutable Release 22 PDF, inventory all original mathematical claims and distinguish their historical definitions from later code revisions.
-2. Extend the formal model to exact `ZMod 2147483647` constants, normative byte padding, field packing, initialized IVs, per-block counter/tag injection and comparison squeeze; prove a trace relation to executable reference vectors.
+2. Extend the formal model to exact `ZMod 2147483647` constants and full byte-oriented padding, initialized IVs, counter/tag field injection and comparison squeeze (building on the proved packing and block-count lemmas); prove a trace relation to executable reference vectors.
 3. Obtain a green pinned Lean CI run and keep CI's theorem checking separate from simulation tests.
 
 ## Remaining work for #32
