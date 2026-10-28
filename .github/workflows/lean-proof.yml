@@ -28,6 +28,10 @@ jobs:
             echo 'Proof placeholders or axioms are prohibited'
             exit 1
           fi
+      - name: Initialize pinned Mathlib manifest
+        run: |
+          cd lean
+          lake update
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: lean
