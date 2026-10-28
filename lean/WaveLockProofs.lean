@@ -1,5 +1,6 @@
 import WaveLockProofs.Algebra
 import WaveLockProofs.Encoding
 import WaveLockProofs.ExactField
+import WaveLockProofs.FirstBlockReachability
 import WaveLockProofs.Protocol
 import WaveLockProofs.SecurityGames
