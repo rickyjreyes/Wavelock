@@ -22,7 +22,8 @@ theorem candidateB_singular_value_exact :
   calc
     (1 : CCField) + 11 * (195225786 : CCField) =
         ((1 + 11 * 195225786 : ℕ) : CCField) := by push_cast; ring
-    _ = (2147483647 : CCField) := by rw [hnat]
+    _ = (2147483647 : CCField) := by
+      simpa using congrArg (fun n : ℕ => (n : CCField)) hnat
     _ = 0 := ZMod.natCast_self 2147483647
 
 /-- Literal Candidate B injection polynomial on the concrete residue
@@ -53,6 +54,7 @@ theorem concreteCandidateB_singular_slice_not_injective :
     rw [concreteCandidateB_erases_at_singular_value,
       concreteCandidateB_erases_at_singular_value]
   have h01 : (0 : CCField) = 1 := hinj heq
-  exact zero_ne_one h01
+  have hne : (0 : CCField) ≠ 1 := by decide
+  exact hne h01
 
 end WaveLockProofs
