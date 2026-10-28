@@ -1,4 +1,5 @@
 import WaveLockProofs.Algebra
 import WaveLockProofs.Encoding
+import WaveLockProofs.ExactField
 import WaveLockProofs.Protocol
 import WaveLockProofs.SecurityGames
