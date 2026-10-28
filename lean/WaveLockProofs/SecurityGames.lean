@@ -120,4 +120,54 @@ theorem reachable_collision_requires_two_messages
     (h : Collision (fun m => digest (absorb m)) a b) :
     a ≠ b ∧ digest (absorb a) = digest (absorb b) := h
 
+
+/-- Any collision before a deterministic digest postprocessor remains a
+collision afterward, independent of whether that postprocessor is injective. -/
+theorem collision_survives_postprocessing
+    {Msg Mid Digest : Type*}
+    (H : Msg → Mid) (post : Mid → Digest)
+    (a b : Msg) (h : Collision H a b) :
+    Collision (fun m => post (H m)) a b := by
+  exact ⟨h.1, congrArg post h.2⟩
+
+/-- Reflection of digest collisions into pre-digest collisions requires
+an injective postprocessor on the relevant states. -/
+theorem collision_reflects_through_injective_postprocessing
+    {Msg Mid Digest : Type*}
+    (H : Msg → Mid) (post : Mid → Digest)
+    (hpost : Function.Injective post)
+    (a b : Msg)
+    (h : Collision (fun m => post (H m)) a b) :
+    Collision H a b := by
+  exact ⟨h.1, hpost h.2⟩
+
+/-- Exact collision equivalence under injective digest postprocessing;
+no computational hardness or adversary advantage is inferred. -/
+theorem collision_iff_injective_postprocessing
+    {Msg Mid Digest : Type*}
+    (H : Msg → Mid) (post : Mid → Digest)
+    (hpost : Function.Injective post)
+    (a b : Msg) :
+    Collision (fun m => post (H m)) a b ↔ Collision H a b := by
+  constructor
+  · exact collision_reflects_through_injective_postprocessing H post hpost a b
+  · exact collision_survives_postprocessing H post a b
+
+/-- A separate sufficient condition for message-level injectivity:
+absorption must distinguish valid messages, and the digest must be
+injective ON THE REACHABLE absorbed states. This is substantially
+weaker than requiring injectivity over the entire unrestricted state
+space, but remains an explicit unproved condition for WaveLock. -/
+theorem no_collision_of_injective_reachable_states
+    {Msg State Digest : Type*}
+    (absorb : Msg → State) (digest : State → Digest)
+    (habsorb : Function.Injective absorb)
+    (hdigest : Set.InjOn digest (Set.range absorb))
+    (a b : Msg) :
+    ¬ Collision (fun m => digest (absorb m)) a b := by
+  intro hc
+  have hstate : absorb a = absorb b :=
+    hdigest (Set.mem_range_self a) (Set.mem_range_self b) hc.2
+  exact hc.1 (habsorb hstate)
+
 end WaveLockProofs
