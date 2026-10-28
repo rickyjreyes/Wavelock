@@ -112,4 +112,39 @@ theorem versionFrame_separates_versions
   have hv : v1 = v2 := by simpa [versionFrame] using hhead
   exact h hv
 
+
+/-- Parse the version-and-length envelope, rejecting any malformed length.
+This is exact structural framing, not byte-level absorption or cryptography. -/
+def parseVersionFrame : List Nat → Option (Nat × List Nat)
+  | version :: declaredLen :: payload =>
+      if declaredLen = payload.length then some (version, payload) else none
+  | _ => none
+
+/-- Every honestly constructed frame round-trips through the parser. -/
+theorem parseVersionFrame_roundtrip (version : Nat) (payload : List Nat) :
+    parseVersionFrame (versionFrame version payload) =
+      some (version, payload) := by
+  simp [parseVersionFrame, versionFrame]
+
+/-- A forged length header is rejected before entering the protocol. -/
+theorem parseVersionFrame_rejects_wrong_length
+    (version declaredLen : Nat) (payload : List Nat)
+    (h : declaredLen ≠ payload.length) :
+    parseVersionFrame (version :: declaredLen :: payload) = none := by
+  simp [parseVersionFrame, h]
+
+/-- Successful parsing certifies the exact declared payload length. -/
+theorem parseVersionFrame_correct_length
+    (version declaredLen : Nat) (payload : List Nat)
+    (resultVersion : Nat) (resultPayload : List Nat)
+    (h : parseVersionFrame (version :: declaredLen :: payload) =
+      some (resultVersion, resultPayload)) :
+    declaredLen = payload.length ∧
+      resultVersion = version ∧ resultPayload = payload := by
+  by_cases hlen : declaredLen = payload.length
+  · simp [parseVersionFrame, hlen] at h
+    rcases h with ⟨rfl, rfl⟩
+    exact ⟨hlen, rfl, rfl⟩
+  · simp [parseVersionFrame, hlen] at h
+
 end WaveLockProofs
