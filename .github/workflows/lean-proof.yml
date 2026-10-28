@@ -28,8 +28,11 @@ jobs:
             echo 'Proof placeholders or axioms are prohibited'
             exit 1
           fi
-      - name: Initialize pinned Mathlib manifest
+      - name: Initialize pinned Lean toolchain and Mathlib manifest
+        shell: bash
         run: |
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:v4.23.0
+          export PATH="$HOME/.elan/bin:$PATH"
           cd lean
           lake update
       - uses: leanprover/lean-action@v1
