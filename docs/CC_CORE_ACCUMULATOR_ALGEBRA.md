@@ -17,8 +17,8 @@
 | ZETA (ζ) | 17 | Linear-in-v coefficient |
 | A_C | 2 | Accumulator self-square coefficient |
 | MU (μ) | 5 | Accumulator carry multiplier |
-| RHO0 | 0x57434330 = 1463898160 | Round-constant base |
-| RHO1 | 2654435761 mod p = 507468114 | Round-constant slope |
+| RHO0 | 0x57434330 = 1464025904 | Round-constant base |
+| RHO1 | 2654435761 mod p = 506952114 | Round-constant slope |
 | WA, WB, WC | 40503, 50021, 60013 | Position-weight coefficients |
 
 All arithmetic is modulo p.

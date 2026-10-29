@@ -1,0 +1,44 @@
+name: WaveLock Lean verification
+
+on:
+  push:
+    branches:
+      - master
+      - 'formal/**'
+    paths:
+      - 'lean/**'
+      - '.github/workflows/lean-proof.yml'
+  pull_request:
+    paths:
+      - 'lean/**'
+      - '.github/workflows/lean-proof.yml'
+  workflow_dispatch:
+
+jobs:
+  lean:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject proof placeholders and new axioms
+        shell: bash
+        run: |
+          if grep -R -nE '(^|[[:space:]])(sorry|admit|axiom)([[:space:]]|$)' lean --include='*.lean'; then
+            echo 'Proof placeholders or axioms are prohibited'
+            exit 1
+          fi
+      - name: Initialize pinned Lean toolchain and Mathlib manifest
+        shell: bash
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:v4.23.0
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake update
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          use-mathlib-cache: true
+          build: true
+          test: false
+          lint: false
