@@ -13,7 +13,7 @@
 | One-round accumulator separation (conditional theorem) | `accumulator_sign_difference`, `accumulator_sign_separated` | Same starting accumulator/diffused value; nonzero weight; `2 ≠ 0`; nonzero amplitude | Formalized |
 | Design A structured zero eigenmode collapse (symbolic theorem) | `waveRound_collapse` | Eigenvalue, squared amplitude, exact balance | Formalized conditionally; no exact 47-state enumeration |
 | Global internal wave-round injectivity (false when witness exists) | `waveRound_not_injective_of_collapse` | A nonzero collapse witness and `2 ≠ 0` | Formalized conditional counterexample theorem |
-| Deterministic Candidate B coupled round (definition) | `candidateBRound`, `runFrom` | Field; constants from CC-Core-v1-B | Algebraic model, not verified Python parity |
+| Deterministic Candidate B coupled round (definition) | `candidateBRound`, `runFrom`, `NormativeConstants.ccCoreRho0`, `ccCoreRho1` | Field; exact Python hexadecimal and modular constants, with no byte-to-execution translation proof | Corrected algebraic model; **full Python parity still open** |
 | Replay verifier acceptance (logical correctness) | `replay_accepts_honest`, `replay_rejects_wrong_version` | Same deterministic model/output supplied | Formalized for abstract output, **not** cryptographic authenticity |
 | Abstract version/length framing (mathematical model) | `versionFrame_payload_injective`, `versionFrame_separates_versions` | List of natural-number symbols | Formalized; **not** byte encoder |
 | Collision/second-preimage/inversion games (definitions) | `Collision`, `SecondPreimage`, `Inverts`, `SecondPreimageGame`, `InversionGame` | Explicit `H`, challenge, adversary | Specified; no security advantage bound |
@@ -21,13 +21,42 @@
 | Global injectivity fails if message set is larger than digest range (theorem) | `finite_output_collision` | Finite input/output with `n+1>n` | Formalized, **not** an efficient attack |
 | Digest collision from equal reachable states (theorem) | `collision_if_same_absorbed_state`, `collision_if_same_evolved_state` | **Two distinct valid messages** reach same intermediate state | Formalized conditional bridge |
 | 47-state digest separation / HD ≥ 105 (finite verification result) | None | Frozen dataset and complete replay / reflection | **Open Lean obligation**; documented exhaustive computational finding only |
-| Round-0 rate-cell singular-value exclusion (restricted theorem) | `pack3_lt_2pow24`, `pack3_unique`, `firstBlockRate_below_singular`, `firstBlockRate_no_wrap` | IV < 375; 3 bytes in [0,255] | Formalized for rate cells; CAP cells and full protocol remain open |
+| First-block singular-value exclusion for all 256 wave sites (restricted theorem) | `firstBlockRate_below_singular`, `firstAbsorbedWave_not_singular`, `absorbWaveBlock_first_matches_initial` | Bounded IV < 375; 3 byte rate elements; first block is not last | Full 256-site **pre-evolution** wave state formalized; later rounds and messages remain open |
 | Exact two-digit counter arithmetic (theorem) | `counterDigits_injective` | Natural-number digits, prior to field reduction | Formalized, with field encoding bound still open |
 | At least two padded blocks; no first-block finalization tag (theorem) | `paddedBlockCount_at_least_two`, `firstBlock_not_last` | Normative marker, zero-fill and length-block rule | Formalized integer-level count |
 | Normative reference vectors (implementation regression) | None | Byte-exact Python model and certificate | **Open Lean obligation** |
 | One-wayness, second-preimage resistance, collision resistance | None | Security parameter family, distribution and attacker model, explicit reduction or quantitative bound | **Open research questions** |
 | Sequential work lower bound / no shortcut | None | Restricted computational cost model or complexity assumption | **Open research question** |
 | OTS unforgeability and replay protection | None | Full stateful verifier and adversary oracle / key-security model | **Open research question** |
+
+## CC-Core constant mismatch correction, October 29, 2026
+
+The normative Python expressions have **not** changed. The earlier Lean model and
+several written decimal annotations used incorrect conversions:
+
+| Parameter | Normative Python expression | Correct decimal | Previously used incorrect decimal |
+| --- | --- | ---: | ---: |
+| RHO0 | `0x57434330` | 1464025904 | 1463898160 |
+| RHO1 | `2654435761 % 2147483647` | 506952114 | 507468114 |
+| Candidate B D_TAG | `0x57434332` | 1464025906 | 1463898162 |
+| Candidate A D_TAG | `0x57434331` | 1464025905 | 1463898161 |
+
+New `NormativeConstants.lean` certifies the exact integer equalities
+and `gcd(RHO1, p-1)=186`. The previously documented claim that
+the affine additive `rho_t` schedule has period `p-1` because its
+slope is coprime to `p-1` was incorrect. Its actual standalone period
+modulo `p` is `p`, because `p` is prime and RHO1 is nonzero.
+
+`Protocol.lean` now draws the round constant from those exact expressions;
+`BlockAbsorption.lean` now uses the correct finalization tag.
+Python regression tests lock down the literal values and schedule.
+
+**Scope:** correcting literal parameters is necessary but insufficient for
+source-level verification. Historic prior CI runs with the wrong Lean
+parameters do not prove the round model matches the frozen Python program.
+The corrected source must pass full Lean and Python CI at its own final
+commit. Full message processing, multi-block replay and comparison-squeeze
+correspondence remain open.
 
 ## Distinguishing the different levels
 
