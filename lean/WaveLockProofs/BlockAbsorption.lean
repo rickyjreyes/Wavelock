@@ -1,4 +1,5 @@
 import WaveLockProofs.FirstBlockReachability
+import WaveLockProofs.NormativeConstants
 
 /-!
 # CC-Core-v1-B: exact all-block finite-field absorption operator
@@ -35,7 +36,7 @@ def absorbBlockComponent
   else if i.val = 66 then
     state i + 7 * ((ccCounter k).2 : CCField)
   else if i.val = 65 ∧ last = true then
-    state i + (1463898162 : CCField)
+    state i + (ccCoreFinalTag : CCField)
   else state i
 
 def absorbWaveBlock
