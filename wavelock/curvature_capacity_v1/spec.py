@@ -56,7 +56,7 @@ WC = 60013
 
 # --- sponge-like / injection constants ----------------------------------
 G = 7
-D_TAG = 0x57434332           # ASCII "WCC2" = 1463898162 ; DISTINCT from A's WCC1
+D_TAG = 0x57434332           # ASCII "WCC2" = 1464025906 ; DISTINCT from A's WCC1
 CAP0 = 64
 CAP1 = 65
 CAP2 = 66
