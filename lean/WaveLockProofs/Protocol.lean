@@ -1,9 +1,10 @@
 import WaveLockProofs.Algebra
+import WaveLockProofs.NormativeConstants
 
 /-!
 # CC-Core-v1-B coupled round and replay model
 
-The finite-field formulas and constants below reproduce the *round-level*
+The finite-field formulas and corrected hexadecimal constants below reproduce the *round-level*
 equations of docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md, including global time and
 position weights. This does not yet model byte padding, bounded block counters,
 IV construction, multi-block absorption, nor the four-round comparison squeeze.
@@ -25,7 +26,7 @@ def candidateBWeight (t : Nat) (x : TorusSite) : F :=
     (step : F) * (cell : F) * 60013
 
 def candidateBRoundConstant (t : Nat) : F :=
-  (1463898160 : F) + (507468114 : F) * (t : F)
+  (ccCoreRho0 : F) + (ccCoreRho1 : F) * (t : F)
 
 def candidateBWave (psi : TorusSite → F) : TorusSite → F :=
   waveRound torusLap 5 3 1431655765 psi
