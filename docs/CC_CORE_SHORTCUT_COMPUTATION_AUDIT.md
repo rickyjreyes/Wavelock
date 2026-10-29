@@ -100,8 +100,11 @@ The accumulator Φ_t is **round-dependent** (the constant ρ_t = RHO0 + RHO1·t 
 with t). A cycle of the trajectory would require not just C_t = C_{t+k} but also
 the periodic recurrence to lock to a sub-period of the round-constant schedule.
 
-Because ρ_t is linear in t with slope RHO1 = 507468114 (mod p, coprime to p-1),
-the schedule has period exactly p − 1 (the multiplicative group order). No short
+The corrected arithmetic gives RHO1 = 506952114 modulo p = 2147483647, with
+gcd(RHO1, p-1) = 186, so the old coprimality statement is false. Since ρ_t is
+an **additive affine** schedule modulo prime p, its standalone period is p
+for nonzero RHO1, not p-1. This fact alone does not exclude state-space
+cycles in the nonlinear accumulator. No short
 cycle of the round-dependent accumulator was found in the two-cycle search (Part IV,
 budget 3000).
 
