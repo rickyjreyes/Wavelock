@@ -39,4 +39,35 @@ theorem runFrom_two_32_round_segments (t : Nat) (s : CoupledState F) :
   simpa only [show 32 + 32 = 64 by decide] using
     runFrom_add_rounds t 32 32 s
 
+/-- Run an arbitrarily long finite schedule of round segments. Every
+segment starts at the absolute clock reached by preceding segments. -/
+def runRoundSegments (t : Nat) :
+    List Nat → CoupledState F → CoupledState F
+  | [], s => s
+  | rounds :: rest, s =>
+      runRoundSegments (t + rounds) rest (runFrom t rounds s)
+
+/-- The global round clock is consistent across *any* finite sequence
+of segments, including zero-length segments and differing lengths.
+This is stronger than a two-block calculation. -/
+theorem runRoundSegments_eq_runFrom (t : Nat)
+    (segments : List Nat) (s : CoupledState F) :
+    runRoundSegments t segments s = runFrom t segments.sum s := by
+  induction segments generalizing t s with
+  | nil =>
+      simp [runRoundSegments, runFrom]
+  | cons rounds rest ih =>
+      change runRoundSegments (t + rounds) rest
+          (runFrom t rounds s) =
+        runFrom t (rounds + rest.sum) s
+      rw [ih]
+      exact (runFrom_add_rounds t rounds rest.sum s).symm
+
+/-- Two arbitrary adjacent executions are the special case of a
+two-entry segment list; the time origin of the second is not reset. -/
+theorem runRoundSegments_two (t n m : Nat) (s : CoupledState F) :
+    runRoundSegments t [n, m] s = runFrom t (n + m) s := by
+  simpa only [List.sum_cons, List.sum_nil, add_zero] using
+    runRoundSegments_eq_runFrom t [n, m] s
+
 end WaveLockProofs
