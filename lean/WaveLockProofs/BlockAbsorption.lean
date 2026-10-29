@@ -95,6 +95,7 @@ theorem absorbWaveBlock_rate_injective
   have hright := absorbWaveBlock_rate state b k last i (by
     dsimp [i]
     exact j.isLt)
+  change absorbWaveBlock state a k last i = absorbWaveBlock state b k last i at heq
   rw [hleft, hright] at heq
   have hj : (⟨i.val, by
       dsimp [i]
