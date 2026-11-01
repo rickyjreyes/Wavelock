@@ -14,13 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_committed_vectors_match_reference():
-    committed = json.loads((ROOT / "lean" / "conformance_vectors.json").read_text())
+    committed = json.loads((ROOT / "lean" / "conformance_vectors.json").read_text(encoding="utf-8"))
     assert committed == vectors()
 
 
 def test_lean_literals_match_vectors():
     v = vectors()
-    lean = (ROOT / "lean" / "WaveLockProofs" / "MultiBlock.lean").read_text()
+    lean = (ROOT / "lean" / "WaveLockProofs" / "MultiBlock.lean").read_text(encoding="utf-8")
     for key in ("weight_t0_x0", "weight_t31_x255", "rho_0", "rho_100", "injection_u5_v7"):
         assert re.search(rf"= {v[key]}\b", lean), key
     assert "= 6513249" in lean and v["pad"]["abc"]["block0_cells_0_3"][0] == 6513249
