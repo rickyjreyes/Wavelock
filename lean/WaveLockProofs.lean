@@ -8,3 +8,5 @@ import WaveLockProofs.GlobalRoundClock
 import WaveLockProofs.Protocol
 import WaveLockProofs.SecurityGames
 import WaveLockProofs.ConcreteSecurity
+import WaveLockProofs.BytePadding
+import WaveLockProofs.MultiBlock
