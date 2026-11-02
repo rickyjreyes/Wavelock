@@ -73,7 +73,7 @@ C[CAP0] += q0·G ;  C[CAP2] += q1·G            (mod p)
 if k == nb−1:  ψ[CAP1] += D_TAG ;  C[CAP1] += D_TAG   (mod p)
 ```
 **Coordinates `67..255` of ψ are never written by absorption** (they evolve only
-through the wave round). `CAP1 = 65` receives `D_TAG = 1463898162` on the last
+through the wave round). `CAP1 = 65` receives `D_TAG = 1464025906` on the last
 block only.
 
 ## 7. Coupled evolution per block

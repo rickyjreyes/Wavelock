@@ -51,11 +51,11 @@ Identical to Candidate A except `ETA=0`, `ZETA=0`, `D_TAG`, `VERSION`:
 | ZETA (ζ) | **0** (was 17 in A) |
 | A_C | 2 |
 | MU (μ) | 5 |
-| RHO0 | 0x57434330 = 1463898160 |
-| RHO1 | 2654435761 mod p = 507468114 |
+| RHO0 | 0x57434330 = 1464025904 |
+| RHO1 | 2654435761 mod p = 506952114 |
 | WA, WB, WC | 40503, 50021, 60013 |
 | G | 7 |
-| D_TAG | **0x57434332 ("WCC2")** = 1463898162 (was WCC1 in A) |
+| D_TAG | **0x57434332 ("WCC2")** = 1464025906 (was WCC1 in A) |
 | CAP0, CAP1, CAP2 | 64, 65, 66 |
 | RATE / BYTES_PER_BLOCK | 64 / 192 |
 | VERSION | **"WaveLock-CC-Core-v1"** |

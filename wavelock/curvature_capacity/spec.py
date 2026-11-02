@@ -47,8 +47,8 @@ ZETA = 17                    # psi_{t+1} linear term (depends on *later* state o
 A_C = 2                      # accumulator self-square (nonlinearity in C)
 MU = 5                       # accumulator carry multiplier
 # round-constant schedule rho_t = (RHO0 + RHO1 * t) mod P
-RHO0 = 0x57434330            # ASCII "WCC0" = 1463898160 ; < P
-RHO1 = 2654435761 % P        # an odd multiplier, reduced into [0, P)
+RHO0 = 0x57434330            # ASCII "WCC0" = 1464025904 ; < P
+RHO1 = 2654435761 % P        # reduced round slope (506952114), in [0, P)
 # position-weight schedule W_t(x) = (1 + (t+1)*WA + (x+1)*WB + (t+1)*(x+1)*WC) mod P
 WA = 40503                   # small fixed odd constants
 WB = 50021
@@ -56,7 +56,7 @@ WC = 60013
 
 # --- sponge-like / injection constants (analogous to Design A) ----------
 G = 7                        # counter generator
-D_TAG = 0x57434331           # ASCII "WCC1" = 1463898161 ; finalization tag, < P
+D_TAG = 0x57434331           # ASCII "WCC1" = 1464025905 ; finalization tag, < P
 CAP0 = 64                    # block-counter low digit (capacity cell, psi & C)
 CAP1 = 65                    # finalization injection
 CAP2 = 66                    # block-counter high digit

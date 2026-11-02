@@ -17,13 +17,15 @@ pre-first-wave-round state `ψ_0(m)` equals `v_star`:
 - Rate cells `x ∈ {0,…,63}`: `ψ_0(m)[x] = (ψ_IV[x] + elem[x]) mod p` with
   `elem[x] ∈ [0, 2²⁴)` and `ψ_IV[x] ∈ [54, 374]`. Hence `ψ_0(m)[x] ≤ 374 + 2²⁴ − 1
   = 16777589 < p` (no wraparound) and `≤ 16777589 < 195225786 = v_star`.
-- `x = 65` (CAP1): `ψ_0(m)[65] = (ψ_IV[65] + D_TAG) mod p = 1464026030 ≠ v_star`.
+- `x = 65` (CAP1): `ψ_0(m)[65] = ψ_IV[65] ≠ v_star`. The first padded block is **never** final because the padding appends a separate length block (even an empty message occupies two blocks). Therefore `D_TAG` is **not** injected into CAP1 until the final block. The previous expression `ψ_IV[65] + D_TAG` described a final-block update, not the initial pre-round-0 state.
 - `x ∈ {64, 66}` (CAP0, CAP2): `ψ_IV[x] + (counter)·G`; for the counter values these
   are small fixed residues `≠ v_star`.
 - `x ∈ {67,…,255}`: never written by absorption; `ψ_0(m)[x] = ψ_IV[x] ∈ [123, 374]
   ≠ v_star`.
 
 Every coordinate is therefore `≠ v_star`. ∎
+
+**Clarification:** the first-block tag timing correction does not change the theorem's exclusion of `v_star`, but does correct the previously stated exact value of CAP1. The Nat-level packing, bounds and block-count facts are independently formalized in `lean/WaveLockProofs/Encoding.lean`; a complete field-valued IV and absorption proof remains open.
 
 **Corollary.** The full-lattice singular constant `c·1` (`c = 357959172`, the
 unique state with `F(c·1) = v_star·1`) is **not** valid-message reachable as
