@@ -74,6 +74,18 @@ unproven, and unreviewed. With M1/M2/M3 fixed it may be ready for a **scoped**
 bounty focused on canonical verification, replay protection, and OTS block
 acceptance — not an open-scope or value-transfer bounty.
 
+## Formal verification addendum (2026-11-20, issue #41)
+
+Lean proofs and Lean/Python trace conformance now cover stateful acceptance; see
+`docs/WAVELOCK_OTS_FORMAL_VERIFICATION.md`. Same-host single use of `one_time_key_id` and
+`public_key_fingerprint` is proved for a trusted, durable store, over any interleaving, crashes,
+restarts and side-ledger loss. The work also found and corrected four `one_time_key_id` defects
+(`""`, `null` and arrays were accepted once and then made the ledger or chain unloadable; the string
+`"None"` was dropped by reconstruction, so after side-ledger loss a second block with that key id
+was accepted). It records two present boundaries: the identities are labels, so a holder of the
+seed can reuse it under a fresh key id, and on the standalone payload path anyone can relabel a
+consumed signature; and rollback or independent hosts can accept one identity twice.
+
 ## What changed
 
 - **New asymmetric construction: WaveLock-OTS** (`wavelock/crypto/wavelock_ots.py`).
@@ -127,8 +139,8 @@ acceptance — not an open-scope or value-transfer bounty.
 | Small integer seed brute-force (`seed_bruteforce.py`) | **succeeds** (~7-bit seeds) | **blocked** — 256-bit seeds, sub-128-bit rejected |
 | Cleartext seed/ψ★ in public artifact | **yes** | **no** — export/load reject forbidden fields |
 | Server trust-only / fail-open acceptance | **yes** | **removed** — fail-closed |
-| One-time key reuse | unprotected | **detected and rejected** |
-| Replay / copied-key second-sign at block acceptance | n/a | **rejected** — durable replay ledger refuses a consumed `one_time_key_id`/leaf |
+| One-time key reuse | unprotected | **detected and rejected** under the same `one_time_key_id`; the same seed under a fresh key id is a new identity (see addendum) |
+| Replay / copied-key second-sign at block acceptance | n/a | **rejected** — durable replay ledger refuses a consumed `one_time_key_id`/leaf (per identity label, single host; see addendum) |
 | Legacy SIGv2 accepted where OTS is required | n/a | **rejected** — no fallback on the OTS path |
 
 Each row is pinned by a test; the legacy rows assert the break still works

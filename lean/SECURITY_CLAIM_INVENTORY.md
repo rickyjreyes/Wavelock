@@ -52,6 +52,19 @@ no `sorry`, `admit` or local axiom. `#print axioms` on the theorems below lists 
 * Side channels, constant-time behaviour, NumPy/CPU dispatch reproducibility, and key or bounty
   operations.
 
+## WaveLock-OTS acceptance (issue #41)
+
+| Kind | Claim | Declarations |
+|---|---|---|
+| (M) | Same-host single use of both identities over arbitrary traces (interleavings, crashes, restarts, side-file loss) | `inv_run`, `chain_single_use`, `consume_fresh`, `at_most_one_acceptance`, `wavelock_ots_chain_single_use` |
+| (M) | No self-inflicted denial of service without torn writes | `loadable_run`, `wavelock_ots_no_self_dos` |
+| (M) | Fail-closed `verify_ots`; identity binding; block transcript binding up to `Collision` | `verifyOTS_sound`, `verifyOTS_identity`, `block_binding`, `block_relabel_needs_second_message` |
+| (M) counterexample | Rollback, independent hosts, key material under fresh key ids, payload relabelling, missing locks / re-scan, four key-id defects at `b310ea5` | `KeyReuseCounterexample`, `LedgerLinearizability`, `kid_relabel_verifies` |
+| (A) | One-time unforgeability over SHAKE256; fingerprint/transcript collision resistance | not assumed by any theorem; named as `TableUsedTwice` / `Collision` |
+| (I) | Python ↔ model on 20 traces (finite); `flock`/SQLite exclusion, honest `fsync` | `OTSConformance`, `tests/test_ots_formal_conformance.py` |
+
+Details: `docs/WAVELOCK_OTS_FORMAL_VERIFICATION.md`.
+
 ## Open obligations
 1. Prove `concreteEvolveT` equals `coupled_evolve_T` on the flat layout for all states, i.e.
    the Laplacian indexing and the wave-update constants against `evolve.py`.

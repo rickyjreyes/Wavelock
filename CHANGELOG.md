@@ -5,6 +5,19 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS acceptance formal verification (#41)
+
+- Add Lean proofs of same-host single use for OTS acceptance (any interleaving, crashes,
+  restarts, side-ledger loss), fail-closed verification, block transcript binding, and
+  kernel-checked counterexamples for rollback, independent hosts and key-material reuse. Twenty
+  acceptance traces are checked against both the Lean model and the implementation.
+- Fix: the replay ledger now rejects a `one_time_key_id` that is not a non-empty string (or a
+  non-string fingerprint). Previously `""`, `null` or an array key id was accepted once and then
+  made the replay ledger or chain permanently unloadable. Numeric key ids are now rejected too.
+- Fix: chain reconstruction no longer drops the key id string `"None"`, which allowed a second
+  block with that key id after the side ledger was lost.
+- No wire, record or protocol version changes.
+
 ## [Unreleased] — Bounty contract hardening
 
 - Add `WL-Consensus-Commitment-v1` and a single NumPy reference producer/replay

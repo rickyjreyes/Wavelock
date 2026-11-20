@@ -93,6 +93,13 @@ raises `OTSLedgerError` (**fail closed**) instead of being silently skipped.
 Deleting the side ledger no longer resurrects consumed identities while the
 accepted chain still contains the block that consumed them.
 
+**Formal follow-up (2026-11-20).** The claim above failed for one identity: `index_signature`
+skipped any key id whose `str()` was `"None"`, so the *string* key id `"None"` was not
+reconstructed and, after side-ledger deletion and restart, a second block with that key id was
+accepted (Lean `legacy_none_sentinel_double_accepts_key_id`, reproduced in
+`tests/test_ots_formal_conformance.py`). Corrected: only absent fields are skipped. Burned
+identities (consumed but never appended) are still not reconstructed from the chain.
+
 **Pin.** `tests/test_ots_mythos_break.py::test_m2_*` (replay rejected after delete
 + `load_from_disk` restart; reconstruction indexes by structure independent of
 cfg; malformed OTS auth fails closed; PoC blocked).
