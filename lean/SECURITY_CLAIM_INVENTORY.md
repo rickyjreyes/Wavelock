@@ -56,12 +56,13 @@ no `sorry`, `admit` or local axiom. `#print axioms` on the theorems below lists 
 
 | Kind | Claim | Declarations |
 |---|---|---|
-| (M) | Same-host single use of both identities over arbitrary traces (interleavings, crashes, restarts, side-file loss) | `inv_run`, `chain_single_use`, `consume_fresh`, `at_most_one_acceptance`, `wavelock_ots_chain_single_use` |
+| (M) | Same-host single use of key id, fingerprint and commitment table over arbitrary traces (interleavings, crashes, restarts, side-file loss) | `inv_run`, `chain_single_use`, `consume_fresh`, `at_most_one_acceptance`, `wavelock_ots_material_single_use`, `wavelock_ots_fresh_triple` |
+| (M) | Material identity: equality preservation, invariance under every admitted relabelling, distinct ids ⇒ distinct tables | `materialId_eq_of_decode_eq`, `relabelled_replays_keep_material`, `distinct_material_distinct_tables` |
 | (M) | No self-inflicted denial of service without torn writes | `loadable_run`, `wavelock_ots_no_self_dos` |
 | (M) | Fail-closed `verify_ots`; identity binding; block transcript binding up to `Collision` | `verifyOTS_sound`, `verifyOTS_identity`, `block_binding`, `block_relabel_needs_second_message` |
-| (M) counterexample | Rollback, independent hosts, key material under fresh key ids, payload relabelling, missing locks / re-scan, four key-id defects at `b310ea5` | `KeyReuseCounterexample`, `LedgerLinearizability`, `kid_relabel_verifies` |
-| (A) | One-time unforgeability over SHAKE256; fingerprint/transcript collision resistance | not assumed by any theorem; named as `TableUsedTwice` / `Collision` |
-| (I) | Python ↔ model on 20 traces (finite); `flock`/SQLite exclusion, honest `fsync` | `OTSConformance`, `tests/test_ots_formal_conformance.py` |
+| (M) counterexample | Rollback, independent hosts, missing locks / re-scan, four key-id defects at `b310ea5`, PR #47 key-material and payload relabelling (now rejected) | `KeyReuseCounterexample`, `LedgerLinearizability`, `kid_relabel_verifies`, `psi_relabel_verifies` |
+| (A) | One-time unforgeability over SHAKE256; fingerprint/transcript/Merkle-root collision resistance | not assumed by any theorem; named as `TableUsedTwice` / `Collision` |
+| (I) | Python ↔ model on 25 traces (finite); `flock`/SQLite exclusion, honest `fsync` | `OTSConformance`, `tests/test_ots_formal_conformance.py`, `tests/test_ots_key_material.py` |
 
 Details: `docs/WAVELOCK_OTS_FORMAL_VERIFICATION.md`.
 

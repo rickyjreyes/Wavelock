@@ -5,6 +5,22 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS key-material single use (#41, phase II)
+
+- **Consensus-affecting.** Acceptance now consumes the commitment table of every OTS key
+  (`wavelock_ots.ots_material_id`, the Merkle root recomputed from `pk_commitments`) as well as its
+  key id and fingerprint. A second signature over the same table is rejected whatever key id,
+  ψ-commitment or hex spelling it carries; this closes the reuse of copied key material under fresh
+  labels and third-party relabelling of consumed signatures on `verify_ots_payload`.
+- `verify_ots_chain` rejects a chain in which two blocks share a commitment table; a node refuses
+  to load such a chain. Honest chains (one fresh key per block) are unaffected. Nodes running older
+  code accept blocks this code rejects.
+- Replay records are `LEDGER_VERSION` 2 (adds `material_id`); version 1 records still load and keep
+  their labels consumed. Reconstruction folds tables back in from the chain and fails closed on an
+  OTS block whose table cannot be identified.
+- Lean: identities generalised to atoms; `wavelock_ots_material_single_use`,
+  `wavelock_ots_fresh_triple`, `distinct_material_distinct_tables`; 25 Lean/Python traces.
+
 ## [Unreleased] — WaveLock-OTS acceptance formal verification (#41)
 
 - Add Lean proofs of same-host single use for OTS acceptance (any interleaving, crashes,

@@ -86,6 +86,11 @@ was accepted). It records two present boundaries: the identities are labels, so 
 seed can reuse it under a fresh key id, and on the standalone payload path anyone can relabel a
 consumed signature; and rollback or independent hosts can accept one identity twice.
 
+Phase II closes the first boundary: acceptance also consumes the commitment table
+(`ots_material_id`), so one table authorises at most one accepted signature whatever labels it
+carries (proved in Lean; replay records are now version 2). Rollback and independent hosts remain
+open.
+
 ## What changed
 
 - **New asymmetric construction: WaveLock-OTS** (`wavelock/crypto/wavelock_ots.py`).
@@ -139,8 +144,8 @@ consumed signature; and rollback or independent hosts can accept one identity tw
 | Small integer seed brute-force (`seed_bruteforce.py`) | **succeeds** (~7-bit seeds) | **blocked** — 256-bit seeds, sub-128-bit rejected |
 | Cleartext seed/ψ★ in public artifact | **yes** | **no** — export/load reject forbidden fields |
 | Server trust-only / fail-open acceptance | **yes** | **removed** — fail-closed |
-| One-time key reuse | unprotected | **detected and rejected** under the same `one_time_key_id`; the same seed under a fresh key id is a new identity (see addendum) |
-| Replay / copied-key second-sign at block acceptance | n/a | **rejected** — durable replay ledger refuses a consumed `one_time_key_id`/leaf (per identity label, single host; see addendum) |
+| One-time key reuse | unprotected | **detected and rejected** — the key id, fingerprint and commitment table are all consumed, so a fresh key id over the same table is rejected too (see addendum) |
+| Replay / copied-key second-sign at block acceptance | n/a | **rejected** — durable replay ledger refuses a consumed key id, fingerprint or commitment table (single host; see addendum) |
 | Legacy SIGv2 accepted where OTS is required | n/a | **rejected** — no fallback on the OTS path |
 
 Each row is pinned by a test; the legacy rows assert the break still works
