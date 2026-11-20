@@ -94,3 +94,8 @@ pdfs/
 FUTURE.md
 tests/scientific/dataset_pro
 .tests/scientific/dataset_pro
+
+# -------------------------
+# Lean build output (lake)
+# -------------------------
+lean/.lake/

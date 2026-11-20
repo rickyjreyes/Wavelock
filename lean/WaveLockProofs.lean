@@ -10,3 +10,9 @@ import WaveLockProofs.SecurityGames
 import WaveLockProofs.ConcreteSecurity
 import WaveLockProofs.BytePadding
 import WaveLockProofs.MultiBlock
+import WaveLockProofs.OTSKeyConsumption
+import WaveLockProofs.LedgerLinearizability
+import WaveLockProofs.KeyReuseCounterexample
+import WaveLockProofs.OTSVerification
+import WaveLockProofs.AuthenticatedBlockBinding
+import WaveLockProofs.OTSConformance
