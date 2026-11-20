@@ -99,14 +99,32 @@ def default_ledger_path() -> str:
 def _ids_for(signature: dict) -> tuple[str, str]:
     """Return ``(one_time_key_id, leaf_id)`` for a signature.
 
-    ``leaf_id`` is the signature's ``public_key_fingerprint`` — the canonical,
-    collision-resistant identifier of the exact OTS public key (its full
-    ``pk_commitments`` / Merkle root / params / ψ-commitment), recomputed and
-    checked by ``verify_ots`` before this is ever trusted. Recording both means a
-    replay is caught whether the attacker reuses the key id or splices a new id
-    onto the same committed key material.
+    ``leaf_id`` is the signature's ``public_key_fingerprint``: the hash of the
+    canonical public-key payload, recomputed and checked by ``verify_ots`` before
+    this is ever trusted. Recording both catches reuse of either identity.
+
+    Neither identity is the key *material*. The fingerprint covers
+    ``one_time_key_id``, so the same ``pk_commitments``/``merkle_root`` under a
+    new key id has a new fingerprint and is a fresh identity here. A holder of
+    the secret seed can therefore reuse it under fresh key ids, and on the
+    standalone (non-block) path anyone can relabel an accepted signature this way.
+    Block transcripts bind the carried public key, which stops third-party
+    relabelling there. See ``docs/WAVELOCK_OTS_FORMAL_VERIFICATION.md``.
     """
     return str(signature.get("one_time_key_id")), str(signature.get("public_key_fingerprint"))
+
+
+def _identity_types_ok(signature: dict) -> bool:
+    """True when both replay identities are strings this ledger can record.
+
+    ``LEDGER_VERSION`` 1 records require a non-empty string key id (see
+    ``_scan_file_into_sets``). ``verify_ots`` compares key ids with ``!=`` and
+    does not type them, so without this check a ``""``, ``null`` or array key id
+    was accepted once and then left the ledger or chain unloadable.
+    """
+    kid = signature.get("one_time_key_id")
+    leaf = signature.get("public_key_fingerprint")
+    return isinstance(kid, str) and kid != "" and isinstance(leaf, str)
 
 
 class PersistentOTSReplayLedger:
@@ -245,6 +263,8 @@ class PersistentOTSReplayLedger:
           accepted here);
         * any ``verify_ots`` failure (strict canonical / Merkle / fingerprint
           checks);
+        * a ``one_time_key_id`` that is not a non-empty string, or a
+          fingerprint that is not a string (records must stay loadable);
         * a replayed/duplicate ``one_time_key_id`` or leaf id;
         * a durable-write failure or any other exception.
         """
@@ -257,6 +277,9 @@ class PersistentOTSReplayLedger:
                 return False
             # Pure cryptographic verification (no state) first (no lock needed).
             if not verify_ots(public_key, message, signature):
+                return False
+            # Only identities this ledger can durably record and reload.
+            if not _identity_types_ok(signature):
                 return False
             kid, leaf = _ids_for(signature)
             transcript = signature_transcript(signature)
@@ -292,10 +315,12 @@ class PersistentOTSReplayLedger:
         if not isinstance(signature, dict):
             return
         kid, leaf = _ids_for(signature)
+        # Skip only absent fields. Comparing str(...) with "None" also dropped a
+        # real key id spelled "None", so that identity was not reconstructed.
         with self._lock:
-            if kid != "None":
+            if signature.get("one_time_key_id") is not None:
                 self._key_ids.add(kid)
-            if leaf != "None":
+            if signature.get("public_key_fingerprint") is not None:
                 self._leaf_ids.add(leaf)
 
 
