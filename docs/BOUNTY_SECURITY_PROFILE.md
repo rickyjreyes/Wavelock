@@ -1,10 +1,12 @@
 # WaveLock bounty security profile
 
-Status: proposed on `hardening/bounty-contract-v020`, based on unchanged tag
-`v0.2.0` (`9430442ae93e26c192d9be1f5ee9137369f5df37`). This defines the
-commitment implementation under review; it does not declare the full bounty
-ready. [The enforcement matrix](../audit/artifacts/bounty_contract_matrix.json)
-records missing attestation, drift, and full storage-tamper controls as FAIL.
+Status: implemented by merged PR #22. The algorithm, encoding and reference
+vectors below are unchanged by Public Bounty v1 finalization; the stable
+`v0.2.0` tag remains `9430442ae93e26c192d9be1f5ee9137369f5df37`.
+[Public Bounty v1](../audit/PUBLIC_BOUNTY_V1.md) defines current public target
+eligibility. [The earlier enforcement matrix](../audit/artifacts/bounty_contract_matrix.json)
+is a historical full-research inventory; its broader attestation, drift and
+hostile-storage entries are not offered Public Bounty v1 properties.
 
 ## Normative API and inputs
 
