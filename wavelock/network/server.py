@@ -231,6 +231,7 @@ _strict_verify_curvature = _verify_curvature
 from wavelock.crypto.wavelock_ots import (
     SCHEME as OTS_SCHEME,
     OTSReplayLedger,
+    WaveLockOTSError,
     verify_ots as _verify_ots,
 )
 from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger, OTSLedgerError
@@ -325,13 +326,28 @@ def _reconstruct_consumed_ots(blocks, ledger) -> None:
     Fail-closed: a block that STRUCTURALLY claims to be OTS (``block_type ==
     "OTS"`` or ``meta.auth_scheme == WaveLock-OTS-v1``) but carries malformed or
     missing OTS auth raises :class:`OTSLedgerError` rather than being skipped — a
-    silently-skipped OTS block would reopen the replay hole this closes.
+    silently-skipped OTS block would reopen the replay hole this closes. The
+    same holds when its public key's commitment table cannot be identified
+    (``ots_material_id``): that identity must be reconstructed too.
     """
     for b in blocks:
         auth = _extract_ots_auth(b)
         sig = auth.get("signature") if isinstance(auth, dict) else None
         if _is_well_formed_ots_signature(sig):
-            ledger.index_signature(sig)
+            public_key = auth.get("public_key")
+            try:
+                if not isinstance(public_key, dict):
+                    raise WaveLockOTSError("missing public key")
+                ledger.index_signature(sig, public_key=public_key)
+            except WaveLockOTSError as error:
+                if _block_claims_ots(b):
+                    raise OTSLedgerError(
+                        f"accepted OTS block #{getattr(b, 'index', '?')} "
+                        f"({str(getattr(b, 'hash', ''))[:12]}...) has no identifiable "
+                        "commitment table; refusing to reconstruct replay state "
+                        "(fail closed)."
+                    ) from error
+                ledger.index_signature(sig)  # never claimed OTS: labels only
         elif _block_claims_ots(b):
             raise OTSLedgerError(
                 f"accepted OTS block #{getattr(b, 'index', '?')} "
@@ -392,12 +408,13 @@ def verify_ots_payload(public_key: dict, message, signature: dict,
     """Fail-closed WaveLock-OTS verification + duplicate-key rejection.
 
     Standalone entry point (not block-shaped). Returns True only if the
-    signature verifies AND its one_time_key_id has not been consumed before.
-    Rejects (False) on:
+    signature verifies AND none of its key id, fingerprint or commitment table
+    has been consumed before. Rejects (False) on:
 
     * any non-WaveLock-OTS scheme (legacy SIGv2 is never accepted here);
     * any verification failure (strict canonical checks in ``verify_ots``);
-    * a replayed/duplicate one_time_key_id;
+    * a replayed/duplicate one_time_key_id, fingerprint, or commitment table
+      (so relabelling a consumed signature with a new key id is rejected);
     * any exception (fail closed).
     """
     try:

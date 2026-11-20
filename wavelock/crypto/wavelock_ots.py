@@ -397,6 +397,35 @@ def public_key_fingerprint(public_key: dict) -> str:
     return _h(_DOM_PK_FINGERPRINT, _canon(payload)).hex()
 
 
+def ots_material_id(public_key: dict) -> str:
+    """Identifier of a public key's one-time signing commitments (hex).
+
+    The Merkle root recomputed from ``pk_commitments``; the key's ``merkle_root``
+    field must equal it. It depends only on the decoded commitment bytes, so a
+    new ``one_time_key_id``, ``psi_commitment`` or fingerprint, or another hex
+    spelling of a commitment, leaves it unchanged. Replay ledgers consume it so
+    that one commitment table authorizes at most one accepted signature.
+
+    Not ``Block.merkle_root``, which is the tree over a block's messages.
+    Raises :class:`WaveLockOTSError` if the table is malformed or the stored
+    root does not match it.
+    """
+    if not isinstance(public_key, dict):
+        raise WaveLockOTSError("public key must be a dict")
+    commitments = public_key.get("pk_commitments")
+    if not isinstance(commitments, list) or len(commitments) != _N_BITS:
+        raise WaveLockOTSError(
+            f"pk_commitments must be a list of {_N_BITS} [half0, half1] rows"
+        )
+    try:
+        root = _merkle_root_from_commitments(commitments).hex()
+    except (TypeError, ValueError) as error:
+        raise WaveLockOTSError("malformed pk_commitments") from error
+    if not _ct_eq(root, str(public_key.get("merkle_root"))):
+        raise WaveLockOTSError("merkle_root does not match pk_commitments")
+    return root
+
+
 def signature_transcript(signature: dict) -> str:
     """Deterministic transcript hash over the canonical signature (hex).
 
@@ -844,10 +873,15 @@ class OTSReplayLedger:
 
     This is a reference/model object — it is NOT yet wired into block/consensus
     acceptance (see docs/WAVELOCK_MERKLE_ROADMAP.md and the report).
+
+    It consumes the key id, the fingerprint and the commitment table
+    (:func:`ots_material_id`), like the durable ledger.
     """
 
     def __init__(self):
         self._consumed_key_ids: set[str] = set()
+        self._consumed_fingerprints: set[str] = set()
+        self._consumed_materials: set[str] = set()
 
     def is_consumed(self, one_time_key_id: str) -> bool:
         return str(one_time_key_id) in self._consumed_key_ids
@@ -855,15 +889,20 @@ class OTSReplayLedger:
     def accept(self, public_key: dict, message, signature: dict) -> bool:
         """Verify then consume. Returns True only on first valid use.
 
-        Rejects (returns False) if the signature is invalid OR if its
-        ``one_time_key_id`` has already been consumed (replay/reuse).
+        Rejects (returns False) if the signature is invalid OR if its key id,
+        fingerprint or commitment table has already been consumed.
         """
         if not verify_ots(public_key, message, signature):
             return False
         kid = str(signature.get("one_time_key_id"))
-        if kid in self._consumed_key_ids:
+        fingerprint = str(signature.get("public_key_fingerprint"))
+        material = ots_material_id(public_key)
+        if (kid in self._consumed_key_ids or fingerprint in self._consumed_fingerprints
+                or material in self._consumed_materials):
             return False
         self._consumed_key_ids.add(kid)
+        self._consumed_fingerprints.add(fingerprint)
+        self._consumed_materials.add(material)
         return True
 
 
@@ -1031,6 +1070,7 @@ __all__ = [
     "evolve_psi_star",
     "psi_commitment",
     "public_key_fingerprint",
+    "ots_material_id",
     "signature_transcript",
     "generate_ots_keypair",
     "sign_ots",

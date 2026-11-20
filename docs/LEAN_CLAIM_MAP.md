@@ -27,7 +27,13 @@
 | Normative reference vectors (implementation regression) | None | Byte-exact Python model and certificate | **Open Lean obligation** |
 | One-wayness, second-preimage resistance, collision resistance | None | Security parameter family, distribution and attacker model, explicit reduction or quantitative bound | **Open research questions** |
 | Sequential work lower bound / no shortcut | None | Restricted computational cost model or complexity assumption | **Open research question** |
-| OTS unforgeability and replay protection | None | Full stateful verifier and adversary oracle / key-security model | **Open research question** |
+| WaveLock-OTS same-host single use: no accepted transition consumes an already-consumed `one_time_key_id`, fingerprint or commitment table, any interleaving, crashes, restarts, side-file loss (theorem) | `inv_run`, `chain_single_use`, `consume_fresh`, `at_most_one_acceptance`, `wavelock_ots_single_use`, `wavelock_ots_material_single_use`, `wavelock_ots_fresh_triple` | Trusted durable single-host store; `AcceptSound`; `LosslessRecon` ∨ no side-file loss (both proved for the Python instance) | Formalized; see [OTS formal verification](WAVELOCK_OTS_FORMAL_VERIFICATION.md) |
+| One commitment table authorises at most one accepted block (theorem) | `distinct_material_distinct_tables`, `materialId_eq_of_decode_eq`, `relabelled_replays_keep_material`, `psi_relabel_verifies` | None for this direction; the converse needs Merkle-root collision resistance (`material_binding`) | Formalized; model ↔ `ots_material_id` by conformance traces |
+| OTS acceptance never makes the node's own files unloadable (liveness theorem) | `loadable_run`, `wavelock_ots_no_self_dos` | No torn writes; `RecordAdmissible`, `ReconTotal` | Formalized; false at `b310ea5` (`legacy_*_key_id_*`), corrected |
+| `verify_ots` fails closed and binds replay identities to the verified key (theorem) | `verifyOTS_sound`, `verifyOTS_identity`, `fingerprint_binding` | Opaque hashes; uniqueness only modulo an explicit fingerprint `Collision` | Formalized |
+| OTS block signature binds the received block (theorem) | `verifyOTSBlock_binds`, `block_binding`, `block_relabel_needs_second_message` | Opaque transcript digest; conclusions are disjunctions with `Collision` / `TableUsedTwice` | Formalized, conditional |
+| Global one-time use; rollback or cross-host safety; secret values recommitted under a new table (counterexample / boundary) | `rollback_reaccepts_identity`, `independent_nodes_both_accept`; PR #47 `copied_key_material_accepted_twice` (closed by `copied_key_material_rejected`) | — | **Counterexamples**; not provided by the implementation |
+| OTS unforgeability (EUF-CMA, one-time) | None | Adversary oracle model, explicit reduction to SHAKE256 properties | **Open research question** |
 
 ## CC-Core constant mismatch correction, October 29, 2026
 
