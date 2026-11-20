@@ -13,7 +13,8 @@ from typing import Optional
 
 from wavelock.chain.Block import Block
 from wavelock.chain.WaveLock import _canonical_json
-from wavelock.crypto.wavelock_ots import SCHEME as OTS_SCHEME, verify_ots
+from wavelock.crypto import wavelock_ots as _ots
+from wavelock.crypto.wavelock_ots import SCHEME as OTS_SCHEME, WaveLockOTSError, verify_ots
 
 #: Bumped if the canonical OTS block-signing transcript shape changes.
 OTS_BLOCK_TRANSCRIPT_VERSION = 1
@@ -213,10 +214,15 @@ def verify_block_integrity(block: Block, *, require_pow: bool = True) -> bool:
 
 
 def verify_ots_chain(blocks, *, expected_tip=None) -> bool:
-    """Verify linkage, hashes, public signatures and OTS uniqueness, without I/O."""
+    """Verify linkage, hashes, public signatures and OTS uniqueness, without I/O.
+
+    Uniqueness covers the key id, the fingerprint and the commitment table
+    (``ots_material_id`` of the carried public key), so one table cannot
+    authorize two blocks under different labels.
+    """
     previous = "0" * 64
     newest_header = 1
-    keys, leaves = set(), set()
+    keys, leaves, materials = set(), set(), set()
     for index, block in enumerate(blocks, 1):
         if (block.index != index or block.previous_hash != previous
                 or not verify_block_integrity(block) or not verify_ots_block(block)):
@@ -224,11 +230,17 @@ def verify_ots_chain(blocks, *, expected_tip=None) -> bool:
         if block.header_version < newest_header:
             return False
         newest_header = block.header_version
-        signature = block.meta["ots_auth"]["signature"]
+        auth = block.meta["ots_auth"]
+        signature = auth["signature"]
         kid, leaf = signature["one_time_key_id"], signature["public_key_fingerprint"]
-        if kid in keys or leaf in leaves:
+        try:
+            material = _ots.ots_material_id(auth["public_key"])
+        except WaveLockOTSError:
+            return False
+        if kid in keys or leaf in leaves or material in materials:
             return False
         keys.add(kid)
         leaves.add(leaf)
+        materials.add(material)
         previous = block.hash
     return expected_tip is None or (isinstance(expected_tip, str) and hmac.compare_digest(previous, expected_tip))

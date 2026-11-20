@@ -82,7 +82,8 @@ def _mine(args):
     tip = server.CHAIN.tip()
     if block.previous_hash != (tip.hash if tip else "0" * 64):
         raise ValueError("signed parent is stale; prepare a new block with a fresh one-time key")
-    if server.CONSENSUS_OTS_LEDGER.is_consumed(block.meta["ots_auth"]["signature"]):
+    auth = block.meta["ots_auth"]
+    if server.CONSENSUS_OTS_LEDGER.is_consumed(auth["signature"], public_key=auth["public_key"]):
         raise ValueError("one-time identity already accepted")
     # The target and mining fields are excluded by transcript version 1.
     # Mine to both the declared difficulty and the local acceptance target.

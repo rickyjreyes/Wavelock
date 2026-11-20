@@ -6,8 +6,10 @@ proves with ``decide`` that the Lean model of ``OTSKeyConsumption`` produces eac
 outcome. This module replays every trace against the real implementation: real WaveLock-OTS
 keys and signed blocks, ``server.try_accept_block_dict``, the durable replay ledger and chain
 files, several ledger/chain instances standing for processes, and failures injected at the
-modelled write boundaries. ``spec: legacy`` traces restore the two ledger functions of
-``b310ea5`` to reproduce the defects corrected in this change.
+modelled write boundaries. Each trace names a revision: ``current`` runs the code as is;
+``pr47`` makes every commitment table look fresh (labels-only consumption, as before the
+key-material change); ``b310ea5`` additionally restores the two ledger functions of
+``master`` before this work, to reproduce the defects PR #47 corrected.
 
 Agreement on these finite traces is conformance evidence, not a refinement proof.
 """
@@ -17,7 +19,9 @@ import contextlib
 import copy
 import json
 import os
+import secrets
 import time
+import types
 
 import pytest
 
@@ -45,8 +49,8 @@ class SimulatedCrash(BaseException):
     """Process death at a modelled point. Not an ``Exception``: no handler may absorb it."""
 
 
-def _legacy_index_signature(self, signature):
-    """``PersistentOTSReplayLedger.index_signature`` at ``b310ea5``."""
+def _legacy_index_signature(self, signature, public_key=None):
+    """``PersistentOTSReplayLedger.index_signature`` at ``b310ea5`` (labels only)."""
     if not isinstance(signature, dict):
         return
     kid, leaf = ots_ledger._ids_for(signature)
@@ -67,11 +71,45 @@ def _kid_value(spec):
     return list(spec["arr"])
 
 
-def _relabel(keypair, kid):
+def _relabel(keypair, kid, psi=None):
+    """The same commitment table under key id ``kid`` (and ψ-commitment ``psi``).
+
+    The secret key keeps the true ψ-commitment, which ``sign_ots`` re-derives."""
     pk, sk = copy.deepcopy(keypair["public_key"]), copy.deepcopy(keypair["secret_key"])
     pk["one_time_key_id"] = sk["one_time_key_id"] = kid
+    if psi is not None:
+        pk["psi_commitment"] = psi
     pk["public_key_fingerprint"] = sk["public_key_fingerprint"] = ots.public_key_fingerprint(pk)
     return pk, sk
+
+
+def _holder_block(pk, sk, body, index, prev):
+    """A block signed by the seed holder for a public key whose ψ-commitment was relabelled:
+    sign with the true derivation, then relabel the signature's ψ field (verify_ots accepts)."""
+    timestamp = str(time.time())
+    header = {"version": 2, "index": index, "timestamp": timestamp, "difficulty": 0}
+    draft = _manual_block(index, prev, body, {"block_header": header, "auth_scheme": ots.SCHEME,
+                                              "ots_auth": {"public_key": pk}}, timestamp)
+    digest = canonical_ots_block_digest(draft)
+    signature = ots.sign_ots(sk, digest, allow_reuse=True)
+    signature["psi_commitment"] = pk["psi_commitment"]
+    meta = build_ots_block_meta(pk, digest, signature)
+    meta["block_header"] = header
+    return _manual_block(index, prev, body, meta, timestamp)
+
+
+def _payload_relabel(base, kid, hex_case):
+    """A third party relabels a consumed signature: new key id, optionally another hex spelling
+    of an unselected commitment half, and the fingerprint that recomputes. No secret is used."""
+    auth = copy.deepcopy(base.meta["ots_auth"])
+    pk, signature = auth["public_key"], auth["signature"]
+    pk["one_time_key_id"] = signature["one_time_key_id"] = kid
+    if hex_case:
+        bit = ots._digest_bits(bytes.fromhex(signature["message_digest"]))[0]
+        pk["pk_commitments"][0][1 - bit] = pk["pk_commitments"][0][1 - bit].upper()
+    pk["public_key_fingerprint"] = signature["public_key_fingerprint"] = ots.public_key_fingerprint(pk)
+    assert ots.verify_ots(pk, auth["message"], signature)
+    return types.SimpleNamespace(meta={"ots_auth": auth}, hash=f"payload:{kid}")
 
 
 def _manual_block(index, prev, messages, meta, timestamp):
@@ -83,6 +121,8 @@ def _build_block(spec, pk, sk, label):
     index, prev = spec["index"], spec["prev_hash"]
     body = [spec.get("body", f"ots: {label}")]
     tamper = spec.get("tamper")
+    if spec.get("psi") is not None and tamper is None:
+        return _holder_block(pk, sk, body, index, prev)
     if tamper in (None, "body", "slice", "legacy"):
         block = build_signed_ots_block(sk, pk, body, index=index, previous_hash=prev,
                                        difficulty=0, allow_reuse=True)
@@ -118,11 +158,24 @@ def _build_block(spec, pk, sk, label):
 def build_blocks(trace):
     keys, built = {}, {}
     for label, spec in trace["blocks"].items():  # parents precede children
+        if "relabel_of" in spec:
+            built[label] = _payload_relabel(built[spec["relabel_of"]], _kid_value(spec["kid"]),
+                                            spec.get("hex_case", False))
+            continue
         keypair = keys.setdefault(spec["key"], ots.generate_ots_keypair())
-        pk, sk = _relabel(keypair, _kid_value(spec["kid"]))
+        pk, sk = _relabel(keypair, _kid_value(spec["kid"]), spec.get("psi"))
         prev = "0" * 64 if spec["parent"] is None else built[spec["parent"]].hash
         built[label] = _build_block({**spec, "prev_hash": prev}, pk, sk, label)
     return built
+
+
+def _identity(block):
+    """(key id, fingerprint, material id) as the ledger records them; computed with the real
+    ``ots_material_id`` before any revision emulation is installed."""
+    auth = block.meta["ots_auth"]
+    signature = auth["signature"]
+    return (str(signature["one_time_key_id"]), str(signature["public_key_fingerprint"]),
+            ots.ots_material_id(auth["public_key"]))
 
 
 def _logical_records(path):
@@ -143,14 +196,19 @@ def _logical_records(path):
 
 
 class _Discard:
-    def index_signature(self, signature):
+    def index_signature(self, signature, public_key=None):
         pass
+
+
+def _fresh_material(public_key):
+    """Labels-only consumption: every commitment table looks unseen (revisions before this change)."""
+    return secrets.token_hex(32)
 
 
 class Host:
     """One host: shared replay/chain files and several processes (ledger + chain objects)."""
 
-    def __init__(self, tmp_path, monkeypatch, legacy):
+    def __init__(self, tmp_path, monkeypatch, revision):
         self.dir = tmp_path / "ledger"
         self.dir.mkdir()
         self.replay_path = str(self.dir / "ots_replay.jsonl")
@@ -159,7 +217,9 @@ class Host:
         monkeypatch.setattr(chain_utils, "LEDGER_DIR", self.dir)
         monkeypatch.setattr(chain_utils, "LEDGER_FILE", self.chain_file)
         monkeypatch.setattr(server, "broadcast_inv", lambda h: None)
-        if legacy:
+        if revision in ("b310ea5", "pr47"):
+            monkeypatch.setattr(ots, "ots_material_id", _fresh_material)
+        if revision == "b310ea5":
             monkeypatch.setattr(PersistentOTSReplayLedger, "index_signature", _legacy_index_signature)
             monkeypatch.setattr(ots_ledger, "_identity_types_ok", lambda signature: True)
         self.cfg = Config()
@@ -197,16 +257,17 @@ class Host:
     def _record_fault(self, ledger, kind):
         real = ledger._append
 
-        def append(kid, leaf, transcript):
+        def append(kid, leaf, material, transcript):
             line = json.dumps({"v": ots_ledger.LEDGER_VERSION, "one_time_key_id": kid,
-                               "leaf_id": leaf, "transcript": transcript},
+                               "leaf_id": leaf, "material_id": material,
+                               "transcript": transcript},
                               separators=(",", ":"), sort_keys=True)
             if kind == "fail_before_write":
                 raise OSError("injected: nothing written")
             if kind == "fail_after_write":
                 with pytest.MonkeyPatch.context() as m:
                     m.setattr(ots_ledger, "fsync_directory", _raise_os_error)
-                    real(kid, leaf, transcript)
+                    real(kid, leaf, material, transcript)
             with open(self.replay_path, "a", encoding="utf-8") as fh:
                 fh.write(line[: len(line) // 2] if kind == "crash_torn" else line)
             raise SimulatedCrash(kind)
@@ -285,11 +346,6 @@ class Host:
             return False
 
 
-def _identity(block):
-    signature = block.meta["ots_auth"]["signature"]
-    return str(signature["one_time_key_id"]), str(signature["public_key_fingerprint"])
-
-
 def test_generated_lean_traces_are_committed():
     assert OUT.read_text(encoding="utf-8") == render(), \
         "run: python scripts/gen_ots_conformance.py --write"
@@ -298,7 +354,9 @@ def test_generated_lean_traces_are_committed():
 @pytest.mark.parametrize("trace", TRACES, ids=[t["name"] for t in TRACES])
 def test_python_matches_lean_trace(trace, tmp_path, monkeypatch):
     blocks = build_blocks(trace)
-    host = Host(tmp_path, monkeypatch, legacy=trace["spec"] == "legacy")
+    identities = {label: _identity(block) for label, block in blocks.items()
+                  if not trace["blocks"][label].get("tamper")}
+    host = Host(tmp_path, monkeypatch, trace["spec"])
     accepted = []
     for event in trace["events"]:
         kind = event[0]
@@ -321,10 +379,12 @@ def test_python_matches_lean_trace(trace, tmp_path, monkeypatch):
     expected = trace["expected"]
     by_hash = {b.hash: label for label, b in blocks.items()}
     chain = [by_hash[record["hash"]] for record in _logical_records(str(host.chain_file))]
-    replay = [(r["one_time_key_id"], r["leaf_id"]) for r in _logical_records(host.replay_path)]
+    width = 3 if trace["spec"] == "current" else 2  # earlier revisions consume labels only
+    replay = [(r["one_time_key_id"], r["leaf_id"], r.get("material_id"))[:width]
+              for r in _logical_records(host.replay_path)]
     assert accepted == expected["accepted"]
     assert chain == expected["chain"]
-    assert replay == [_identity(blocks[label]) for label in expected["replay"]]
+    assert replay == [identities[label][:width] for label in expected["replay"]]
     assert host.chain_loads() is expected["chain_loads"]
     assert host.replay_loads() is expected["replay_loads"]
 
@@ -334,25 +394,37 @@ def _raise_os_error(*args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# Boundaries proved in Lean that are present behaviour (documented, not corrected)
+# Relabelling and key-material reuse (Lean: OTSVerification, KeyReuseCounterexample)
 # ---------------------------------------------------------------------------
 
-def _payload_relabel(pk, sig, kid):
+def _relabel_kid(pk, sig, kid):
     pk2 = dict(pk, one_time_key_id=kid)
     pk2["public_key_fingerprint"] = ots.public_key_fingerprint(pk2)
     sig2 = dict(sig, one_time_key_id=kid, public_key_fingerprint=pk2["public_key_fingerprint"])
     return pk2, sig2
 
 
-def test_boundary_payload_path_relabelled_replay_is_accepted(tmp_path):
-    """Lean ``kid_relabel_verifies``: on the standalone path anyone can relabel."""
+def test_payload_path_relabelled_replay_rejected(tmp_path):
+    """Lean ``relabelled_replays_keep_material``: the relabelled signature still verifies, but it
+    carries the consumed commitment table, so the ledger rejects it."""
     kp = ots.generate_ots_keypair()
     sig = ots.sign_ots(kp["secret_key"], "pay alice 5")
     ledger = PersistentOTSReplayLedger(path=str(tmp_path / "replay.jsonl"))
     assert server.verify_ots_payload(kp["public_key"], "pay alice 5", sig, ledger=ledger)
-    assert not server.verify_ots_payload(kp["public_key"], "pay alice 5", sig, ledger=ledger)
-    pk2, sig2 = _payload_relabel(kp["public_key"], sig, "observer-chosen-id")
-    assert sig2["revealed_slices"] == sig["revealed_slices"]
+    pk2, sig2 = _relabel_kid(kp["public_key"], sig, "observer-chosen-id")
+    assert ots.verify_ots(pk2, "pay alice 5", sig2)
+    assert ots.ots_material_id(pk2) == ots.ots_material_id(kp["public_key"])
+    assert not server.verify_ots_payload(pk2, "pay alice 5", sig2, ledger=ledger)
+
+
+def test_pr47_payload_relabel_reproduction(tmp_path, monkeypatch):
+    """PR #47 boundary, reproduced by making every table look fresh (labels-only consumption)."""
+    monkeypatch.setattr(ots, "ots_material_id", _fresh_material)
+    kp = ots.generate_ots_keypair()
+    sig = ots.sign_ots(kp["secret_key"], "pay alice 5")
+    ledger = PersistentOTSReplayLedger(path=str(tmp_path / "replay.jsonl"))
+    assert server.verify_ots_payload(kp["public_key"], "pay alice 5", sig, ledger=ledger)
+    pk2, sig2 = _relabel_kid(kp["public_key"], sig, "observer-chosen-id")
     assert server.verify_ots_payload(pk2, "pay alice 5", sig2, ledger=ledger)
 
 
@@ -361,7 +433,7 @@ def test_block_path_relabelling_breaks_the_transcript():
     kp = ots.generate_ots_keypair()
     block = build_signed_ots_block(kp["secret_key"], kp["public_key"], ["x"], difficulty=0)
     meta = copy.deepcopy(block.meta)
-    pk2, sig2 = _payload_relabel(meta["ots_auth"]["public_key"], meta["ots_auth"]["signature"], "spliced")
+    pk2, sig2 = _relabel_kid(meta["ots_auth"]["public_key"], meta["ots_auth"]["signature"], "spliced")
     meta["ots_auth"].update(public_key=pk2, signature=sig2)
     relabelled = _manual_block(block.index, block.previous_hash, block.messages, meta, block.timestamp)
     meta["ots_auth"]["message"] = canonical_ots_block_digest(relabelled)
@@ -404,5 +476,10 @@ def test_lean_modules_present_and_imported():
     consumption = (root / "WaveLockProofs" / "OTSKeyConsumption.lean").read_text(encoding="utf-8")
     for theorem in ("inv_run", "chain_single_use", "consume_fresh", "at_most_one_acceptance",
                     "restart_recovers", "loadable_run", "wavelock_ots_chain_single_use",
-                    "wavelock_ots_no_self_dos"):
+                    "wavelock_ots_no_self_dos", "wavelock_ots_material_single_use",
+                    "wavelock_ots_fresh_triple", "wavelock_ots_records_triple"):
         assert f"theorem {theorem}" in consumption
+    verification = (root / "WaveLockProofs" / "OTSVerification.lean").read_text(encoding="utf-8")
+    for theorem in ("materialId_eq_of_decode_eq", "relabelled_replays_keep_material",
+                    "psi_relabel_verifies", "distinct_material_distinct_tables"):
+        assert f"theorem {theorem}" in verification

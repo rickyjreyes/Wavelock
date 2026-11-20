@@ -106,6 +106,13 @@ structure OTSCrypto (Msg : Type) where
   digest : String → Msg → Option String
   /-- `len(revealed) == 256` and each revealed slice hashes to the committed half it selects -/
   slicesOK : String → String → JVal → JVal → Bool
+  /-- `bytes.fromhex` of every half of a 256-row table of `[half0, half1]` rows; `none` when a
+  row or half is malformed.  Bytes are lists of byte values. -/
+  decodeTable : JVal → Option (List (List ℕ × List ℕ))
+  /-- `_merkle_root(leaves).hex()` over the decoded leaves (domain-separated SHAKE256) -/
+  rootOf : List (List ℕ × List ℕ) → String
+  /-- `_merkle_root_from_commitments` decodes the table, then hashes the decoded bytes -/
+  merkleRoot_eq : ∀ x, merkleRoot x = (decodeTable x).map rootOf
 
 section Verify
 variable {Msg : Type} (E : PyEnv) (C : OTSCrypto Msg)
@@ -378,6 +385,154 @@ checked separately. -/
 theorem version_check_accepts_noncanonical :
     (JVal.bool true).eqInt 1 = true ∧ (JVal.num 1).eqInt 1 = true ∧ (JVal.str "1").eqInt 1 = false := by
   decide
+
+
+/-! ## The ψ-commitment is a free label too -/
+
+theorem field_set_set_other (o : JObj) {k₁ k₂ f : String} (v₁ v₂ : JVal) (h1 : f ≠ k₁)
+    (h2 : f ≠ k₂) : JObj.field (JObj.set (JObj.set o k₁ v₁) k₂ v₂) f = JObj.field o f := by
+  rw [JObj.field_set_ne _ _ h2, JObj.field_set_ne _ _ h1]
+
+/-- The fingerprint that recomputes after relabelling `pk` with ψ-commitment `v`. -/
+def relabelPsiFP (C : OTSCrypto Msg) (pk : JObj) (v : JVal) : String :=
+  C.fingerprint (payloadOf (JObj.set pk "psi_commitment" v))
+
+def relabelPsiPK (C : OTSCrypto Msg) (pk : JObj) (v : JVal) : JObj :=
+  JObj.set (JObj.set pk "psi_commitment" v) "public_key_fingerprint" (.str (relabelPsiFP C pk v))
+
+def relabelPsiSig (C : OTSCrypto Msg) (pk sig : JObj) (v : JVal) : JObj :=
+  JObj.set (JObj.set sig "psi_commitment" v) "public_key_fingerprint" (.str (relabelPsiFP C pk v))
+
+/-- **The ψ-commitment is not bound to the key material either.**  `verify_ots` only compares the
+signature's ψ-commitment with the key's; the slices are opened under `params_hash`.  Any accepted
+`(pk, m, sig)` relabelled with an arbitrary ψ-commitment (and the fingerprint that recomputes)
+verifies, with the same revealed slices.  So an identifier that hashes the ψ-commitment
+(Candidate C of the material analysis) can be refreshed by relabelling. -/
+theorem psi_relabel_verifies {pk sig : JObj} {m : Msg} (v : JVal)
+    (h : verifyOTS E C (.obj pk) m (.obj sig) = true) :
+    verifyOTS E C (.obj (relabelPsiPK C pk v)) m (.obj (relabelPsiSig C pk sig v)) = true := by
+  obtain ⟨_, _, hpk, hsig, hfields, hsfields, hscheme, hsscheme, hver, hsver, halg, hsalg, hshape,
+    hroot, -, hparams, hkid, -, hsph, -, d, hd, hmd, hsl⟩ := verifyOTS_sound E C h
+  cases hpk; cases hsig
+  have hppk : "psi_commitment" ∈ JObj.keys pk :=
+    mem_keys_of_hasExactly hfields (by simp [PUBLIC_KEY_FIELDS])
+  have hfpk : "public_key_fingerprint" ∈ JObj.keys (JObj.set pk "psi_commitment" v) := by
+    rw [JObj.keys_set]; exact mem_keys_of_hasExactly hfields (by simp [PUBLIC_KEY_FIELDS])
+  have hpsig : "psi_commitment" ∈ JObj.keys sig :=
+    mem_keys_of_hasExactly hsfields (by simp [SIGNATURE_FIELDS])
+  have hfsig : "public_key_fingerprint" ∈ JObj.keys (JObj.set sig "psi_commitment" v) := by
+    rw [JObj.keys_set]; exact mem_keys_of_hasExactly hsfields (by simp [SIGNATURE_FIELDS])
+  have hpkpsi : JObj.field (relabelPsiPK C pk v) "psi_commitment" = v := by
+    simp only [relabelPsiPK]; rw [JObj.field_set_ne _ _ (by decide)]; exact JObj.field_set_self _ _ hppk
+  have hsigpsi : JObj.field (relabelPsiSig C pk sig v) "psi_commitment" = v := by
+    simp only [relabelPsiSig]; rw [JObj.field_set_ne _ _ (by decide)]
+    exact JObj.field_set_self _ _ hpsig
+  have hpkfp : JObj.field (relabelPsiPK C pk v) "public_key_fingerprint" =
+      .str (relabelPsiFP C pk v) := by
+    simp only [relabelPsiPK]; exact JObj.field_set_self _ _ hfpk
+  have hsigfp : JObj.field (relabelPsiSig C pk sig v) "public_key_fingerprint" =
+      .str (relabelPsiFP C pk v) := by
+    simp only [relabelPsiSig]; exact JObj.field_set_self _ _ hfsig
+  have hpl : payloadOf (relabelPsiPK C pk v) = payloadOf (JObj.set pk "psi_commitment" v) := by
+    simp only [payloadOf, relabelPsiPK]
+    congr 1
+    apply List.map_congr_left
+    intro f hf
+    have : f ≠ "public_key_fingerprint" := by
+      intro h; subst h; simp [PAYLOAD_FIELDS] at hf
+    rw [JObj.field_set_ne _ _ this]
+  have hexpk : JObj.hasExactly (relabelPsiPK C pk v) PUBLIC_KEY_FIELDS = true := by
+    simp only [relabelPsiPK, JObj.hasExactly_set]; exact hfields
+  have hexsig : JObj.hasExactly (relabelPsiSig C pk sig v) SIGNATURE_FIELDS = true := by
+    simp only [relabelPsiSig, JObj.hasExactly_set]; exact hsfields
+  have opk : ∀ f, f ≠ "psi_commitment" → f ≠ "public_key_fingerprint" →
+      JObj.field (relabelPsiPK C pk v) f = JObj.field pk f := fun f h1 h2 =>
+    field_set_set_other pk _ _ h1 h2
+  have osig : ∀ f, f ≠ "psi_commitment" → f ≠ "public_key_fingerprint" →
+      JObj.field (relabelPsiSig C pk sig v) f = JObj.field sig f := fun f h1 h2 =>
+    field_set_set_other sig _ _ h1 h2
+  simp only [verifyOTS, pkCanonical, sigChecks, msgOK, Bool.and_eq_true, beq_iff_eq,
+    hexpk, hexsig, hpkpsi, hsigpsi, hpkfp, hsigfp, hpl, E.render_str,
+    opk "scheme" (by decide) (by decide), opk "version" (by decide) (by decide),
+    opk "hash_alg" (by decide) (by decide), opk "pk_commitments" (by decide) (by decide),
+    opk "merkle_root" (by decide) (by decide), opk "params_hash" (by decide) (by decide),
+    opk "one_time_key_id" (by decide) (by decide),
+    osig "scheme" (by decide) (by decide), osig "version" (by decide) (by decide),
+    osig "hash_alg" (by decide) (by decide), osig "params_hash" (by decide) (by decide),
+    osig "one_time_key_id" (by decide) (by decide), osig "message_digest" (by decide) (by decide),
+    osig "revealed_slices" (by decide) (by decide), hd, relabelPsiFP]
+  simp [hscheme, hver, halg, hshape, hroot, hparams, hsscheme, hsver, hsalg, hkid, hsph, hmd, hsl]
+
+/-! ## Key-material identity: the commitment table's Merkle root -/
+
+/-- `ots_material_id(public_key)`: the Merkle root recomputed from the commitment table (not the
+block's message `merkle_root`). -/
+def materialId (C : OTSCrypto Msg) (pk : JObj) : Option String :=
+  C.merkleRoot (JObj.field pk "pk_commitments")
+
+/-- For a verified key the material id is the key's verified `merkle_root` field, i.e. what
+`ots_material_id` returns. -/
+theorem materialId_of_verified {pk sig : JObj} {m : Msg}
+    (h : verifyOTS E C (.obj pk) m (.obj sig) = true) :
+    materialId C pk = some (E.render (JObj.field pk "merkle_root")) := by
+  obtain ⟨_, _, hpk, _, -, -, -, -, -, -, -, -, -, hroot, -⟩ := verifyOTS_sound E C h
+  cases hpk; exact hroot
+
+/-- **Equality preservation (no assumption).**  Keys whose commitment tables decode to the same
+bytes have the same material id, whatever their key ids, ψ-commitments, fingerprints or hex
+spellings. -/
+theorem materialId_eq_of_decode_eq {pk₁ pk₂ : JObj}
+    (h : C.decodeTable (JObj.field pk₁ "pk_commitments") =
+      C.decodeTable (JObj.field pk₂ "pk_commitments")) :
+    materialId C pk₁ = materialId C pk₂ := by
+  simp only [materialId, C.merkleRoot_eq, h]
+
+/-- Relabelling the key id does not change the material id. -/
+theorem materialId_relabel_kid (pk : JObj) (k : JVal) :
+    materialId C (relabelPK C pk k) = materialId C pk := by
+  simp only [materialId, relabelPK]; rw [field_relabel_other pk k _ (by decide) (by decide)]
+
+/-- Relabelling the ψ-commitment does not change the material id. -/
+theorem materialId_relabel_psi (pk : JObj) (v : JVal) :
+    materialId C (relabelPsiPK C pk v) = materialId C pk := by
+  simp only [materialId, relabelPsiPK]; rw [field_set_set_other pk _ _ (by decide) (by decide)]
+
+/-- **A relabelled replay carries the consumed material.**  Every relabelling the verifier
+admits — key id (`kid_relabel_verifies`) or ψ-commitment (`psi_relabel_verifies`) — keeps the
+material id, so a ledger that consumes it rejects the relabelled signature. -/
+theorem relabelled_replays_keep_material {pk sig : JObj} {m : Msg} (k v : JVal)
+    (h : verifyOTS E C (.obj pk) m (.obj sig) = true) :
+    verifyOTS E C (.obj (relabelPK C pk k)) m (.obj (relabelSig C pk sig k)) = true ∧
+      materialId C (relabelPK C pk k) = materialId C pk ∧
+      verifyOTS E C (.obj (relabelPsiPK C pk v)) m (.obj (relabelPsiSig C pk sig v)) = true ∧
+      materialId C (relabelPsiPK C pk v) = materialId C pk :=
+  ⟨kid_relabel_verifies E C k h, materialId_relabel_kid C pk k, psi_relabel_verifies E C v h,
+    materialId_relabel_psi C pk v⟩
+
+/-- **Converse, as collision extraction.**  Equal material ids of two keys whose tables decode
+mean equal decoded tables, or an explicit collision of the commitment Merkle root. -/
+theorem material_binding {pk₁ pk₂ : JObj} {t₁ t₂ : List (List ℕ × List ℕ)}
+    (h₁ : C.decodeTable (JObj.field pk₁ "pk_commitments") = some t₁)
+    (h₂ : C.decodeTable (JObj.field pk₂ "pk_commitments") = some t₂)
+    (h : materialId C pk₁ = materialId C pk₂) : t₁ = t₂ ∨ Collision C.rootOf t₁ t₂ := by
+  simp only [materialId, C.merkleRoot_eq, h₁, h₂, Option.map_some, Option.some.injEq] at h
+  by_cases heq : t₁ = t₂
+  · exact Or.inl heq
+  · exact Or.inr ⟨heq, h⟩
+
+/-- **Material single use implies table single use.**  If the material ids of a list of keys are
+pairwise distinct (as `OTSKeyConsumption.wavelock_ots_material_single_use` guarantees for the
+keys of an accepted chain), their decoded commitment tables are pairwise distinct: no table
+authorises two accepted blocks.  No cryptographic assumption is used in this direction. -/
+theorem distinct_material_distinct_tables {ι : Type} (key : ι → JObj) (l : List ι)
+    (h : (l.map fun i => materialId C (key i)).Nodup) :
+    (l.map fun i => C.decodeTable (JObj.field (key i) "pk_commitments")).Nodup := by
+  have heq : (l.map fun i => materialId C (key i)) =
+      (l.map fun i => C.decodeTable (JObj.field (key i) "pk_commitments")).map
+        (Option.map C.rootOf) := by
+    simp [materialId, C.merkleRoot_eq, Function.comp_def]
+  rw [heq] at h
+  exact List.Nodup.of_map (Option.map C.rootOf) h
 
 end Theorems
 
