@@ -22,12 +22,15 @@ open Lean Elab Command
 
 namespace WaveLockAudit
 
-/-- Every Lean module of the WaveLock-OTS formal work. -/
+/-- Every Lean module of the WaveLock-OTS and RCA formal work. -/
 def auditedModules : List Name := [
   `WaveLockProofs.OTSKeyConsumption, `WaveLockProofs.LedgerLinearizability,
   `WaveLockProofs.KeyReuseCounterexample, `WaveLockProofs.OTSVerification,
   `WaveLockProofs.AuthenticatedBlockBinding, `WaveLockProofs.OTSConformance,
-  `WaveLockProofs.OTSSignerGuard, `WaveLockProofs.OTSSignerConformance]
+  `WaveLockProofs.OTSSignerGuard, `WaveLockProofs.OTSSignerConformance,
+  `WaveLockProofs.RCAAgentState, `WaveLockProofs.RCATransitions,
+  `WaveLockProofs.RCASafetyInvariants, `WaveLockProofs.RCADriftMetrics,
+  `WaveLockProofs.RCACounterexamples, `WaveLockProofs.RCAConformance]
 
 /-- Central theorem roots, by the property they establish. -/
 def centralRoots : List (String × Name) := [
@@ -42,7 +45,53 @@ def centralRoots : List (String × Name) := [
   ("signer: Windows power-loss boundary", `WaveLockProofs.OTSSigner.windows_power_loss_forgets),
   ("signer: migration boundary", `WaveLockProofs.OTSSigner.legacy_material_signs_once_more),
   ("OTS (PR #47): accepted chain single use", `WaveLockProofs.OTS.chain_single_use),
-  ("OTS (PR #47): at most one acceptance", `WaveLockProofs.OTS.at_most_one_acceptance)]
+  ("OTS (PR #47): at most one acceptance", `WaveLockProofs.OTS.at_most_one_acceptance),
+  ("RCA: operational view refines the specification", `WaveLockProofs.RCA.load_refines_spec),
+  ("RCA: guard decides the specification", `WaveLockProofs.RCA.authorizes_iff_spec),
+  ("RCA: inductive invariant over all runs", `WaveLockProofs.RCA.inv_run),
+  ("RCA Theorem A: state validity", `WaveLockProofs.RCA.state_validity),
+  ("RCA Theorem B: safety-memory preservation", `WaveLockProofs.RCA.safety_memory_preserved),
+  ("RCA: memory append-only", `WaveLockProofs.RCA.log_prefix_step),
+  ("RCA Theorem C: restart consistency", `WaveLockProofs.RCA.restart_consistency),
+  ("RCA Theorem D: replay is inert", `WaveLockProofs.RCA.replay_is_inert),
+  ("RCA Theorem D: credentials bound to prefixes", `WaveLockProofs.RCA.credential_bound),
+  ("RCA: effects only from committed intents", `WaveLockProofs.RCA.effect_step_source),
+  ("RCA: intents only from guarded submits", `WaveLockProofs.RCA.step_enters_committed),
+  ("RCA: authorization before execution", `WaveLockProofs.RCA.authorized_before_execution),
+  ("RCA: blocking the request", `WaveLockProofs.RCA.pre_action_intervention),
+  ("RCA: blocking the effect", `WaveLockProofs.RCA.effect_blocked),
+  ("RCA: inductive safety preservation", `WaveLockProofs.RCA.safe_run),
+  ("drift: l1 triangle inequality", `WaveLockProofs.RCA.l1_triangle),
+  ("drift: accumulated drift bound", `WaveLockProofs.RCA.dev_le_path),
+  ("drift: step detector evaded", `WaveLockProofs.RCA.step_detector_evaded),
+  ("drift: prediction soundness under a rate bound", `WaveLockProofs.RCA.predict_sound),
+  ("drift: no false negative outside the band", `WaveLockProofs.RCA.no_false_negative_outside_band),
+  ("drift: no false positive outside the band", `WaveLockProofs.RCA.no_false_positive_outside_band),
+  ("drift: guard monotone under tightening", `WaveLockProofs.RCA.tighten_restricts),
+  ("rollback: invisible without an anchor", `WaveLockProofs.RCA.load_take),
+  ("rollback: below an anchor fails closed", `WaveLockProofs.RCA.rollback_below_anchor_fails_closed),
+  ("rollback: anchor retains prohibitions", `WaveLockProofs.RCA.anchor_retains_prohibitions),
+  ("rollback: anchor retains the latch", `WaveLockProofs.RCA.anchor_retains_latch),
+  ("case 1a: volatile memory", `WaveLockProofs.RCA.ce1_volatile_memory_forgets_latch),
+  ("case 1b: rollback without anchor", `WaveLockProofs.RCA.ce1_rollback_forgets_latch),
+  ("case 1c: anchor detects rollback", `WaveLockProofs.RCA.ce1_anchor_detects_rollback),
+  ("case 2: no drift gate", `WaveLockProofs.RCA.ce2_action_without_drift_gate),
+  ("case 3: policy weakening", `WaveLockProofs.RCA.ce3_policy_weakening_executes_prohibited),
+  ("case 3: reload validation stops it", `WaveLockProofs.RCA.ce3_reload_validation_stops_weakening),
+  ("case 4: stale view", `WaveLockProofs.RCA.ce4_stale_view_reused),
+  ("case 4: shortest stale view (model check)", `WaveLockProofs.RCA.ce4_shortest_stale_view),
+  ("case 5: direct effect", `WaveLockProofs.RCA.ce5_direct_effect_bypasses_guard),
+  ("case 6: state change after authorization", `WaveLockProofs.RCA.ce6_policy_change_after_authorization),
+  ("case 7: slow drift caught", `WaveLockProofs.RCA.ce7_kernel_catches_slow_drift),
+  ("case 8: manipulated report", `WaveLockProofs.RCA.ce8_manipulated_report_executes),
+  ("case 9: race without lock", `WaveLockProofs.RCA.ce9_race_without_lock),
+  ("case 9: race between intent and effect (model check)",
+    `WaveLockProofs.RCA.ce9_race_between_intent_and_effect),
+  ("case 9: reference serializes", `WaveLockProofs.RCA.ce9_reference_serializes),
+  ("case 10: reference divergence is safe", `WaveLockProofs.RCA.ce10_reference_divergence_is_safe),
+  ("case 10: failed write not acknowledged", `WaveLockProofs.RCA.ce10_failed_write_not_acknowledged),
+  ("case 11: false positive", `WaveLockProofs.RCA.ce11_false_positive_blocks_safe_action),
+  ("case 12: false negative", `WaveLockProofs.RCA.ce12_false_negative_permits_unsafe_action)]
 
 def approved : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 

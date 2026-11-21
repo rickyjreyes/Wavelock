@@ -55,3 +55,10 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           cd lean
           lake env lean scripts/AxiomAuditNegativeControl.lean
+      - name: Bounded model check of the RCA model (receipt)
+        shell: bash
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake env lean scripts/RCAModelCheck.lean > "$RUNNER_TEMP/rca-model-check.txt" 2>&1
+          diff -u rca_model_check_receipt.txt "$RUNNER_TEMP/rca-model-check.txt"
