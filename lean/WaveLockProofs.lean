@@ -17,3 +17,4 @@ import WaveLockProofs.OTSVerification
 import WaveLockProofs.AuthenticatedBlockBinding
 import WaveLockProofs.OTSConformance
 import WaveLockProofs.OTSSignerGuard
+import WaveLockProofs.OTSSignerConformance
