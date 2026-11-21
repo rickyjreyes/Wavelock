@@ -1,0 +1,28 @@
+WaveLockProofs.OTSKeyConsumption: 87 theorems, 132 definitions, 15 types, 14 derived instances, 504 auxiliary (752 constants, all axiom-checked)
+WaveLockProofs.LedgerLinearizability: 10 theorems, 8 definitions, 0 types, 0 derived instances, 0 auxiliary (18 constants, all axiom-checked)
+WaveLockProofs.KeyReuseCounterexample: 23 theorems, 25 definitions, 1 types, 0 derived instances, 19 auxiliary (68 constants, all axiom-checked)
+WaveLockProofs.OTSVerification: 25 theorems, 45 definitions, 3 types, 0 derived instances, 112 auxiliary (185 constants, all axiom-checked)
+WaveLockProofs.AuthenticatedBlockBinding: 8 theorems, 24 definitions, 2 types, 0 derived instances, 34 auxiliary (68 constants, all axiom-checked)
+WaveLockProofs.OTSConformance: 25 theorems, 80 definitions, 0 types, 0 derived instances, 0 auxiliary (105 constants, all axiom-checked)
+WaveLockProofs.OTSSignerGuard: 33 theorems, 49 definitions, 9 types, 14 derived instances, 349 auxiliary (454 constants, all axiom-checked)
+WaveLockProofs.OTSSignerConformance: 14 theorems, 14 definitions, 0 types, 0 derived instances, 0 auxiliary (28 constants, all axiom-checked)
+total: 225 theorems, 377 definitions, 30 types, 28 derived instances, 1018 auxiliary
+root [signer: single use of key id and signing material] WaveLockProofs.OTSSigner.signer_single_use: [propext,
+ Quot.sound]
+root [signer: secret values (given an injective derivation)] WaveLockProofs.OTSSigner.signer_values_distinct: [propext,
+ Quot.sound]
+root [signer: safety memory append-only] WaveLockProofs.OTSSigner.durable_markers_monotone: [propext]
+root [signer: present defect at c3cb0d1] WaveLockProofs.OTSSigner.c3cb0d1_material_reused: []
+root [signer: corrected guard refuses] WaveLockProofs.OTSSigner.current_material_refused: []
+root [signer: allow_reuse boundary] WaveLockProofs.OTSSigner.allow_reuse_bypasses_guard: []
+root [signer: Windows power-loss boundary] WaveLockProofs.OTSSigner.windows_power_loss_forgets: []
+root [signer: migration boundary] WaveLockProofs.OTSSigner.legacy_material_signs_once_more: []
+root [OTS (PR #47): accepted chain single use] WaveLockProofs.OTS.chain_single_use: [propext,
+ Quot.sound,
+ Classical.choice]
+root [OTS (PR #47): at most one acceptance] WaveLockProofs.OTS.at_most_one_acceptance: [propext,
+ Quot.sound,
+ Classical.choice]
+audited theorem roots: 10; approved axioms: [propext,
+ Classical.choice,
+ Quot.sound]; unexpected axioms and failed declarations: []

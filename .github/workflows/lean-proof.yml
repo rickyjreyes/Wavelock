@@ -42,3 +42,16 @@ jobs:
           build: true
           test: false
           lint: false
+      - name: Strict declaration and axiom audit
+        shell: bash
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake env lean scripts/AxiomAudit.lean | tee "$RUNNER_TEMP/axiom-audit.txt"
+          diff -u axiom_audit_receipt.txt "$RUNNER_TEMP/axiom-audit.txt"
+      - name: Audit negative control (sorryAx and native_decide must be flagged)
+        shell: bash
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake env lean scripts/AxiomAuditNegativeControl.lean

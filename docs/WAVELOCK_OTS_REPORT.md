@@ -29,7 +29,8 @@ experimental. Full design: `docs/WAVELOCK_OTS_DESIGN.md`. Migration:
   (`index_signature` rebuilds it from accepted blocks), so it is canonical per
   node. **Caveat:** D is only *fully* closed when every accepting node runs this
   rejection against a ledger derived from agreed chain state; the host-local
-  signing registry (`_claim_one_time_key`) remains **defense-in-depth only**.
+  signing registry (`_claim_one_time_key`, `_claim_signing_material`) remains
+  **defense-in-depth only**.
 - **Integration — DONE (single-node consensus path).** Block acceptance routes
   OTS-required blocks (`block_type == "OTS"`, or `meta.auth_scheme ==
   WaveLock-OTS-v1`, or `cfg.require_ots`) to fail-closed OTS verification +
