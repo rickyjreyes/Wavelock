@@ -221,9 +221,11 @@ Every hash is domain-separated and versioned:
   preserved and still succeeds once the key is reused. The defenses are: never
   reuse a key, and reject duplicate key/leaf usage at the ledger.
 - **Finding D is mitigated host-locally and otherwise a deployment issue.**
-  Signing now atomically claims the `one_time_key_id` in a host-local key-state
-  registry (`O_CREAT|O_EXCL`, `WAVELOCK_OTS_STATE_DIR`), so a copied secret key
-  cannot sign twice **on the same host**. A copy moved to another host, or a
+  Signing now atomically claims the `one_time_key_id` and the signing material
+  `(params_hash, seed)` in a host-local key-state registry (`O_CREAT|O_EXCL`,
+  `WAVELOCK_OTS_STATE_DIR`), so neither a copied secret key nor another key file
+  holding the same seed under a fresh key id can sign twice **on the same host**
+  (`docs/WAVELOCK_OTS_SIGNER_GUARD.md`). A copy moved to another host, or a
   wiped registry, still bypasses it — this is **not** cryptographic reuse
   prevention. Production verifiers/servers/ledgers MUST reject duplicate
   `one_time_key_id` (and, under WaveLock-Merkle, duplicate leaf indices);
