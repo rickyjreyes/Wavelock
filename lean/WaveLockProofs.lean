@@ -18,3 +18,6 @@ import WaveLockProofs.AuthenticatedBlockBinding
 import WaveLockProofs.OTSConformance
 import WaveLockProofs.OTSSignerGuard
 import WaveLockProofs.OTSSignerConformance
+import WaveLockProofs.RCAAgentState
+import WaveLockProofs.RCATransitions
+import WaveLockProofs.RCASafetyInvariants
