@@ -108,7 +108,9 @@ class GuardedAgent:
         return load(data, verifier=self._verifier, anchor=self._anchor)
 
     def _write_line(self, data: bytes) -> None:
-        fd = os.open(self.directory / LOG_NAME, os.O_WRONLY | os.O_APPEND)
+        # O_BINARY: without it the Windows C runtime opens in text mode and writes "\r\n".
+        fd = os.open(self.directory / LOG_NAME,
+                     os.O_WRONLY | os.O_APPEND | getattr(os, "O_BINARY", 0))
         try:
             view = memoryview(data)
             while view:

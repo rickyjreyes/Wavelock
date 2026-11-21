@@ -219,3 +219,12 @@ def test_concurrent_processes_never_execute_after_latch(agent, tmp_path):
                  if r["kind"] == "observe" and l1(r["values"], [0, 0]) >= 5)
     assert final.view.locked
     assert all(r["kind"] != "execute" for r in recs[latch:])
+
+
+def test_appended_records_are_lf_terminated_bytes(agent, tmp_path):
+    """Records are written in binary mode: every line ends with a bare LF on every platform
+    (a text-mode append on Windows would write CRLF and make the memory non-canonical)."""
+    agent.observe(1, [1, 1])
+    agent.request("move", lambda a: None)
+    data = (tmp_path / "safety-memory.jsonl").read_bytes()
+    assert b"\r" not in data and data.count(b"\n") == 3
