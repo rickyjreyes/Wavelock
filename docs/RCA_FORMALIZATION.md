@@ -355,11 +355,11 @@ All counts are on the final local tree.
 |---|---|
 | `lake build` (pinned toolchain) | success (7,242 jobs); no warnings in the new modules |
 | Strict audit and negative control | pass |
-| `pytest tests -m "not slow"`, container interpreter | 604 passed, 10 skipped, 1 failed: `test_visualize_psi`, because matplotlib is not installed (environment) |
-| The same suite with matplotlib installed (virtualenv; matplotlib is a declared dependency and CI installs it) | **605 passed, 10 skipped, 0 failed** |
+| `pytest tests -m "not slow"`, container interpreter | 605 passed, 10 skipped, 1 failed: `test_visualize_psi`, because matplotlib is not installed (environment) |
+| The same suite with matplotlib installed (virtualenv; matplotlib is a declared dependency and CI installs it) | **606 passed, 10 skipped, 0 failed** |
 | `audit/run_bounty_contract.py --check` | 13/13, no evidence mismatches |
 | `hello_wavelock.py` | PASS |
-| New tests | RCA conformance 42, reference kernel 22 (including a 3-process race), signer conformance 18, signer regressions 13 |
+| New tests | RCA conformance 42, reference kernel 23 (including a 3-process race and LF-only binary appends), signer conformance 18, signer regressions 13 |
 | Slow tests | not run (`-m "not slow"`, as in CI) |
 
 CI results on the final pushed commits are recorded in the pull requests.
