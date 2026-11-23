@@ -6,7 +6,13 @@ WaveLockProofs.AuthenticatedBlockBinding: 8 theorems, 24 definitions, 2 types, 0
 WaveLockProofs.OTSConformance: 25 theorems, 80 definitions, 0 types, 0 derived instances, 0 auxiliary (105 constants, all axiom-checked)
 WaveLockProofs.OTSSignerGuard: 33 theorems, 49 definitions, 9 types, 14 derived instances, 349 auxiliary (454 constants, all axiom-checked)
 WaveLockProofs.OTSSignerConformance: 14 theorems, 14 definitions, 0 types, 0 derived instances, 0 auxiliary (28 constants, all axiom-checked)
-total: 225 theorems, 377 definitions, 30 types, 28 derived instances, 1018 auxiliary
+WaveLockProofs.RCAAgentState: 17 theorems, 43 definitions, 4 types, 8 derived instances, 198 auxiliary (270 constants, all axiom-checked)
+WaveLockProofs.RCATransitions: 9 theorems, 62 definitions, 8 types, 14 derived instances, 369 auxiliary (462 constants, all axiom-checked)
+WaveLockProofs.RCASafetyInvariants: 69 theorems, 6 definitions, 1 types, 0 derived instances, 87 auxiliary (163 constants, all axiom-checked)
+WaveLockProofs.RCADriftMetrics: 28 theorems, 7 definitions, 0 types, 0 derived instances, 57 auxiliary (92 constants, all axiom-checked)
+WaveLockProofs.RCACounterexamples: 29 theorems, 6 definitions, 0 types, 0 derived instances, 10 auxiliary (45 constants, all axiom-checked)
+WaveLockProofs.RCAConformance: 25 theorems, 25 definitions, 0 types, 0 derived instances, 0 auxiliary (50 constants, all axiom-checked)
+total: 402 theorems, 526 definitions, 43 types, 50 derived instances, 1739 auxiliary
 root [signer: single use of key id and signing material] WaveLockProofs.OTSSigner.signer_single_use: [propext,
  Quot.sound]
 root [signer: secret values (given an injective derivation)] WaveLockProofs.OTSSigner.signer_values_distinct: [propext,
@@ -23,6 +29,68 @@ root [OTS (PR #47): accepted chain single use] WaveLockProofs.OTS.chain_single_u
 root [OTS (PR #47): at most one acceptance] WaveLockProofs.OTS.at_most_one_acceptance: [propext,
  Quot.sound,
  Classical.choice]
-audited theorem roots: 10; approved axioms: [propext,
+root [RCA: operational view refines the specification] WaveLockProofs.RCA.load_refines_spec: [propext, Quot.sound]
+root [RCA: guard decides the specification] WaveLockProofs.RCA.authorizes_iff_spec: [propext, Quot.sound]
+root [RCA: inductive invariant over all runs] WaveLockProofs.RCA.inv_run: [propext, Quot.sound, Classical.choice]
+root [RCA Theorem A: state validity] WaveLockProofs.RCA.state_validity: [propext, Quot.sound, Classical.choice]
+root [RCA Theorem B: safety-memory preservation] WaveLockProofs.RCA.safety_memory_preserved: [propext,
+ Quot.sound,
+ Classical.choice]
+root [RCA: memory append-only] WaveLockProofs.RCA.log_prefix_step: [propext, Quot.sound]
+root [RCA Theorem C: restart consistency] WaveLockProofs.RCA.restart_consistency: [propext, Quot.sound]
+root [RCA Theorem D: replay is inert] WaveLockProofs.RCA.replay_is_inert: [propext, Quot.sound, Classical.choice]
+root [RCA Theorem D: credentials bound to prefixes] WaveLockProofs.RCA.credential_bound: [propext,
+ Quot.sound,
+ Classical.choice]
+root [RCA: effects only from committed intents] WaveLockProofs.RCA.effect_step_source: [propext, Quot.sound]
+root [RCA: intents only from guarded submits] WaveLockProofs.RCA.step_enters_committed: [propext, Quot.sound]
+root [RCA: authorization before execution] WaveLockProofs.RCA.authorized_before_execution: [propext,
+ Quot.sound,
+ Classical.choice]
+root [RCA: blocking the request] WaveLockProofs.RCA.pre_action_intervention: [propext, Quot.sound, Classical.choice]
+root [RCA: blocking the effect] WaveLockProofs.RCA.effect_blocked: [propext, Quot.sound]
+root [RCA: inductive safety preservation] WaveLockProofs.RCA.safe_run: [propext, Quot.sound, Classical.choice]
+root [drift: l1 triangle inequality] WaveLockProofs.RCA.l1_triangle: [propext, Classical.choice, Quot.sound]
+root [drift: accumulated drift bound] WaveLockProofs.RCA.dev_le_path: [propext, Classical.choice, Quot.sound]
+root [drift: step detector evaded] WaveLockProofs.RCA.step_detector_evaded: [propext, Quot.sound, Classical.choice]
+root [drift: prediction soundness under a rate bound] WaveLockProofs.RCA.predict_sound: [propext,
+ Quot.sound,
+ Classical.choice]
+root [drift: no false negative outside the band] WaveLockProofs.RCA.no_false_negative_outside_band: [propext,
+ Classical.choice,
+ Quot.sound]
+root [drift: no false positive outside the band] WaveLockProofs.RCA.no_false_positive_outside_band: [propext,
+ Classical.choice,
+ Quot.sound]
+root [drift: guard monotone under tightening] WaveLockProofs.RCA.tighten_restricts: [propext, Quot.sound]
+root [rollback: invisible without an anchor] WaveLockProofs.RCA.load_take: [propext, Quot.sound]
+root [rollback: below an anchor fails closed] WaveLockProofs.RCA.rollback_below_anchor_fails_closed: [propext,
+ Quot.sound]
+root [rollback: anchor retains prohibitions] WaveLockProofs.RCA.anchor_retains_prohibitions: [propext, Quot.sound]
+root [rollback: anchor retains the latch] WaveLockProofs.RCA.anchor_retains_latch: [propext, Quot.sound]
+root [case 1a: volatile memory] WaveLockProofs.RCA.ce1_volatile_memory_forgets_latch: [propext, Quot.sound]
+root [case 1b: rollback without anchor] WaveLockProofs.RCA.ce1_rollback_forgets_latch: [propext, Quot.sound]
+root [case 1c: anchor detects rollback] WaveLockProofs.RCA.ce1_anchor_detects_rollback: [propext, Quot.sound]
+root [case 2: no drift gate] WaveLockProofs.RCA.ce2_action_without_drift_gate: [propext, Quot.sound]
+root [case 3: policy weakening] WaveLockProofs.RCA.ce3_policy_weakening_executes_prohibited: [propext, Quot.sound]
+root [case 3: reload validation stops it] WaveLockProofs.RCA.ce3_reload_validation_stops_weakening: [propext,
+ Quot.sound]
+root [case 4: stale view] WaveLockProofs.RCA.ce4_stale_view_reused: [propext, Quot.sound]
+root [case 4: shortest stale view (model check)] WaveLockProofs.RCA.ce4_shortest_stale_view: [propext, Quot.sound]
+root [case 5: direct effect] WaveLockProofs.RCA.ce5_direct_effect_bypasses_guard: [propext, Quot.sound]
+root [case 6: state change after authorization] WaveLockProofs.RCA.ce6_policy_change_after_authorization: [propext,
+ Quot.sound]
+root [case 7: slow drift caught] WaveLockProofs.RCA.ce7_kernel_catches_slow_drift: [propext, Quot.sound]
+root [case 8: manipulated report] WaveLockProofs.RCA.ce8_manipulated_report_executes: [propext, Quot.sound]
+root [case 9: race without lock] WaveLockProofs.RCA.ce9_race_without_lock: [propext, Quot.sound]
+root [case 9: race between intent and effect (model check)] WaveLockProofs.RCA.ce9_race_between_intent_and_effect: [propext,
+ Quot.sound]
+root [case 9: reference serializes] WaveLockProofs.RCA.ce9_reference_serializes: [propext, Quot.sound]
+root [case 10: reference divergence is safe] WaveLockProofs.RCA.ce10_reference_divergence_is_safe: [propext, Quot.sound]
+root [case 10: failed write not acknowledged] WaveLockProofs.RCA.ce10_failed_write_not_acknowledged: [propext,
+ Quot.sound]
+root [case 11: false positive] WaveLockProofs.RCA.ce11_false_positive_blocks_safe_action: [propext, Quot.sound]
+root [case 12: false negative] WaveLockProofs.RCA.ce12_false_negative_permits_unsafe_action: [propext, Quot.sound]
+audited theorem roots: 55; approved axioms: [propext,
  Classical.choice,
  Quot.sound]; unexpected axioms and failed declarations: []

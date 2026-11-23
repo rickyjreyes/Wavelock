@@ -1,0 +1,2718 @@
+{
+  "schema": 1,
+  "about": "Python/Lean conformance traces of the PROPOSED RCA reference kernel wavelock.rca_reference (issues #42/#43) against lean/WaveLockProofs/RCATransitions.lean. scripts/gen_rca_conformance.py generates RCAConformance.lean; tests/test_rca_formal_conformance.py replays the traces against Python.",
+  "kernel_traces": [
+    {
+      "name": "kernel_init_and_guard",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": [
+              9
+            ]
+          }
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          9,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": [
+                9
+              ]
+            }
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_drift_latch",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            1,
+            1
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            3,
+            3
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              1,
+              1
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              3,
+              3
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              1,
+              1
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              3,
+              3
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_slow_drift_cumulative",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 3,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            1
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            2
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          3,
+          [
+            3
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 3,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              1
+            ]
+          ],
+          [
+            "execute",
+            4
+          ],
+          [
+            "observe",
+            2,
+            [
+              2
+            ]
+          ],
+          [
+            "observe",
+            3,
+            [
+              3
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            4,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              1
+            ]
+          ],
+          [
+            "execute",
+            4
+          ],
+          [
+            "observe",
+            2,
+            [
+              2
+            ]
+          ],
+          [
+            "observe",
+            3,
+            [
+              3
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true,
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_restart_keeps_latch",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            6,
+            0
+          ],
+          "ok"
+        ],
+        [
+          "crash",
+          "p0"
+        ],
+        [
+          "restart",
+          "p0"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "execute",
+          "p1",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              6,
+              0
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              6,
+              0
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_duplicate_and_stale_observation",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            1,
+            0
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            1,
+            0
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            0,
+            0
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          3,
+          [
+            0,
+            0
+          ],
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            2,
+            [
+              1,
+              0
+            ]
+          ],
+          [
+            "observe",
+            3,
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            2,
+            [
+              1,
+              0
+            ]
+          ],
+          [
+            "observe",
+            3,
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          false,
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "name": "kernel_policy_updates",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 9,
+            "prohibited": []
+          }
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 1,
+            "threshold": 9,
+            "prohibited": [
+              7
+            ]
+          },
+          "ok"
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 2,
+            "threshold": 20,
+            "prohibited": [
+              7
+            ]
+          },
+          "ok"
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 2,
+            "threshold": 8,
+            "prohibited": []
+          },
+          "ok"
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 3,
+            "threshold": 8,
+            "prohibited": [
+              7
+            ]
+          },
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          7,
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            4,
+            4
+          ],
+          "ok"
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 2,
+            "threshold": 8,
+            "prohibited": [
+              7
+            ]
+          },
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 9,
+              "prohibited": []
+            }
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              4,
+              4
+            ]
+          ],
+          [
+            "policy",
+            {
+              "version": 2,
+              "threshold": 8,
+              "prohibited": [
+                7
+              ]
+            }
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              4,
+              4
+            ]
+          ],
+          [
+            "policy",
+            {
+              "version": 2,
+              "threshold": 8,
+              "prohibited": [
+                7
+              ]
+            }
+          ]
+        ],
+        "results": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          true,
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_conflicting_policy_versions",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0,
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 9,
+            "prohibited": [
+              1
+            ]
+          }
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 1,
+            "threshold": 9,
+            "prohibited": [
+              1,
+              2
+            ]
+          },
+          "ok"
+        ],
+        [
+          "policy",
+          "p1",
+          {
+            "version": 1,
+            "threshold": 8,
+            "prohibited": [
+              1
+            ]
+          },
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0,
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 9,
+              "prohibited": [
+                1
+              ]
+            }
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                1,
+                2
+              ]
+            }
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                1,
+                2
+              ]
+            }
+          ]
+        ],
+        "results": [
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_interrupted_writes",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "fail_nothing"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "fail_line"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "crash_line"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "ok"
+        ],
+        [
+          "restart",
+          "p0"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "execute",
+            4
+          ],
+          [
+            "execute",
+            4
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            4,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            4
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true,
+          null,
+          true
+        ]
+      }
+    },
+    {
+      "name": "kernel_torn_write_fails_closed",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            1
+          ],
+          "fail_torn"
+        ],
+        [
+          "execute",
+          "p1",
+          3,
+          "ok"
+        ],
+        [
+          "rollback",
+          1
+        ],
+        [
+          "execute",
+          "p1",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          null,
+          true
+        ]
+      }
+    },
+    {
+      "name": "kernel_operator_reset",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            1
+          ],
+          "ok"
+        ],
+        [
+          "issue",
+          "c0"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          3,
+          [
+            7
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          4,
+          [
+            0
+          ],
+          "ok"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              1
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            3,
+            [
+              7
+            ]
+          ],
+          [
+            "observe",
+            4,
+            [
+              0
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              1
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            3,
+            [
+              7
+            ]
+          ],
+          [
+            "observe",
+            4,
+            [
+              0
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true,
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_reset_needs_resolved_deviation",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "issue",
+          "c0"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_reset_credential_for_wrong_prefix",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "issue",
+          "c0"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            0
+          ],
+          "ok"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              0
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              0
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          false
+        ]
+      }
+    },
+    {
+      "name": "kernel_anchor_detects_rollback",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "anchor"
+        ],
+        [
+          "rollback",
+          1
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ]
+        ],
+        "results": [
+          true,
+          null
+        ]
+      }
+    },
+    {
+      "name": "kernel_rollback_without_anchor_loses_latch",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "rollback",
+          1
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "kernel_direct_effect_bypasses_guard",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "direct",
+          3
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ]
+        ],
+        "results": [
+          true
+        ]
+      }
+    },
+    {
+      "name": "kernel_crash_between_intent_and_effect",
+      "discipline": "reference",
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok_crash_before_effect"
+        ],
+        [
+          "execute",
+          "p1",
+          3,
+          "ok"
+        ],
+        [
+          "restart",
+          "p0"
+        ],
+        [
+          "execute",
+          "p0",
+          4,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "execute",
+            4
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            3
+          ],
+          [
+            "execute",
+            4
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_no_lock_race",
+      "discipline": {
+        "lock": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "begin",
+          "p0"
+        ],
+        [
+          "begin",
+          "p1"
+        ],
+        [
+          "submit",
+          "p1",
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          "ok"
+        ],
+        [
+          "submit",
+          "p0",
+          [
+            "execute",
+            3
+          ],
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_no_reload_stale_view",
+      "discipline": {
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "observe",
+          "p1",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            3,
+            true
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_no_reload_policy_change",
+      "discipline": {
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 9,
+            "prohibited": []
+          }
+        ],
+        [
+          "execute",
+          "p0",
+          7,
+          "ok"
+        ],
+        [
+          "policy",
+          "p1",
+          {
+            "version": 1,
+            "threshold": 9,
+            "prohibited": [
+              7
+            ]
+          },
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          7,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 9,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            7
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "execute",
+            7
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            7,
+            true
+          ],
+          [
+            7,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "execute",
+            7
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 9,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "execute",
+            7
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_volatile_memory",
+      "discipline": {
+        "persist": false,
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "crash",
+          "p0"
+        ],
+        [
+          "restart",
+          "p0"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ]
+        ],
+        "torn": false,
+        "loads": true,
+        "effects": [
+          [
+            3,
+            true
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_policy_weakening",
+      "discipline": {
+        "monotonePolicy": false,
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": [
+              7
+            ]
+          }
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 1,
+            "threshold": 5,
+            "prohibited": []
+          },
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          7,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            7
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            7,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "execute",
+            7
+          ]
+        ],
+        "results": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "reload_validation_stops_weakened_policy",
+      "discipline": {
+        "monotonePolicy": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": [
+              7
+            ]
+          }
+        ],
+        [
+          "policy",
+          "p0",
+          {
+            "version": 1,
+            "threshold": 5,
+            "prohibited": []
+          },
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          7,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": [
+                7
+              ]
+            }
+          ],
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [],
+        "acked": [
+          [
+            "policy",
+            {
+              "version": 1,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ]
+        ],
+        "results": [
+          true,
+          null
+        ]
+      }
+    },
+    {
+      "name": "ablate_no_seq_check_replay",
+      "discipline": {
+        "seqCheck": false,
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            0
+          ],
+          "ok"
+        ],
+        [
+          "issue",
+          "c0"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            2,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            1,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            2,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            1,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_unbound_credential",
+      "discipline": {
+        "bindCred": false,
+        "reload": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          2,
+          [
+            0
+          ],
+          "ok"
+        ],
+        [
+          "issue",
+          "c0"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          3,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "observe",
+          "p0",
+          4,
+          [
+            0
+          ],
+          "ok"
+        ],
+        [
+          "reset",
+          "p0",
+          "c0",
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            3,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            4,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            3,
+            true
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            2,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ],
+          [
+            "observe",
+            3,
+            [
+              9
+            ]
+          ],
+          [
+            "observe",
+            4,
+            [
+              0
+            ]
+          ],
+          [
+            "reset",
+            "c0"
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "ablate_no_drift_gate",
+      "discipline": {
+        "driftGate": false
+      },
+      "events": [
+        [
+          "provision",
+          1,
+          [
+            0
+          ],
+          {
+            "version": 0,
+            "threshold": 5,
+            "prohibited": []
+          }
+        ],
+        [
+          "observe",
+          "p0",
+          1,
+          [
+            9
+          ],
+          "ok"
+        ],
+        [
+          "execute",
+          "p0",
+          3,
+          "ok"
+        ]
+      ],
+      "expected": {
+        "log": [
+          [
+            "genesis",
+            1,
+            [
+              0
+            ],
+            {
+              "version": 0,
+              "threshold": 5,
+              "prohibited": []
+            }
+          ],
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "torn": false,
+        "loads": false,
+        "effects": [
+          [
+            3,
+            false
+          ]
+        ],
+        "acked": [
+          [
+            "observe",
+            1,
+            [
+              9
+            ]
+          ],
+          [
+            "execute",
+            3
+          ]
+        ],
+        "results": [
+          true,
+          true
+        ]
+      }
+    }
+  ]
+}

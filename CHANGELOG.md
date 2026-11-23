@@ -5,6 +5,22 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — RCA reference safety kernel and formalization (#42, #43)
+
+- **New, proposed functionality; no change to existing behaviour.** No RCA agent state, safety
+  memory, drift measurement or pre-action guard existed in this repository. `wavelock/rca_reference`
+  is a minimal reference safety kernel (`STATUS = "PROPOSED_REFERENCE"`): hash-chained, fail-closed
+  safety memory; guarded execution (lock, reload, guard, durable intent, effect); integer drift
+  metrics; monotone policy; operator-credential reset; optional external anchor. Nothing in the
+  chain, network or WaveLock-OTS code uses it.
+- Lean (`RCAAgentState`, `RCATransitions`, `RCASafetyInvariants`, `RCADriftMetrics`,
+  `RCACounterexamples`, `RCAConformance`): declarative specification and refinement lemma; an
+  inductive invariant over every interleaving with crashes, write failures and restarts; Theorems
+  A–D; `authorized_before_execution`, `pre_action_intervention`, `effect_blocked`, `safe_run`;
+  drift-metric properties and limits; twelve adversarial cases; rollback results; 25 Lean/Python
+  traces; bounded model checks (`lean/scripts/RCAModelCheck.lean`). See
+  `docs/RCA_FORMALIZATION.md`.
+
 ## [Unreleased] — WaveLock-OTS signing guard claims the signing material
 
 - **Signer behaviour only (local state; no wire, signature, ledger or consensus change).**

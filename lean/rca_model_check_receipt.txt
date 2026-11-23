@@ -1,0 +1,52 @@
+reference, broad alphabet: no violation up to depth 8 (4332 states, 23 events)
+reference, write faults: no violation up to depth 8 (948 states, 16 events)
+reference + directEffect: shortest violation, length 3 (38 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 1 [9]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.directEffect 3]
+reference + rollback: shortest violation, length 3 (30 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 1 [9]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.rollback 1]
+no lock: shortest violation, length 5 (432 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.execute 3) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 1,
+ WaveLockProofs.RCA.Event.submit 1 (WaveLockProofs.RCA.Rec.observe 1 [9]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.effect 0]
+no reload: shortest violation, length 7 (1619 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 2 [0]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 1,
+ WaveLockProofs.RCA.Event.submit
+   1
+   (WaveLockProofs.RCA.Rec.policy { version := 1, threshold := 5, prohibited := [3] })
+   (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.execute 3) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.effect 0]
+no persistence, no reload: shortest violation, length 2 (6 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 1 [9]) (WaveLockProofs.RCA.WriteOutcome.ok)]
+no drift gate: shortest violation, length 5 (252 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 1 [9]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.execute 3) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.effect 0]
+no monotone policy, no reload: shortest violation, length 7 (2479 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 2 [0]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 1,
+ WaveLockProofs.RCA.Event.submit
+   1
+   (WaveLockProofs.RCA.Rec.policy { version := 1, threshold := 5, prohibited := [3] })
+   (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.execute 3) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.effect 0]
+no monotone policy (reload kept): no violation up to depth 7 (3206 states, 23 events)
+reference, replay alphabet: no violation up to depth 10 (202 states, 7 events)
+no sequence check, no reload: shortest violation, length 10 (521 states): [WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 2 [9]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.observe 1 [0]) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.issue 1,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.reset 1) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.begin 0,
+ WaveLockProofs.RCA.Event.submit 0 (WaveLockProofs.RCA.Rec.execute 3) (WaveLockProofs.RCA.WriteOutcome.ok),
+ WaveLockProofs.RCA.Event.effect 0]
