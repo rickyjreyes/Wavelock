@@ -5,6 +5,23 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — WaveLock-OTS signing guard claims the signing material
+
+- **Signer behaviour only (local state; no wire, signature, ledger or consensus change).**
+  `sign_ots` now atomically claims the signing material `(params_hash, seed)` in the host-local
+  registry, next to the key id, before revealing any slice. At `c3cb0d1` one seed under two key ids
+  (`generate_ots_keypair(seed=...)` twice, or a relabelled copy) signed twice on one host, making
+  both secret halves public at 122 of 256 positions in the reproduction. A second key file with
+  the same `(params_hash, seed)` is now refused on that host.
+- Migration: material that signed before this change has no material marker;
+  `wavelock_ots.claim_signing_material(secret_key)` records it. The new marker
+  `material-<_h("WL-OTS-SIGNER-MATERIAL-v1", params_hash, seed)>.used` is ignored by older code.
+- Lean `OTSSignerGuard`: `signer_single_use` (key id and material; any interleaving, claim
+  failures, crashes, restarts, POSIX power loss), `signer_values_distinct` (conditional on
+  collision resistance), boundaries (`allow_reuse`, second registry, wiped registry, Windows power
+  loss, migration). 14 Lean/Python traces. A strict declaration and axiom audit
+  (`lean/scripts/AxiomAudit.lean`) runs in CI. See `docs/WAVELOCK_OTS_SIGNER_GUARD.md`.
+
 ## [Unreleased] — WaveLock-OTS key-material single use (#41, phase II)
 
 - **Consensus-affecting.** Acceptance now consumes the commitment table of every OTS key
