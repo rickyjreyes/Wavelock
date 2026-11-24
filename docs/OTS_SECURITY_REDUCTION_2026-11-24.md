@@ -111,3 +111,7 @@ Kernel build and strict module audit must succeed before merge. The new
 audit is independent of the existing historical receipt, so the original
 audit is still executed unchanged. A fresh consolidated receipt is a later
 verification artifact.
+
+## Hosted verification receipt (2026-11-24)
+
+Lean source commit `3c096218155356389ab76777cec138a1a453d183`; GitHub Actions run [45445082370](https://github.com/rickyjreyes/Wavelock/actions/runs/45445082370), job 138626512055. Full library build: 7243 jobs, success. Targeted reduction build: 7222 jobs, success. Historical strict audit: no unexpected axioms or failed declarations. New reduction audit: 8 constants, all passed; all four theorem roots use only `propext`, `Quot.sound`, `Classical.choice`. Core/container CI also passed. This verifies the event and count theorems, not the unmechanized hybrid, SHAKE security or Python correspondence. Keep #52 open and await maintainer authorization before merge.
