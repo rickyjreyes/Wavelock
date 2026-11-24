@@ -49,6 +49,14 @@ jobs:
           cd lean
           lake env lean scripts/AxiomAudit.lean | tee "$RUNNER_TEMP/axiom-audit.txt"
           diff -u axiom_audit_receipt.txt "$RUNNER_TEMP/axiom-audit.txt"
+      - name: OTS event reduction build and strict audit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake build WaveLockProofs.OTSSecurityReduction
+          lake env lean scripts/OTSSecurityReductionAudit.lean
       - name: Audit negative control (sorryAx and native_decide must be flagged)
         shell: bash
         run: |
