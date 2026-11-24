@@ -76,7 +76,8 @@ theorem event_count_cover {Ω I : Type} [Fintype Ω] [Fintype I]
         · simp [ha, hc]
         · have hsingle : (if P i w then (1 : Nat) else 0) ≤
               ∑ j : I, if P j w then 1 else 0 :=
-            Finset.single_le_sum (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
+            Finset.single_le_sum (f := fun j : I => if P j w then (1 : Nat) else 0)
+              (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
           rw [if_pos hi] at hsingle
           rw [if_pos ha]
           omega
