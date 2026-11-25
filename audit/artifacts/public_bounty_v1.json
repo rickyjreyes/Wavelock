@@ -1,0 +1,623 @@
+{
+  "schema_version": 1,
+  "scope": "WaveLock Public Bounty v1",
+  "authoritative_scope": "audit/PUBLIC_BOUNTY_V1.md",
+  "baseline_commit": "c4b1df112c93db8017b788d7f8f58b4f0e2087f9",
+  "baseline": "master after merged PR #22",
+  "profile": "WL-Consensus-Commitment-v1",
+  "eligible_revision": "Current master or explicitly designated current public-bounty release; exact commit required.",
+  "normative_producer": "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+  "normative_verifier": "wavelock/chain/consensus_commitment.py:verify_consensus_commitment",
+  "status_definitions": {
+    "implementation_status": "Existence of the offered public computation/checking boundary, not a hardness proof.",
+    "regression_status": "Outcome of mapped regression cases at the stated baseline; not a security guarantee.",
+    "bounty_status": "Technical target eligibility under this scope; no reward amount or payment terms implied.",
+    "security_proof": "Proof status of the complete claimed property. Component primitives do not imply a reduction for the whole construction."
+  },
+  "allowed_status_values": {
+    "implementation_status": [
+      "IMPLEMENTED",
+      "PARTIAL",
+      "NOT_IMPLEMENTED"
+    ],
+    "regression_status": [
+      "PASS",
+      "FAIL",
+      "NOT_APPLICABLE"
+    ],
+    "bounty_status": [
+      "OPEN",
+      "WITHHELD",
+      "OUT_OF_SCOPE"
+    ],
+    "security_proof": [
+      "NONE",
+      "REDUCTION",
+      "FORMAL",
+      "OTHER"
+    ]
+  },
+  "withheld_meaning": "Not offered security properties of Public Bounty v1; absence is not a vulnerability in this scoped offering.",
+  "severity_rule": "High 1-3 do not automatically become Critical 5. Classify the demonstrated acceptance/cryptanalytic failure.",
+  "targets": [
+    {
+      "id": "C1",
+      "name": "Canonical commitment collision",
+      "severity": "CRITICAL",
+      "description": "Find distinct accepted high-entropy production inputs with an identical complete canonical commitment.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:_digest"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py::test_normative_descriptor_matches_hashed_header"
+      ],
+      "known_limitations": [
+        "Regressions establish vector/encoding behavior, not collision resistance.",
+        "Input entropy is a generation property; type and length alone do not establish it."
+      ],
+      "valid_attack_definition": "Supply both distinct accepted inputs, high-entropy generation/search method, identical profile output and successful replay verification under the supported profile.",
+      "nonqualifying_examples": [
+        "Direct SHA-256 break",
+        "Toy/demo seed search",
+        "Historical serializer or unsupported backend",
+        "Input rejected by producer"
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "Preimage or equivalent-preimage recovery",
+      "severity": "CRITICAL",
+      "description": "Recover an accepted preimage of a high-entropy public challenge with substantially less work than generic brute force.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/consensus_commitment.py:_validate_input",
+        "wavelock/chain/consensus_commitment.py:CommitmentArtifact.to_dict"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high4_production_seed_threshold",
+        "tests/test_bounty_contract.py::test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py::test_commitment_artifact_publishing_is_public_and_exclusive"
+      ],
+      "known_limitations": [
+        "No formal PDE hardness reduction is claimed.",
+        "A passing regression is not evidence of a preimage complexity lower bound."
+      ],
+      "valid_attack_definition": "For an independently generated challenge with >=128 bits of input entropy, return accepted bytes such that verify_consensus_commitment(challenge, recovered) is True. Account for preprocessing, online work, memory and success probability against the same brute-force distribution.",
+      "nonqualifying_examples": [
+        "Recovering a published test seed",
+        "Low-entropy challenge",
+        "State passing only canonical-byte validation",
+        "Unreproduced theoretical shortcut"
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "Supported consensus nondeterminism",
+      "severity": "CRITICAL",
+      "description": "Find different profile outputs for the same valid input entirely within supported configurations.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:evolve_reference",
+        "wavelock/chain/consensus_commitment.py:_transcendental",
+        "wavelock/chain/consensus_commitment.py:_sum16",
+        "wavelock/chain/consensus_commitment.py:canonical_serialize"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py::test_reference_vectors_independent_of_simd_dispatch",
+        "tests/test_bounty_contract.py::test_reference_error_policy_does_not_inherit_ambient_numpy_settings"
+      ],
+      "known_limitations": [
+        "CI tests specific platform/dependency combinations; it does not prove all compatible combinations deterministic.",
+        "The prior CPU-dispatch defect is fixed and retained as historical evidence."
+      ],
+      "valid_attack_definition": "Reproduce differing canonical bytes/commitments for one accepted input with exact environment details and no unsupported execution mode or modified reference implementation.",
+      "nonqualifying_examples": [
+        "Unsupported CuPy/GPU/fast-math/reassociation alone",
+        "Changing the reference vector to permit disagreement",
+        "Monkeypatching the verifier to accept"
+      ]
+    },
+    {
+      "id": "C4",
+      "name": "Computation replay verification bypass",
+      "severity": "CRITICAL",
+      "description": "Make the normative verifier accept an invalid input/state/invariant/profile declaration.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment",
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes",
+        "wavelock/chain/consensus_commitment.py:_metadata"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_every_metadata_field_is_bound",
+        "tests/test_bounty_contract.py::test_replay_rejects_wrong_input_state_invariants_and_extra_fields",
+        "tests/test_bounty_contract.py::test_high1_alternate_wire_encoding_rejected"
+      ],
+      "known_limitations": [
+        "Computation replay requires the verifier to possess the candidate input.",
+        "It is not runtime attestation or authentication of arbitrary application context."
+      ],
+      "valid_attack_definition": "Supply an invalid declaration for input, state, invariants, kernel/parameters, profile/backend, canonical bytes or commitment and show actual successful replay acceptance. Context claims must also cross the public authentication verifier that binds them.",
+      "nonqualifying_examples": [
+        "Exception or crash without invalid acceptance",
+        "Calling encoding consistency a proof of input provenance",
+        "Valid equivalent preimage without analyzing its cryptanalytic cause"
+      ]
+    },
+    {
+      "id": "C5",
+      "name": "Canonical or semantic binding bypass",
+      "severity": "CRITICAL",
+      "description": "Find a deeper authenticated-state binding failure after documented canonicalization rules hold.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes",
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment",
+        "wavelock/chain/ots_blocks.py:canonical_ots_block_digest"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment",
+        "wavelock/chain/ots_blocks.py:verify_ots_block"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high1_alternate_wire_encoding_rejected",
+        "tests/test_bounty_contract.py::test_replay_rejects_wrong_input_state_invariants_and_extra_fields",
+        "tests/test_ots_mythos_break.py::test_m1_body_tampering_rejected"
+      ],
+      "known_limitations": [
+        "High 1-3 do not automatically become Critical 5.",
+        "Regression coverage is not a proof excluding all semantic binding attacks."
+      ],
+      "valid_attack_definition": "Demonstrate semantic aliasing, an independently valid second canonical representation beyond High 1-3, producer/verifier state confusion, or authenticated body/metadata ambiguity surviving canonical verification.",
+      "nonqualifying_examples": [
+        "Automatically upgrading High 1-3",
+        "Outer JSON formatting differences",
+        "Direct underlying-hash break"
+      ]
+    },
+    {
+      "id": "H1",
+      "name": "Noncanonical serialization acceptance",
+      "severity": "HIGH",
+      "description": "Accept a prohibited noncanonical commitment preimage.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes",
+        "wavelock/chain/consensus_commitment.py:_metadata"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes",
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high1_canonical_layout_and_dictionary_order",
+        "tests/test_bounty_contract.py::test_high1_wrong_dtype_rejected",
+        "tests/test_bounty_contract.py::test_high1_alternate_wire_encoding_rejected"
+      ],
+      "known_limitations": [
+        "Canonical-byte validation establishes encoding consistency, not input provenance."
+      ],
+      "valid_attack_definition": "A normative byte/artifact verifier accepts an otherwise valid state with prohibited preimage encoding, schema, endian, dtype or layout representation.",
+      "nonqualifying_examples": [
+        "Equivalent in-memory layouts normalized correctly",
+        "Pretty-printed outer public JSON",
+        "Historical WLv* encoding"
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "Nonfinite acceptance",
+      "severity": "HIGH",
+      "description": "Accept NaN or either infinity in a prohibited security-relevant value.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_state",
+        "wavelock/chain/consensus_commitment.py:_float",
+        "wavelock/chain/consensus_commitment.py:_wire",
+        "wavelock/chain/consensus_commitment.py:reference_invariants"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high2_every_state_position_rejected",
+        "tests/test_bounty_contract.py::test_high2_every_parameter_rejected",
+        "tests/test_bounty_contract.py::test_high2_every_invariant_rejected",
+        "tests/test_bounty_contract.py::test_high2_derived_overflow_and_producer_injection_rejected"
+      ],
+      "known_limitations": [
+        "Underflow to finite zero is allowed by the profile."
+      ],
+      "valid_attack_definition": "The normative production, serialization or verification path accepts NaN, +Inf or -Inf in a security-relevant state/invariant/profile field where the profile forbids it.",
+      "nonqualifying_examples": [
+        "Exception before emission",
+        "NaN in unrelated unconsumed application data",
+        "Historical-only serialization"
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "Signed-zero divergence",
+      "severity": "HIGH",
+      "description": "Produce divergent valid encodings/commitments for one logical state differing only by zero sign.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_state",
+        "wavelock/chain/consensus_commitment.py:_float",
+        "wavelock/chain/consensus_commitment.py:canonical_serialize"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:canonical_serialize",
+        "wavelock/chain/consensus_commitment.py:validate_canonical_bytes"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high3_signed_zero_in_state_and_invariants"
+      ],
+      "known_limitations": [
+        "Zero-sign equivalence does not equate nonzero values or different inputs automatically."
+      ],
+      "valid_attack_definition": "Show valid canonical outputs for +0.0 and -0.0 representations of the same state that differ after normative normalization.",
+      "nonqualifying_examples": [
+        "Changing an ordinary negative nonzero value",
+        "Raw negative-zero bytes rejected by byte validation"
+      ]
+    },
+    {
+      "id": "H4",
+      "name": "Production input boundary bypass",
+      "severity": "HIGH",
+      "description": "Admit an integer/string/demo mode or fewer than 16 bytes as normative production input.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:_validate_input",
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high4_production_seed_threshold",
+        "tests/test_bounty_contract.py::test_high4_accepted_inputs_and_pinned_reference_parity",
+        "tests/test_bounty_contract.py::test_historical_modes_cannot_masquerade_as_consensus"
+      ],
+      "known_limitations": [
+        "The implementation checks exact bytes type and length; it does not measure statistical entropy."
+      ],
+      "valid_attack_definition": "The unmodified normative producer accepts an integer, string, demo seed mode or raw byte string shorter than 16 bytes.",
+      "nonqualifying_examples": [
+        "Predictable but adequately sized bytes described as an entropy-check bypass",
+        "Explicit historical/research seed modes"
+      ]
+    },
+    {
+      "id": "H5",
+      "name": "Unsupported backend leakage",
+      "severity": "HIGH",
+      "description": "An unsupported execution mode is incorrectly admitted as normative consensus output.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/consensus_commitment.py:commit_consensus_state",
+        "wavelock/chain/consensus_commitment.py:_metadata",
+        "wavelock/chain/consensus_commitment.py:_state",
+        "wavelock/chain/Wavelock_numpy.py:_serialize_commitment"
+      ],
+      "verifier": [
+        "wavelock/chain/consensus_commitment.py:verify_consensus_commitment"
+      ],
+      "tests": [
+        "tests/test_bounty_contract.py::test_high5_unsupported_backend_or_profile",
+        "tests/test_bounty_contract.py::test_historical_modes_cannot_masquerade_as_consensus",
+        "tests/test_bounty_contract.py::test_reference_vectors_independent_of_simd_dispatch"
+      ],
+      "known_limitations": [
+        "An artifact and its metadata do not remotely attest which machine executed a computation."
+      ],
+      "valid_attack_definition": "Demonstrate an actual supported API bypass in which unsupported backend/GPU/CuPy/fast-math/reassociation or alternate profile output is emitted and accepted as WL-Consensus-Commitment-v1.",
+      "nonqualifying_examples": [
+        "Merely attaching a profile label",
+        "Replacing/monkeypatching trusted producer or verifier code",
+        "Unsupported-mode nondeterminism that is rejected",
+        "Independently producing equivalent valid bytes outside the supported API without demonstrating incorrect API admission; artifacts are not runtime attestations."
+      ]
+    },
+    {
+      "id": "AR-1",
+      "name": "One-time identity and reuse acceptance",
+      "severity": "CRITICAL",
+      "description": "Accept a consumed one-time key or leaf as fresh through stateful verification.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/crypto/wavelock_ots.py:_claim_one_time_key",
+        "wavelock/crypto/wavelock_ots.py:sign_ots",
+        "wavelock/network/server.py:_verify_ots_block"
+      ],
+      "verifier": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "tests": [
+        "tests/test_ots_consensus.py::test_replay_same_ots_signature_rejected",
+        "tests/test_ots_consensus.py::test_different_message_same_copied_key_rejected_after_first",
+        "tests/test_ots_redteam.py::test_secure_copied_key_cannot_sign_twice"
+      ],
+      "known_limitations": [
+        "Lamport-style OTS remains vulnerable to intentional key reuse; the offered boundary is default signing/stateful acceptance.",
+        "No global distributed replay consensus is claimed."
+      ],
+      "valid_attack_definition": "Show two successful stateful acceptances of one consumed key/leaf in the shared public acceptance state, or bypass the default local signer-use guard while retaining its state.",
+      "nonqualifying_examples": [
+        "Repeated pure verify_ots calls returning True",
+        "allow_reuse=True alone",
+        "Independent isolated ledgers presented as one shared ledger",
+        "Deleting all authoritative signing/replay state"
+      ]
+    },
+    {
+      "id": "AR-2",
+      "name": "Body transcript and authenticated context binding",
+      "severity": "CRITICAL",
+      "description": "Accept unauthorized body/transcript/metadata under an existing signature.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/ots_blocks.py:canonical_ots_block_message",
+        "wavelock/chain/ots_blocks.py:canonical_ots_block_digest",
+        "wavelock/chain/ots_blocks.py:verify_ots_block",
+        "wavelock/network/server.py:_verify_ots_block"
+      ],
+      "verifier": [
+        "wavelock/chain/ots_blocks.py:verify_ots_block",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "tests": [
+        "tests/test_ots_mythos_break.py::test_m1_benign_signature_cannot_authorize_malicious_body",
+        "tests/test_ots_mythos_break.py::test_m1_body_tampering_rejected",
+        "tests/test_ots_mythos_break.py::test_m1_transcript_changes_with_block_type_and_prev"
+      ],
+      "known_limitations": [
+        "Transcript v1 is preserved; its exact public metadata boundary determines what is authenticated."
+      ],
+      "valid_attack_definition": "Mutate signed body, transcript, authenticated metadata, block type or parent and show authentication/normal acceptance under the existing authorization.",
+      "nonqualifying_examples": [
+        "A newly authorized block with a fresh key",
+        "Arbitrary unsigned application fields outside the offered record",
+        "A verifier rejecting the modified transcript"
+      ]
+    },
+    {
+      "id": "AR-3",
+      "name": "Public-key fingerprint and Merkle consistency",
+      "severity": "CRITICAL",
+      "description": "Pass public OTS verification with inconsistent identity or committed key material.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/crypto/wavelock_ots.py:_check_public_key_canonical",
+        "wavelock/crypto/wavelock_ots.py:public_key_fingerprint",
+        "wavelock/crypto/wavelock_ots.py:_merkle_root_from_commitments",
+        "wavelock/crypto/wavelock_ots.py:verify_ots"
+      ],
+      "verifier": [
+        "wavelock/crypto/wavelock_ots.py:verify_ots",
+        "wavelock/chain/ots_blocks.py:verify_ots_block"
+      ],
+      "tests": [
+        "tests/test_ots_redteam.py::test_attack_merkle_root_substitution_is_defended",
+        "tests/test_ots_redteam.py::test_attack_key_substitution_is_defended",
+        "tests/test_ots_redteam.py::test_secure_verify_rejects_mutated_fingerprint",
+        "tests/test_ots_consensus.py::test_tampered_revealed_slice_rejected_without_consuming"
+      ],
+      "known_limitations": [
+        "The public construction validates its complete committed-key/Merkle-root structure; no broader tree signing service is implied."
+      ],
+      "valid_attack_definition": "Supply a substituted public key, mismatched fingerprint/Merkle root/commitment array or modified revealed slice and obtain successful public authentication.",
+      "nonqualifying_examples": [
+        "Generating a different valid key and signing a new authorization",
+        "Claiming an unimplemented arbitrary Merkle-path protocol"
+      ]
+    },
+    {
+      "id": "AR-4",
+      "name": "Authenticated header and chain linkage integrity",
+      "severity": "CRITICAL",
+      "description": "Accept unauthorized stable header changes or mutated authenticated records into valid chain linkage.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/chain/Block.py:Block.calculate_hash",
+        "wavelock/chain/ots_blocks.py:verify_block_integrity",
+        "wavelock/chain/ots_blocks.py:verify_ots_block",
+        "wavelock/network/server.py:_verify_pow_and_linkage"
+      ],
+      "verifier": [
+        "wavelock/chain/ots_blocks.py:verify_ots_chain",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "tests": [
+        "tests/test_bounty_headers.py::test_confirmed_legacy_ambiguity_and_v2_separation",
+        "tests/test_bounty_headers.py::test_ots_v1_unchanged_and_downgraded_header_not_accepted",
+        "tests/test_bounty_headers.py::test_remining_header_cannot_mutate_signed_context",
+        "tests/test_supported_workflow.py::test_public_chain_rejects_reuse_and_header_tampering"
+      ],
+      "known_limitations": [
+        "Unanchored history completeness and trustworthy checkpoint acquisition are withheld, not offered properties."
+      ],
+      "valid_attack_definition": "Modify authenticated version/index/timestamp/difficulty/context or a linked authenticated record and show normal v2 chain acceptance despite the unauthorized mutation.",
+      "nonqualifying_examples": [
+        "Legitimate nonce/hash changes during mining",
+        "Documented historical header-v1 behavior",
+        "A valid chain prefix without a trusted external tip"
+      ]
+    },
+    {
+      "id": "AR-5",
+      "name": "Persistent replay parsing and restart reconstruction",
+      "severity": "HIGH",
+      "description": "Bypass public replay-record schema checks or offered restart reconstruction.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger._scan_file_into_sets",
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger._load",
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/network/server.py:ChainState.load_from_disk",
+        "wavelock/network/server.py:_reconstruct_consumed_ots"
+      ],
+      "verifier": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger._load",
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/network/server.py:ChainState.load_from_disk"
+      ],
+      "tests": [
+        "tests/test_bounty_durability.py::test_malformed_replay_records_fail_closed",
+        "tests/test_ots_consensus.py::test_durable_ledger_survives_reopen",
+        "tests/test_ots_mythos_break.py::test_m2_replay_rejected_after_side_ledger_delete_and_restart",
+        "tests/test_bounty_durability.py::test_process_exit_between_replay_and_append_stays_consumed"
+      ],
+      "known_limitations": [
+        "Unsigned replay-cache authenticity against arbitrary hostile writes is withheld.",
+        "Separate replay/chain files may burn a key before block append; Windows has no portable directory-fsync power-loss guarantee."
+      ],
+      "valid_attack_definition": "A malformed schema/version/identifier record is treated as valid, or restart/cache-loss reconstruction with accepted history retained permits consumed-identity acceptance. Unauthorized reuse demonstrates Critical AR-1 impact.",
+      "nonqualifying_examples": [
+        "Fail-closed load error",
+        "Valid-format cache authentication claims",
+        "Rollback/deletion of all authoritative local state",
+        "A conservatively burned key that cannot be reused"
+      ]
+    },
+    {
+      "id": "AR-6",
+      "name": "Same-host process-race exclusion",
+      "severity": "CRITICAL",
+      "description": "Race shared public state into duplicate acceptance or incompatible sibling appends.",
+      "implementation_status": "IMPLEMENTED",
+      "regression_status": "PASS",
+      "bounty_status": "OPEN",
+      "security_proof": "NONE",
+      "enforcing_code": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger._interprocess_lock",
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/storage/durability.py:exclusive_lock",
+        "wavelock/network/server.py:ChainState.acceptance_lock",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "verifier": [
+        "wavelock/crypto/ots_ledger.py:PersistentOTSReplayLedger.accept",
+        "wavelock/network/server.py:try_accept_block"
+      ],
+      "tests": [
+        "tests/test_bounty_durability.py::test_same_host_multiprocess_exclusion",
+        "tests/test_ots_mythos_break.py::test_m3_concurrent_duplicate_acceptance_accepts_at_most_one",
+        "tests/test_supported_workflow.py::test_sqlite_fallback_lock_rejects_concurrent_replay"
+      ],
+      "known_limitations": [
+        "Local file/SQLite exclusion is not distributed consensus.",
+        "Filesystem must provide the documented atomic publication and lock semantics."
+      ],
+      "valid_attack_definition": "Synchronize competing processes sharing the same normal data/replay paths and demonstrate successful duplicate one-time acceptance or inconsistent sibling appends.",
+      "nonqualifying_examples": [
+        "Two separate hosts or isolated data directories",
+        "Bypassing the public acceptance path with direct historical file writes",
+        "Only one process successfully accepts"
+      ]
+    }
+  ],
+  "withheld_targets": [
+    {
+      "id": "C6",
+      "name": "Remote runtime/machine/kernel/configuration attestation",
+      "severity": "CRITICAL",
+      "implementation_status": "NOT_IMPLEMENTED",
+      "regression_status": "NOT_APPLICABLE",
+      "bounty_status": "WITHHELD",
+      "security_proof": "NONE",
+      "reason": "Requires a separate trust architecture not provided by the public reference repository."
+    },
+    {
+      "id": "C7",
+      "name": "Behavior-wide drift-detection evasion",
+      "severity": "CRITICAL",
+      "implementation_status": "NOT_IMPLEMENTED",
+      "regression_status": "NOT_APPLICABLE",
+      "bounty_status": "WITHHELD",
+      "security_proof": "NONE",
+      "reason": "The public repository does not provide the observation/enforcement boundary needed for this broader claim."
+    },
+    {
+      "id": "C8",
+      "name": "Broad hostile rollback/cache tamper/trusted-anchor guarantees",
+      "severity": "CRITICAL",
+      "implementation_status": "PARTIAL",
+      "regression_status": "NOT_APPLICABLE",
+      "bounty_status": "WITHHELD",
+      "security_proof": "NONE",
+      "reason": "Public authenticated records and local persistence checks do not provide a complete hostile-host rollback-resistant system. Only AR-1 through AR-6 are offered."
+    }
+  ]
+}
