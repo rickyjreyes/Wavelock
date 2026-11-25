@@ -6,6 +6,16 @@ and the documentation that interprets it. The raw audit lives in
 edits, softens, or hides it. The purpose of this README is to explain *what the
 audit means* and to convert its findings into a clean research / bounty boundary.
 
+> **Patent / legal context:** Terms used in this audit such as “claim,” “broken,”
+> “failure,” “vendor admission,” “insecure,” or similar security-audit language
+> refer to tested engineering assertions, code behavior, threat models, or
+> experimental results. They do **not** refer to patent claims and are not
+> intended as admissions or legal conclusions concerning patentability, written
+> description, enablement, priority, validity, enforceability, claim
+> construction, infringement, or patent scope. See
+> [`../PATENT_NOTICE.md`](../PATENT_NOTICE.md), [`../LICENSE`](../LICENSE), and
+> [`../docs/PATENT_SCOPE.md`](../docs/PATENT_SCOPE.md).
+
 > **Bottom line up front:** The audit clarified the boundary. WaveLock should
 > currently be tested as **machine-to-machine (M2M) commitment / attestation /
 > replay / drift-detection infrastructure**, not as direct payload encryption or

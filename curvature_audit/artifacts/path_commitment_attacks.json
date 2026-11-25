@@ -1,0 +1,79 @@
+{
+  "avalanche": {
+    "max_HD": 148,
+    "mean_output_HD": 127.68,
+    "messages": 100,
+    "min_HD": 108,
+    "note": "ideal mean HD 128; per-bit flip prob ideal 0.5.",
+    "per_bit_flip_prob_max": 0.64,
+    "per_bit_flip_prob_min": 0.38
+  },
+  "differential": {
+    "mean_HD": 128.15,
+    "messages": 300,
+    "min_HD": 106,
+    "note": "fixed single-bit input differential; ideal mean 128.",
+    "std_HD": 7.829910599745057
+  },
+  "length_extension": {
+    "mean_HD_appended": 128.05,
+    "note": "appending bytes (which changes the length block and re-runs finalization) gives avalanche-level HD; no trivial length-extension relation observed (not a proof)."
+  },
+  "limitations": [
+    "collisions measured on truncations only; full 256-bit extrapolated",
+    "all searches budgeted; no result is a lower bound"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "multicollision": {
+    "budget": 5000,
+    "max_multicollision": 3,
+    "nbits": 16,
+    "note": "largest set of messages sharing the same nbit truncation."
+  },
+  "output_bias": {
+    "max_abs_z": 2.713546265191242,
+    "messages": 1200,
+    "n_bits_abs_z_gt_3": 0,
+    "note": "monobit per output bit; |z|>3 count vs 256 bits.",
+    "p1_max": 0.5391666666666667,
+    "p1_min": 0.4683333333333333
+  },
+  "path_merging": {
+    "example": null,
+    "merges_with_distinct_digest": 0,
+    "note": "where a 32-bit wave fingerprint collided, digests still differed -- the accumulator path commitment is doing work.",
+    "samples": 2000,
+    "wave_fingerprint_merges": 0
+  },
+  "pebble_property": {
+    "distinct_digest_fraction": 1.0,
+    "distinct_pre_squeeze_state_fraction": 1.0,
+    "full_digest_collisions": [],
+    "note": "distinct messages gave distinct pre-squeeze coupled states and distinct 256-bit digests across the sample; no full collision.",
+    "pairs": 1200
+  },
+  "phase": "path_collision",
+  "runtime_s": 323.86,
+  "seed": 90300,
+  "transcript_injectivity": {
+    "note": "no two distinct messages shared the full accumulator state C_T within budget (transcript space ~ P^256).",
+    "samples": 2000,
+    "transcript_collision": null
+  },
+  "truncated_collision": {
+    "birthday_expected": 5133.6,
+    "budget": 4000,
+    "first_collision_evals": 3291,
+    "nbits": 24,
+    "note": "truncated digest collision vs birthday law.",
+    "ratio_observed_over_expected": 0.641
+  }
+}

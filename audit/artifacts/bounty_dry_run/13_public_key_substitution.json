@@ -1,0 +1,9 @@
+{
+  "target": "Critical 8 / OTS identity",
+  "attempt": "substitute public key and rehash",
+  "expected": "reject",
+  "observed": {
+    "accepted": false
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,74 @@
+{
+  "artifact": "reduced_exhaustive_cc1",
+  "description": "Full joint (psi,C) exhaustive enumeration of toy CC-Core-v0 models",
+  "equations": {
+    "coupled_injective": "True iff all (psi,C) map to distinct (psi',C')",
+    "coupled_round": "(psi', C') = (F(psi), Phi_t(C, psi, F(psi)))"
+  },
+  "interpretation": "At p=3, N0=2 the full joint (psi,C) state space is 3^4 x 3^4 = 6561. At p=5, N0=2 it is 5^4 x 5^4 = 390,625. If coupled_injective is True, the coupled round is injective on the full joint domain (not just a wave slice). N=2 degeneracy (up==down, left==right on a 2x2 torus) dominates and results are NOT extrapolated to N=16.",
+  "limitations": [
+    "N0=2 torus has extreme neighbor degeneracy (every cell's up==down, left==right)",
+    "Results at N=16 remain unresolved",
+    "Coupled round is tested at t=0 only for the single-round result"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "bb96765ef2fa760482a325e95c57ccc8bccb6377",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "runtime_s": 39.25,
+  "seed": 93000,
+  "toy_results": {
+    "p3_N2": {
+      "full_joint_enumeration": {
+        "N0": 2,
+        "coupled_collisions_on_full_domain": 5562,
+        "coupled_image_size": 999,
+        "coupled_injective": false,
+        "domain_joint": 6561,
+        "domain_psi": 81,
+        "enumerated": true,
+        "note": "Full joint (psi, C) enumeration at round t=0. Coupled injectivity means every (psi, C) pair maps to a distinct (psi', C') pair.",
+        "p": 3,
+        "wave_collisions": 27,
+        "wave_image_size": 27
+      },
+      "multi_round": {
+        "N0": 2,
+        "domain_joint": 6561,
+        "enumerated": true,
+        "injective_after_rounds": false,
+        "n_rounds": 3,
+        "p": 3,
+        "trajectory_collisions": 6480,
+        "trajectory_image_size": 81
+      }
+    },
+    "p5_N2": {
+      "full_joint_enumeration": {
+        "N0": 2,
+        "coupled_collisions_on_full_domain": 375073,
+        "coupled_image_size": 15552,
+        "coupled_injective": false,
+        "domain_joint": 390625,
+        "domain_psi": 625,
+        "enumerated": true,
+        "note": "Full joint (psi, C) enumeration at round t=0. Coupled injectivity means every (psi, C) pair maps to a distinct (psi', C') pair.",
+        "p": 5,
+        "wave_collisions": 80,
+        "wave_image_size": 81
+      }
+    },
+    "p7_N2": {
+      "full_joint_enumeration": {
+        "domain_size_psi": 2401,
+        "enumerated": false,
+        "reason": "Domain size 2401^2 = 5764801 too large for full enumeration"
+      }
+    }
+  }
+}

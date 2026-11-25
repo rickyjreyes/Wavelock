@@ -1,6 +1,7 @@
 # network/server.py
 from __future__ import annotations
 import os, socket, threading, time, json, hashlib, traceback
+from contextlib import contextmanager, nullcontext
 from typing import List, Tuple, Dict, Optional
 
 import numpy as np
@@ -30,16 +31,36 @@ HOST = "0.0.0.0"
 ###############################################################################
 
 class ChainState:
-    def __init__(self):
+    def __init__(self, *, persistent=False):
+        self.persistent = persistent
         self._lock = threading.RLock()
         self.blocks: List[Block] = []
         self.by_hash: Dict[str, Block] = {}
 
-    def load_from_disk(self):
-        with self._lock:
-            self.blocks = load_all_blocks()
+    def _file_lock(self):
+        from wavelock.chain import chain_utils
+        from wavelock.storage.durability import exclusive_lock
+        return exclusive_lock(chain_utils.LEDGER_DIR / "chain-writer.lock") if self.persistent else nullcontext()
+
+    def load_from_disk(self, *, require_ots=False, already_locked=False):
+        with self._lock, (nullcontext() if already_locked else self._file_lock()):
+            blocks = load_all_blocks()
+            if require_ots:
+                from wavelock.chain.ots_blocks import verify_ots_chain
+                if not verify_ots_chain(blocks):
+                    raise OTSLedgerError("stored chain failed public OTS verification")
+            _reconstruct_consumed_ots(blocks, CONSENSUS_OTS_LEDGER)
+            self.blocks = blocks
             self.by_hash = {b.hash: b for b in self.blocks}
-            _reconstruct_consumed_ots(self.blocks, CONSENSUS_OTS_LEDGER)
+
+    @contextmanager
+    def acceptance_lock(self, cfg):
+        with self._lock, self._file_lock():
+            if self.persistent:
+                # A different local process may have advanced the tip. Reload
+                # under the writer lock before linkage/replay/append decisions.
+                self.load_from_disk(require_ots=getattr(cfg, "require_ots", True), already_locked=True)
+            yield
 
     def tip(self) -> Optional[Block]:
         with self._lock:
@@ -59,7 +80,7 @@ class ChainState:
             self.blocks.append(b)
             self.by_hash[b.hash] = b
 
-CHAIN = ChainState()
+CHAIN = ChainState(persistent=True)
 
 ###############################################################################
 # Trust / strict verification
@@ -99,7 +120,16 @@ def _extract_curvature_fields(b: Block) -> Tuple[Optional[str], Optional[str], O
     return msg, sig, com
 
 def _verify_pow_and_linkage(b: Block, cfg) -> bool:
+    if getattr(cfg, "require_ots", True) and b.header_version != 2:
+        print("Reject: new OTS acceptance requires block header version 2.")
+        return False
+    if not verify_block_integrity(b):
+        print("Reject: invalid block hash, Merkle root, or proof of work.")
+        return False
     tip = CHAIN.tip()
+    if b.index != (tip.index + 1 if tip else 1):
+        print("Reject: non-sequential block index.")
+        return False
     expected_prev = tip.hash if tip else "0" * 64
     if b.previous_hash != expected_prev:
         print(f"Reject: prev_hash mismatch (got {b.previous_hash[:12]}..., expected {expected_prev[:12]}...)")
@@ -201,13 +231,15 @@ _strict_verify_curvature = _verify_curvature
 from wavelock.crypto.wavelock_ots import (
     SCHEME as OTS_SCHEME,
     OTSReplayLedger,
+    WaveLockOTSError,
     verify_ots as _verify_ots,
 )
 from wavelock.crypto.ots_ledger import PersistentOTSReplayLedger, OTSLedgerError
 
 #: Durable, reconstructable consumed-id ledger used by block acceptance. The
-#: consumed set is a function of accepted chain state (see ``index_signature``),
-#: so any node replaying accepted OTS blocks derives the same set. This is the
+#: accepted identities are reconstructable from chain state (``index_signature``).
+#: Local interrupted appends can additionally burn identities before a block
+#: reaches the chain; retain the durable replay ledger to preserve those. This is the
 #: load-bearing control that turns OTS "one-time" into an enforced invariant on
 #: this node; full Finding-D closure requires every node to run this rejection
 #: against a ledger derived from agreed chain state.
@@ -225,120 +257,13 @@ CONSENSUS_OTS_LEDGER = PersistentOTSReplayLedger()
 OTS_LEDGER = CONSENSUS_OTS_LEDGER
 
 
-#: Bumped if the canonical OTS block-signing transcript shape changes.
-OTS_BLOCK_TRANSCRIPT_VERSION = 1
-
-
-def _ots_block_transcript_payload(block_type, previous_hash, messages, meta) -> dict:
-    """Build the canonical, signature-free transcript object for an OTS block.
-
-    This is the object an OTS signature actually authorizes (Mythos M1). It binds
-    the consensus-stable, attacker-relevant parts of the block:
-
-    * ``messages`` — the actual accepted body payload;
-    * ``block_type`` — so an OTS auth can't be retyped onto another block kind;
-    * ``previous_hash`` — the parent reference (consensus linkage);
-    * ``auth_scheme`` and the **public key** carried in ``ots_auth`` — binds the
-      signing identity;
-    * any other ``meta`` fields a deployment adds.
-
-    It deliberately EXCLUDES the self-referential ``ots_auth.signature`` and
-    ``ots_auth.message`` (those carry / equal the transcript itself) and the
-    mining outputs (``nonce``/``hash``) and ``timestamp``/``index`` (not signed:
-    a node may legitimately reposition an identical body, and the durable replay
-    ledger — not the index — is what prevents reuse).
-    """
-    m = dict(meta or {})
-    auth = m.get("ots_auth")
-    if isinstance(auth, dict):
-        # Strip the self-referential fields so sign-time and verify-time agree.
-        m = {**m, "ots_auth": {k: v for k, v in auth.items()
-                               if k not in ("signature", "message")}}
-    return {
-        "wl_ots_block_transcript": OTS_BLOCK_TRANSCRIPT_VERSION,
-        "auth_scheme": m.get("auth_scheme"),
-        "block_type": str(block_type or ""),
-        "previous_hash": previous_hash,
-        "messages": list(messages or []),
-        "meta": m,
-    }
-
-
-def canonical_ots_block_message(b: "Block") -> bytes:
-    """Canonical signing transcript (preimage bytes) for an OTS block.
-
-    Recomputed from the *received* block at verify time so the OTS signature is
-    bound to the actual block body, not to an arbitrary ``meta.ots_auth.message``
-    (Mythos M1). Sign-time and verify-time produce identical bytes because the
-    self-referential signature/message fields are excluded.
-    """
-    return _canonical_json(_ots_block_transcript_payload(
-        getattr(b, "block_type", ""),
-        getattr(b, "previous_hash", None),
-        getattr(b, "messages", []) or [],
-        getattr(b, "meta", {}) or {},
-    ))
-
-
-def canonical_ots_block_digest(b: "Block") -> str:
-    """Domain-separated hex digest of :func:`canonical_ots_block_message`.
-
-    This hex string is the message an OTS signer signs and the verifier
-    recomputes; it is what gets stored in ``meta.ots_auth.message``.
-    """
-    return hashlib.sha256(
-        b"WL-OTS-BLOCK-TRANSCRIPT-v1\x00" + canonical_ots_block_message(b)
-    ).hexdigest()
-
-
-def build_ots_block_meta(public_key: dict, message, signature: dict) -> dict:
-    """Canonical ``meta`` for an OTS-authenticated block.
-
-    The auth material lives in ``meta`` so it is covered by the block hash
-    (``Block.calculate_hash`` hashes a sorted-key JSON of ``meta``), binding the
-    OTS signature into the block identity. ``message`` MUST be the canonical
-    block-signing digest (:func:`canonical_ots_block_digest`) that ``signature``
-    actually signs — a free-text message no longer authorizes a block (M1). Use
-    :func:`build_signed_ots_block` to construct blocks correctly.
-    """
-    return {
-        "auth_scheme": OTS_SCHEME,
-        "ots_auth": {
-            "public_key": public_key,
-            "message": message,
-            "signature": signature,
-        },
-    }
-
-
-def build_signed_ots_block(secret_key: dict, public_key: dict, messages,
-                           *, index: int = 1, previous_hash: str = "0" * 64,
-                           difficulty: int = 1, block_type: str = "OTS",
-                           extra_meta: Optional[dict] = None,
-                           allow_reuse: bool = False) -> "Block":
-    """Build a mined OTS block whose signature is bound to its body (M1).
-
-    The signer signs :func:`canonical_ots_block_digest` of the body (messages,
-    block_type, previous_hash, auth scheme, public key, extra meta) — NOT a
-    free-text message — so the accepted body is exactly what was authorized.
-    """
-    from wavelock.crypto.wavelock_ots import sign_ots
-
-    base_meta = dict(extra_meta or {})
-    base_meta["auth_scheme"] = OTS_SCHEME
-    base_meta["ots_auth"] = {"public_key": public_key}
-    transcript = hashlib.sha256(
-        b"WL-OTS-BLOCK-TRANSCRIPT-v1\x00" + _canonical_json(
-            _ots_block_transcript_payload(block_type, previous_hash, messages, base_meta)
-        )
-    ).hexdigest()
-    sig = sign_ots(secret_key, transcript, allow_reuse=allow_reuse)
-    meta = build_ots_block_meta(public_key, transcript, sig)
-    if extra_meta:
-        for k, v in extra_meta.items():
-            meta.setdefault(k, v)
-    return Block(index=index, messages=list(messages), previous_hash=previous_hash,
-                 difficulty=difficulty, block_type=block_type, meta=meta)
+# Re-export existing helper names for callers of the node API.
+from wavelock.chain.ots_blocks import (
+    OTS_BLOCK_TRANSCRIPT_VERSION, _ots_block_transcript_payload,
+    canonical_ots_block_message, canonical_ots_block_digest,
+    build_ots_block_meta, build_signed_ots_block, verify_ots_block,
+    verify_block_integrity,
+)
 
 
 def _extract_ots_auth(b: "Block") -> Optional[dict]:
@@ -361,7 +286,7 @@ def block_requires_ots(b: "Block", cfg=None) -> bool:
     meta = getattr(b, "meta", None) or {}
     if str(meta.get("auth_scheme", "")) == OTS_SCHEME:
         return True
-    if cfg is not None and getattr(cfg, "require_ots", False):
+    if getattr(cfg, "require_ots", True):
         return True
     return False
 
@@ -401,13 +326,28 @@ def _reconstruct_consumed_ots(blocks, ledger) -> None:
     Fail-closed: a block that STRUCTURALLY claims to be OTS (``block_type ==
     "OTS"`` or ``meta.auth_scheme == WaveLock-OTS-v1``) but carries malformed or
     missing OTS auth raises :class:`OTSLedgerError` rather than being skipped — a
-    silently-skipped OTS block would reopen the replay hole this closes.
+    silently-skipped OTS block would reopen the replay hole this closes. The
+    same holds when its public key's commitment table cannot be identified
+    (``ots_material_id``): that identity must be reconstructed too.
     """
     for b in blocks:
         auth = _extract_ots_auth(b)
         sig = auth.get("signature") if isinstance(auth, dict) else None
         if _is_well_formed_ots_signature(sig):
-            ledger.index_signature(sig)
+            public_key = auth.get("public_key")
+            try:
+                if not isinstance(public_key, dict):
+                    raise WaveLockOTSError("missing public key")
+                ledger.index_signature(sig, public_key=public_key)
+            except WaveLockOTSError as error:
+                if _block_claims_ots(b):
+                    raise OTSLedgerError(
+                        f"accepted OTS block #{getattr(b, 'index', '?')} "
+                        f"({str(getattr(b, 'hash', ''))[:12]}...) has no identifiable "
+                        "commitment table; refusing to reconstruct replay state "
+                        "(fail closed)."
+                    ) from error
+                ledger.index_signature(sig)  # never claimed OTS: labels only
         elif _block_claims_ots(b):
             raise OTSLedgerError(
                 f"accepted OTS block #{getattr(b, 'index', '?')} "
@@ -451,8 +391,7 @@ def _verify_ots_block(b: "Block", cfg=None, ledger: "PersistentOTSReplayLedger |
         # whose body says something else: the carried message must equal the
         # recomputed transcript, and verification runs against that transcript.
         expected = canonical_ots_block_digest(b)
-        import hmac as _hmac
-        if not _hmac.compare_digest(msg, expected):
+        if not verify_ots_block(b):
             print("Reject: OTS auth message does not bind the block body (M1, fail closed).")
             return False
         if not led.accept(pub, expected, sig):
@@ -469,12 +408,13 @@ def verify_ots_payload(public_key: dict, message, signature: dict,
     """Fail-closed WaveLock-OTS verification + duplicate-key rejection.
 
     Standalone entry point (not block-shaped). Returns True only if the
-    signature verifies AND its one_time_key_id has not been consumed before.
-    Rejects (False) on:
+    signature verifies AND none of its key id, fingerprint or commitment table
+    has been consumed before. Rejects (False) on:
 
     * any non-WaveLock-OTS scheme (legacy SIGv2 is never accepted here);
     * any verification failure (strict canonical checks in ``verify_ots``);
-    * a replayed/duplicate one_time_key_id;
+    * a replayed/duplicate one_time_key_id, fingerprint, or commitment table
+      (so relabelling a consumed signature with a new key id is rejected);
     * any exception (fail closed).
     """
     try:
@@ -537,18 +477,20 @@ def try_accept_block_dict(d: dict, cfg) -> bool:
     return try_accept_block(b, cfg)
 
 def try_accept_block(b: Block, cfg) -> bool:
-    if not _verify_pow_and_linkage(b, cfg):
+    # One local critical section covers refreshed linkage, replay and append.
+    try:
+        with CHAIN.acceptance_lock(cfg):
+            if not _verify_pow_and_linkage(b, cfg):
+                return False
+            if block_requires_ots(b, cfg):
+                if not _verify_ots_block(b, cfg):
+                    return False
+            elif not _verify_curvature(b, cfg):
+                return False
+            CHAIN.append(b)
+    except (OSError, OTSLedgerError) as error:
+        print(f"Reject: durable acceptance failed: {error}")
         return False
-    # Route to the correct authentication path. An OTS-required block is verified
-    # with WaveLock-OTS + durable replay rejection and NEVER falls back to the
-    # legacy curvature path (legacy SIGv2 is refused where OTS is expected).
-    if block_requires_ots(b, cfg):
-        if not _verify_ots_block(b, cfg):
-            return False
-    else:
-        if not _verify_curvature(b, cfg):
-            return False
-    CHAIN.append(b)
     print(f"Accepted Block #{b.index} | {b.hash[:12]}...")
     broadcast_inv(b.hash)
     return True
@@ -590,7 +532,7 @@ def handle_client(conn: socket.socket, addr: Tuple[str, int], cfg):
                 if blocks:
                     conn.sendall(encode_message(SEND_BLOCKS, blocks))
 
-            elif opcode == SEND_BLOCKS:
+            elif opcode in (SEND_BLOCKS, SEND_BLOCK):
                 for bd in data:
                     try:
                         if not has_block(bd.get("hash", "")):
@@ -629,16 +571,26 @@ def handle_client(conn: socket.socket, addr: Tuple[str, int], cfg):
 # Server main
 ###############################################################################
 
-def main():
-    CHAIN.load_from_disk()
-    cfg = load_config(os.getenv("WAVELOCK_CONFIG"))
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser(description="WaveLock OTS node")
+    parser.add_argument("--port", type=int)
+    parser.add_argument("--config", default=os.getenv("WAVELOCK_CONFIG"))
+    args = parser.parse_args(argv)
+    cfg = load_config(args.config)
+    if args.port is not None:
+        if not 1 <= args.port <= 65535:
+            parser.error("port must be between 1 and 65535")
+        cfg.port = args.port
+    CHAIN.load_from_disk(require_ots=cfg.require_ots)
 
     trusted = _load_trusted_commitments()
     print(f"Trusted commitments loaded: {len(trusted)}")
     print(f"WaveLock P2P server listening on port {cfg.port}")
-    print("  Curvature verify: FAIL-CLOSED (always requires a valid signature)")
-    print("  Trust-list membership alone never accepts a block.")
-    print("  Unpublished proof material is rejected.")
+    if cfg.require_ots:
+        print("  Authentication: WaveLock-OTS required; public verification and durable replay rejection.")
+    else:
+        print("  LEGACY COMPATIBILITY: SIGv2 remains insecure; use only with historical test ledgers.")
 
     for seed in cfg.seeds or []:
         try:

@@ -1,0 +1,1116 @@
+{
+  "exhaustive": [
+    {
+      "collision_examples": [
+        [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        [
+          [
+            1
+          ],
+          [
+            4
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.6,
+      "message_collisions": 2,
+      "messages_enumerated": 5,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T1_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "blocks": 1,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            3
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.12,
+      "message_collisions": 22,
+      "messages_enumerated": 25,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "blocks": 2,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.024,
+      "message_collisions": 122,
+      "messages_enumerated": 125,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T1_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "blocks": 3,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        [
+          [
+            1
+          ],
+          [
+            4
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.6,
+      "message_collisions": 2,
+      "messages_enumerated": 5,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T2_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 2,
+        "blocks": 1,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.12,
+      "message_collisions": 22,
+      "messages_enumerated": 25,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T2_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 2,
+        "blocks": 2,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.024,
+      "message_collisions": 122,
+      "messages_enumerated": 125,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T2_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 2,
+        "blocks": 3,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        [
+          [
+            1
+          ],
+          [
+            4
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.6,
+      "message_collisions": 2,
+      "messages_enumerated": 5,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T3_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 3,
+        "a": 3,
+        "b": 2,
+        "blocks": 1,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            3
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.12,
+      "message_collisions": 22,
+      "messages_enumerated": 25,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T3_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 3,
+        "a": 3,
+        "b": 2,
+        "blocks": 2,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 3,
+      "image_fraction": 0.024,
+      "message_collisions": 122,
+      "messages_enumerated": 125,
+      "messages_reaching_zero": 0,
+      "model": "N2_p5_T3_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 3,
+        "a": 3,
+        "b": 2,
+        "blocks": 3,
+        "p": 5
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 7,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 7,
+      "messages_reaching_zero": 0,
+      "model": "N2_p7_T1_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 3,
+        "blocks": 1,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 49,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 49,
+      "messages_reaching_zero": 0,
+      "model": "N2_p7_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 3,
+        "blocks": 2,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            2,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            1,
+            2,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            2,
+            3
+          ],
+          [
+            1,
+            3,
+            3
+          ]
+        ],
+        [
+          [
+            0,
+            2,
+            4
+          ],
+          [
+            1,
+            3,
+            4
+          ]
+        ],
+        [
+          [
+            1,
+            5,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 311,
+      "image_fraction": 0.9067055393586005,
+      "message_collisions": 32,
+      "messages_enumerated": 343,
+      "messages_reaching_zero": 1,
+      "model": "N2_p7_T1_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 3,
+        "blocks": 3,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": [
+        [
+          1,
+          4,
+          6
+        ]
+      ]
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 7,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 7,
+      "messages_reaching_zero": 0,
+      "model": "N2_p7_T2_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 3,
+        "blocks": 1,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 49,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 49,
+      "messages_reaching_zero": 0,
+      "model": "N2_p7_T2_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 3,
+        "blocks": 2,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            2,
+            5
+          ],
+          [
+            0,
+            6,
+            3
+          ]
+        ],
+        [
+          [
+            0,
+            2,
+            5
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            6,
+            1
+          ],
+          [
+            1,
+            1,
+            5
+          ]
+        ],
+        [
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            1,
+            2,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            3,
+            0
+          ],
+          [
+            1,
+            3,
+            1
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 263,
+      "image_fraction": 0.7667638483965015,
+      "message_collisions": 80,
+      "messages_enumerated": 343,
+      "messages_reaching_zero": 6,
+      "model": "N2_p7_T2_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 3,
+        "blocks": 3,
+        "p": 7
+      },
+      "skipped": false,
+      "zero_message_examples": [
+        [
+          0,
+          2,
+          5
+        ],
+        [
+          0,
+          6,
+          3
+        ],
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          2,
+          4,
+          0
+        ],
+        [
+          3,
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 11,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 11,
+      "messages_reaching_zero": 0,
+      "model": "N2_p11_T1_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 5,
+        "blocks": 1,
+        "p": 11
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 121,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 121,
+      "messages_reaching_zero": 0,
+      "model": "N2_p11_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 5,
+        "blocks": 2,
+        "p": 11
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [
+        [
+          [
+            0,
+            0,
+            5
+          ],
+          [
+            2,
+            3,
+            9
+          ]
+        ],
+        [
+          [
+            1,
+            2,
+            8
+          ],
+          [
+            2,
+            7,
+            7
+          ]
+        ],
+        [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            2,
+            7,
+            10
+          ]
+        ],
+        [
+          [
+            0,
+            6,
+            1
+          ],
+          [
+            2,
+            9,
+            8
+          ]
+        ],
+        [
+          [
+            1,
+            5,
+            5
+          ],
+          [
+            2,
+            10,
+            1
+          ]
+        ]
+      ],
+      "distinct_pre_squeeze_states": 1247,
+      "image_fraction": 0.9368895567242674,
+      "message_collisions": 84,
+      "messages_enumerated": 1331,
+      "messages_reaching_zero": 0,
+      "model": "N2_p11_T1_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 5,
+        "blocks": 3,
+        "p": 11
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 13,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 13,
+      "messages_reaching_zero": 0,
+      "model": "N2_p13_T1_blk1",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 6,
+        "blocks": 1,
+        "p": 13
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    },
+    {
+      "collision_examples": [],
+      "distinct_pre_squeeze_states": 169,
+      "image_fraction": 1.0,
+      "message_collisions": 0,
+      "messages_enumerated": 169,
+      "messages_reaching_zero": 0,
+      "model": "N2_p13_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 6,
+        "blocks": 2,
+        "p": 13
+      },
+      "skipped": false,
+      "zero_message_examples": []
+    }
+  ],
+  "interpretation": "Reduced-model lifting (or its failure) identifies mechanisms only; NOT extrapolated to the normative system.",
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "8K_reduced_lifting",
+  "rate_capacity_note": "rate = ceil(N*N/4) cells (mirrors 64/256); message symbols are arbitrary F_p (relaxed analog for tiny p).",
+  "runtime_s": 60.61,
+  "smt": [
+    {
+      "available": true,
+      "model": "N2_p7_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 3,
+        "blocks": 2,
+        "p": 7
+      },
+      "result": "unsat",
+      "solve_time_s": 0.056,
+      "vars": 2
+    },
+    {
+      "available": true,
+      "model": "N2_p7_T2_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 3,
+        "blocks": 3,
+        "p": 7
+      },
+      "result": "unknown",
+      "solve_time_s": 20.095,
+      "vars": 3
+    },
+    {
+      "available": true,
+      "model": "N2_p11_T1_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 1,
+        "a": 3,
+        "b": 5,
+        "blocks": 3,
+        "p": 11
+      },
+      "result": "unknown",
+      "solve_time_s": 20.008,
+      "vars": 3
+    },
+    {
+      "available": true,
+      "model": "N2_p13_T2_blk3",
+      "params": {
+        "D": 5,
+        "N": 2,
+        "T": 2,
+        "a": 3,
+        "b": 6,
+        "blocks": 3,
+        "p": 13
+      },
+      "result": "unknown",
+      "solve_time_s": 20.11,
+      "vars": 3
+    },
+    {
+      "available": true,
+      "model": "N4_p5_T1_blk1",
+      "params": {
+        "D": 5,
+        "N": 4,
+        "T": 1,
+        "a": 3,
+        "b": 2,
+        "blocks": 1,
+        "p": 5
+      },
+      "result": "unsat",
+      "solve_time_s": 0.0,
+      "vars": 4
+    },
+    {
+      "available": true,
+      "model": "N4_p7_T1_blk2",
+      "params": {
+        "D": 5,
+        "N": 4,
+        "T": 1,
+        "a": 3,
+        "b": 3,
+        "blocks": 2,
+        "p": 7
+      },
+      "result": "unsat",
+      "solve_time_s": 0.041,
+      "vars": 8
+    }
+  ],
+  "z3_available": true
+}

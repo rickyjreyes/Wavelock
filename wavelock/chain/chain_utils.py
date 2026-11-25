@@ -1,5 +1,6 @@
 import os, time, json, hashlib, sys
 from pathlib import Path
+from wavelock.storage.durability import atomic_write, ensure_directory, fsync_directory
 import numpy as np
 try:
     import cupy as cp
@@ -20,7 +21,7 @@ from wavelock.chain.Block import Block
 ROOT = Path(__file__).resolve().parents[1]
 
 # The real global ledger directory used by ALL nodes, tests, etc.
-LEDGER_DIR = ROOT / "ledger"
+from wavelock.storage.runtime import LEDGER_DIR
 LEDGER_DIR.mkdir(exist_ok=True)
 
 # Main rotating ledger file
@@ -34,7 +35,7 @@ LEDGER_FILE = LEDGER_DIR / "blk00000.jsonl"
 def _write_lock(path: Path) -> Path:
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     lock = path.with_suffix(".hash")
-    lock.write_text(digest)
+    atomic_write(lock, digest.encode("ascii"), mode=0o644)
     return lock
 
 
@@ -148,17 +149,22 @@ def tamper_and_test(keypair: CurvatureKeyPair):
 def save_block_to_disk(block: Block):
     """Append block JSON to canonical rotating ledger file."""
     target = LEDGER_FILE
-    target.parent.mkdir(exist_ok=True)
+    ensure_directory(target.parent)
 
     try:
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
     except PermissionError:
         # target is read-only, rotate ledger
         target = _next_ledger_path()
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(block.to_dict()) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
 
+    fsync_directory(target.parent)
     lock_path = _write_lock(target)
     if os.getenv("WL_LOCK_AFTER_WRITE") == "1":
         _set_readonly(target)
@@ -177,19 +183,7 @@ def load_all_blocks() -> list[Block]:
         with p.open("r", encoding="utf-8") as f:
             for line in f:
                 data = json.loads(line)
-                block = Block(
-                    index=data["index"],
-                    messages=data["messages"],
-                    previous_hash=data["previous_hash"],
-                    difficulty=data.get("difficulty", 4),
-                    timestamp=float(data["timestamp"]),
-                    nonce=data["nonce"],
-                    block_hash=data["hash"],
-                    merkle_root=data.get("merkle_root"),
-                    block_type=data.get("block_type", "GENERIC"),
-                    meta=data.get("meta", {}),
-                )
-                block.hash = data["hash"]   # ⭐ REQUIRED ⭐
+                block = Block.from_dict(data)
                 blocks.append(block)
 
     return blocks

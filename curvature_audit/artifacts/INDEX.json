@@ -1,0 +1,47 @@
+{
+  "artifacts": {
+    "curvature_metrics_demo.json": {
+      "phase": "curvature_metrics_demo",
+      "runtime_s": 0.1,
+      "seed": 90100
+    },
+    "curvature_scaling.json": {
+      "phase": "curvature_scaling",
+      "runtime_s": 1.7,
+      "seed": 90500
+    },
+    "eigenmode_attacks.json": {
+      "phase": "eigenmode_attacks",
+      "runtime_s": 43.55,
+      "seed": 90200
+    },
+    "path_commitment_attacks.json": {
+      "phase": "path_collision",
+      "runtime_s": 323.86,
+      "seed": 90300
+    },
+    "reduced_models.json": {
+      "phase": "reduced_models",
+      "runtime_s": 2.39,
+      "seed": 90600
+    },
+    "resource_bound_analysis.json": {
+      "phase": "resource_bounds",
+      "runtime_s": 2.03,
+      "seed": 90400
+    }
+  },
+  "description": "WaveLock Curvature-Capacity Core adversarial audit artifacts",
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "note": "Each artifact records branch, commit, equations, seed, environment, runtime, budget, raw result, interpretation and limitations. Negative results are budgeted, not proofs.",
+  "suite": "curvature_capacity_audit",
+  "verdict": "Experimental: mechanism partially supported, no proof"
+}

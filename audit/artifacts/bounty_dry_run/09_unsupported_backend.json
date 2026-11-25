@@ -1,0 +1,10 @@
+{
+  "target": "High 5",
+  "attempt": "CuPy emission labeled as consensus",
+  "expected": "reject",
+  "observed": {
+    "result": "reject",
+    "error": "unsupported consensus profile or backend"
+  },
+  "status": "PASS"
+}

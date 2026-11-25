@@ -6,6 +6,71 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
 
 ---
 
+
+## Current research architecture
+
+WaveLock now separates three distinct layers:
+
+1. **CC-Core-v1-B — curvature/path commitment.** This is the current primary
+   experimental research core. It co-evolves an accumulator with the wavefield so
+   the commitment depends on the ordered trajectory rather than only on the
+   terminal state. Candidate B uses the linear injection
+   `j_B(u,v) = u(1 + γv) mod p`, removes Candidate A's generic 2-to-1 injection
+   weakness, and separates all 47 known Phase 8J terminal-collapse states
+   (minimum pairwise Hamming distance 105/256).
+2. **WaveLock-OTS — asymmetric one-time signatures.** This is the current
+   experimental signing layer. It provides public verification without revealing
+   `ψ★`, but every one-time key must be used exactly once.
+3. **CurvaChain — ledger and replay enforcement.** This binds canonical block
+   bodies, OTS identities, commitments, and accepted-chain replay state.
+
+`CC-Core-v1-B` is the best current realization of the original “pebble leaves a
+wake” idea, but it is **not a proven cryptographic primitive**. The Phase CC-3
+audit found:
+
+- all 47 known terminal-state collapse cases remain distinct under the path
+  commitment;
+- the singular value `v_star = -γ^-1 mod p = 195225786` is unreachable at round
+  0 under the normative message protocol;
+- a replay-verified 191-byte message reaches `v_star` at one coordinate at round
+  1, but the tested singular event did not erase the path commitment or produce
+  a structural collision;
+- 205 fast tests pass and GitHub Actions completed successfully on the research
+  branch;
+- multi-coordinate singular reachability, general binding, collision hardness,
+  second-preimage hardness, and any Layer-3 lower bound remain unresolved.
+
+The curvature-capacity research code is isolated in:
+
+```text
+wavelock/curvature_capacity/       # frozen CC-Core-v0-A baseline
+wavelock/curvature_capacity_v1/    # current CC-Core-v1-B candidate
+curvature_audit/                   # adversarial tests, artifacts, and reports
+```
+
+Primary documents:
+
+- `docs/CC_CORE_V1_SPEC.md`
+- `docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md`
+- `docs/CC_CORE_V1_VSTAR_REACHABILITY.md`
+- `docs/WAVELOCK_CURVATURE_CAPACITY_RESULTS.md`
+
+**Use classification**
+
+| Component | Current status | Intended use |
+|---|---|---|
+| `CC-Core-v1-B` | Experimental research core | Path/trajectory commitment studies |
+| WaveLock-OTS | Experimental asymmetric OTS | One-time signing tests and scoped demos |
+| CurvaChain | Prototype ledger | Local replay, persistence, and consensus experiments |
+| WLv2 / SIGv2 | Deprecated and insecure | Compatibility/testing only |
+| Ed25519 / SLH-DSA / LMS / XMSS | Established alternatives | Production security |
+
+Do not describe any WaveLock component as “provably secure,” “collision-resistant,”
+“one-way,” “256-bit secure,” or as forcing full sequential execution. No such
+general theorem has been proved.
+
+---
+
 ## ⚠️ Security notice — read this first
 
 - **Legacy WaveLock SIGv2 (`WLv2`) is DEPRECATED and INSECURE.** It signs with
@@ -13,8 +78,8 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   hash, so **the verifier must possess ψ★ — and anyone who can verify can
   forge.** It is a symmetric MAC, not an asymmetric signature. See
   `attacks/WAVELOCK_THEORY_BREAK_AUDIT.md` and `docs/MIGRATION_FROM_SIGV2.md`.
-  The legacy CLI (`wavelock-cli keygen` / `sign`) now prints a deprecation
-  warning.
+  Historical CLI tools are isolated under `wavelock-cli legacy`. The normal
+  `keygen`, `sign`, `mine`, and `verify` commands implement WaveLock-OTS.
 
 - **WaveLock-OTS is the new, experimental asymmetric construction.** It is a
   Lamport/WOTS-style one-time signature with WaveLock ψ-state binding
@@ -63,7 +128,7 @@ This repo contains a prototype curvature-locked ledger (“CurvaChain”) and he
   consumed OTS identities are **reconstructed from accepted chain state
   independent of current config** and fail closed on malformed auth (M2, deleting
   `ots_replay.jsonl` no longer reopens replay); and the replay ledger's accept
-  critical section is **inter-process `flock`-locked** with a single authoritative
+  critical section is **inter-process locked (`flock` on POSIX; SQLite on Windows)** with a single authoritative
   ledger (M3). Cross-node/global consensus enforcement remains future work. With
   M1/M2/M3 fixed the system may be ready for a **scoped** bounty (canonical
   verification, replay protection, OTS block acceptance) — not value transfer.
@@ -103,226 +168,116 @@ wavelock-encrypt decrypt --private wlenc_private.pem --input env.json --output o
 
 ---
 
-## 0) Requirements
+## Install and run
 
-- **Python** 3.9+
-- **numpy** (required)
-- **matplotlib** (for visualizations and attack battery plots)
-- **pytest** (for running test suite)
-
-Optional:
-- **CuPy** (GPU acceleration; falls back to NumPy automatically if unavailable)
-  - Install CuPy per your CUDA version: `pip install cupy-cuda12x`
+Python 3.9+ is supported. The reference workflow uses NumPy and requires no GPU.
 
 ```bash
-pip install numpy matplotlib pytest
-# Or install the package:
-pip install -e .
-```
-
----
-
-## 1) Project layout (key files)
-
-```text
-WaveLock/
-├─ chain/
-│  ├─ Block.py               # Block object (index, prev_hash, merkle, messages, nonce, hash)
-│  ├─ WaveLock.py            # CurvatureKeyPair, signing/verification helpers (WLv1 + WLv2/SIGv2)
-│  ├─ CurvaChain.py          # Minimal chain object (append-only, PoW target optional)
-│  ├─ chain_utils.py         # Load/save ledger, Merkle tools, visualization, reset helpers
-│  ├─ UserRegistry.py        # Registry of users, commitments, signing convenience
-│  ├─ pov.py                 # Proof-of-Verification records + VERIFICATION_TX blocks
-│  ├─ artifacts.py           # Research artifact DAG (hash → parents, metadata)
-│  ├─ kernel_decl.py         # KERNEL_DECL blocks binding kernel version + spec hash
-│  ├─ cli.py                 # WaveLock / CurvaChain CLI (keygen, sign, mine, audit, peers…)
-│  └─ __init__.py            # package marker
-├─ network/
-│  ├─ __init__.py
-│  ├─ client.py              # Simple TCP client demo (GET_CHAIN, etc.)
-│  ├─ peer_utils.py          # Peer list helpers
-│  ├─ peers.json             # Local peer config (usually git-ignored)
-│  ├─ protocol.py            # Socket message types + encode/decode
-│  └─ server.py              # P2P server (TCP), validates and stores blocks
-├─ scripts/
-│  ├─ start_node.ps1         # Windows helper to start node
-│  ├─ start_node.sh          # Unix helper to start node
-│  ├─ start_miner.ps1        # Windows helper to start miner
-│  └─ start_miner.sh         # Unix helper to start miner
-├─ storage/
-│  ├─ __init__.py
-│  ├─ storage.py             # Disk IO helpers (append-only .jsonl, header index)
-│  └─ ledger/                # On-disk blockchain (runtime files)
-└─ tests/
-   ├─ conftest.py
-   ├─ test_artifact_dag.py
-   ├─ test_curvachain_typed_blocks.py
-   ├─ test_curvature_hash.py
-   ├─ test_kernel_decl.py
-   ├─ test_merkle.py
-   ├─ test_pov.py
-   ├─ test_signature_commitment_v2.py
-   ├─ test_utils.py
-   └─ test_wcc_rails.py
-
-```
-
-Runtime files:
-- `ledger/blk*.jsonl` — append-only ledger blocks
-- `trusted_commitments.json` — allow-list of trusted commitments
-- `commitments/*.npz` — published ψ* snapshots (for full strict verification)
-
-All of these are normally ignored via `.gitignore`.
-
----
-
-## 2) Quick start
-
-From the `WaveLock` folder:
-
-```bash
-pip install numpy matplotlib pytest
-# Or install as editable package:
-pip install -e .
-```
-
-Run the demo:
-
-```bash
+python -m pip install -e ".[blake3]" pytest
 python hello_wavelock.py
 ```
 
-Run the test suite:
+The demo generates a fresh OTS key, signs a canonical block body, mines and
+accepts it, deletes the secret key, verifies in a new process using public
+material, and checks replay rejection. It uses disposable state and leaves
+existing ledgers alone.
+
+## Supported block workflow
+
+These normal commands now use **WaveLock-OTS**. A signature authenticates the
+canonical block body and its parent. Mining uses that existing signature;
+it does not sign a second message with the same key.
 
 ```bash
-python -m pytest tests/ -v
+wavelock-cli --data-dir demo-node keygen --out keys/demo-1
+wavelock-cli --data-dir demo-node sign --secret keys/demo-1/wl_ots_secret.json --message "research artifact abc" --output signed-block.json
+wavelock-cli --data-dir demo-node verify --signed-path signed-block.json
+wavelock-cli --data-dir demo-node mine --signed-path signed-block.json
+wavelock-cli --data-dir demo-node verify
 ```
 
----
+`add ricky` is a convenience for generating a fresh pair in `keys/ricky/`;
+`sign ricky --message "..."` uses that pair. Labels are local aliases, not
+long-lived authenticated identities. Each pair signs once. Generate another
+pair in a new directory for the next block. Existing key files are never
+silently overwritten. A stale signed parent requires a fresh key and signature.
 
-## 3) Core workflows
+The signed artifact contains the public key and selected OTS slices only.
+Verification never loads a secret key, integer seed, registry, or psi snapshot.
+The standalone `wavelock-ots` commands remain available for detached messages;
+those detached signatures are not block authorizations.
 
-### 3.1 Generate a curvature keypair and trust it
+## Node configuration and persistence
 
-```powershell
-python -m wavelock.chain.cli keygen
-python -m wavelock.chain.cli add ricky --n 4 --seed 42
-```
+CLI and node use the same `WAVELOCK_DATA_DIR` (default: the existing user data
+location, `$XDG_DATA_HOME/wavelock` or `~/.wavelock`). The CLI also accepts
+`--data-dir` before its subcommand. Set `WAVELOCK_DATA_DIR` for the node.
+Accepted blocks and the reconstructable OTS replay cache live under `ledger/`.
+Signer-use markers live under `ots-state/`. Keep backups of signing state;
+never reuse an OTS key across hosts or restored copies.
 
-This adds user `ricky` with a deterministic ψ* commitment to `users.json`.
+CLI mining and node acceptance share a same-host writer lock and reload the
+tip before appending. A draft signed against an old parent is rejected: use a
+fresh key to sign for the new tip. This coordinates local writers; it does not
+provide distributed consensus or authenticated recovery from a full rollback.
 
-Update trust list:
-
-```powershell
-python tools/publish_trusted.py
-```
-
-This ensures ricky’s commitment is in `trusted_commitments.json` and publishes `commitments/<hash>.npz`.
-
----
-
-### 3.2 Start the server
-
-```powershell
-$env:WAVELOCK_REQUIRE_FULL_VERIFY="1"
-python -m wavelock.network.server --port 9001
-```
-
-Strict mode ON means blocks must:
-- come from a trusted commitment (in `trusted_commitments.json`)
-- AND have a published ψ* snapshot in `commitments/`.
-
----
-
-### 3.3 Create and mine a block
-
-```powershell
-python -m wavelock.chain.cli sign ricky --message "hello wlv2" --output signed.json
-python -m wavelock.chain.cli mine --signed_path signed.json
-```
-
-The mined block is broadcast to peers and saved on disk.
-
----
-
-### 3.4 Verify and audit
-
-```powershell
-python -m wavelock.chain.cli view        # show ledger
-python -m wavelock.chain.cli audit       # baseline audit (single commitment)
-python tools/audit_multi_trust.py   # multi-trust audit with full ψ* verification
-```
-
-Expected: trusted commitments accepted, curvature signature valid for any block whose ψ* snapshot exists.
-
----
-
-## 4) Publishing ψ* snapshots
-
-Run:
-
-```powershell
-python tools/publish_trusted.py
-```
-
-This script:
-- Reads `users.json` and `psi_keypair.json` (if present)
-- Publishes `.npz` files in `commitments/`
-- Updates `trusted_commitments.json`
-
----
-
-## 5) Demos
-
-### Clean ledger + single user
-
-```powershell
-python -m wavelock.chain.cli reset
-python -m wavelock.chain.cli keygen
-python -m wavelock.chain.cli add ricky --n 4 --seed 42
-python tools/publish_trusted.py
-$env:WAVELOCK_REQUIRE_FULL_VERIFY="1"
-python -m wavelock.network.server --port 9001
-python -m wavelock.chain.cli sign ricky --message "strict test" --output signed.json
-python -m wavelock.chain.cli mine --signed_path signed.json
-python tools/audit_multi_trust.py
-```
-
-### Multi-trust ledger
-
-1. Mine blocks under different commitments.
-2. Run `python tools/publish_trusted.py` to publish ψ* and update trust.
-3. Audit with `python tools/audit_multi_trust.py` → all blocks pass.
-
----
-
-After installing in editable mode you can also use the convenience entrypoints (if configured in `pyproject.toml`):
+The new normative commitment API and its adversarial contract are described in
+[BOUNTY_SECURITY_PROFILE.md](docs/BOUNTY_SECURITY_PROFILE.md). Thirteen passing
+dry runs close the enumerated High 1–5 checks; broader attestation, drift and
+storage-tamper claims remain unresolved in the
+[hardening report](audit/BOUNTY_HARDENING_REPORT.md).
 
 ```bash
-pip install -e .
-
-# node (port 9001)
-wavelockd
-
-# add peer to it from another terminal (optional if running seeds)
-wavelock-cli peer 127.0.0.1 9001
-
-# miner
-wavelock-miner mine-daemon --peer 127.0.0.1:9001 --user ricky
+wavelockd --port 9001
 ```
 
----
+The node defaults to `require_ots=true`. It verifies stored OTS history on
+startup and rejects legacy SIGv2 on the normal acceptance path. Configure via
+`WAVELOCK_CONFIG` or `wavelockd --config node.json`:
 
-## 6) Security notes
+```json
+{"port": 9001, "require_ots": true}
+```
 
-- Prototype only; do not expose to untrusted networks.
-- Trust is managed by static allow-list (`trusted_commitments.json`).
-- Full strict verification requires publishing ψ* snapshots.
-- Earlier blocks without ψ* snapshots can still be allow-listed but will show as “trusted, no published ψ*”.
+`WAVELOCK_REQUIRE_OTS=1` also enables this policy. Explicit `false` / `0` is
+reserved for historical compatibility experiments. Unknown JSON configuration
+keys are errors. File settings override environment defaults.
 
----
+New OTS ledgers do not silently import or rewrite an old SIGv2 ledger. Historical
+package-local data can be inspected with the tools described in
+[the migration guide](docs/MIGRATION_FROM_SIGV2.md).
 
-## 7) License
+Replay acceptance is serialized across processes on one filesystem (POSIX
+flock or SQLite locking), and tip validation plus append are serialized within
+one node. This remains a single-node prototype: block and replay files are not
+a distributed transactional store; crash gaps can conservatively consume a key
+without a completed block. Full cross-node consensus and Merkle many-key
+signing remain on the [roadmap](docs/WAVELOCK_MERKLE_ROADMAP.md).
 
-Copyright © 2025 Ricky Reyes. All rights reserved.  
-WaveLock / CurvaChain — research prototype.
+## Verification
+
+```bash
+python -m pytest tests/ -m "not slow" -q
+python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
+python -m pytest pde_audit/ -c pde_audit/pytest.ini -m "not slow" -q
+```
+
+`tests/test_supported_workflow.py` exercises the real CLI across fresh processes,
+public-only verification, key reuse, malformed artifacts, startup replay
+reconstruction, configuration, and concurrent acceptance.
+
+## Research and historical tools
+
+- `wavelock/curvature_capacity_v1/`: current CC-Core-v1-B research candidate.
+- `wavelock/curvature_capacity/`: frozen Candidate A baseline.
+- `wavelock/pde_hash/`: historical hash-free PDE core and regression target.
+- `wavelock/crypto/`: OTS, replay protection and encryption wrappers.
+- `wavelock/chain/ots_blocks.py`: shared OTS transcripts and pure public checks.
+- `wavelock-cli legacy ...`: historical SIGv2 tools, retained for reproduction.
+
+Historical SIGv2 findings remain documented and reproducible.
+
+## License
+
+Copyright © 2025 Ricky Reyes. All rights reserved.
+See `LICENSE` and `PATENT_NOTICE.md`.

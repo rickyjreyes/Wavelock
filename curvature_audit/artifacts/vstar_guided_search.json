@@ -1,0 +1,112 @@
+{
+  "artifact": "vstar_guided_search",
+  "description": "Guided (annealing + z3) search for multi-coordinate singular states",
+  "limitations": [
+    "round-1 targeting only; deeper-round multi-hit not searched",
+    "annealing is heuristic; absence of large counts is not a proof",
+    "full-lattice singular reachability remains unproven either way"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "0ae4f74efb502ab17212f837b1eacf3d43d2db0d",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "pinned_witness": null,
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "runtime_s": 110.93,
+  "seed": 113000,
+  "simulated_annealing": {
+    "best_min_centered_distance": 4539,
+    "best_vstar_count_round1": 0,
+    "note": "annealing over 64 rate-cell injections, maximizing round-1 coordinates equal to v_star."
+  },
+  "summary": {
+    "full_lattice_singular_found": false,
+    "max_simultaneous_vstar_round1_found": 0,
+    "multi_cell_z3_results": {
+      "2": "unknown",
+      "3": "unknown",
+      "4": "unknown"
+    },
+    "note": "Guided search did NOT find a multi-coordinate singular state. Simulated annealing reached count=0 (an exact modular target is a needle-in-a-haystack for continuous search). z3 multi-cell (2,3,4 simultaneous) returned UNKNOWN (timeout) -- neither SAT nor UNSAT, hence unresolved, NOT a reachability or unreachability result. Only the single-coordinate Part V witness is confirmed. A full-lattice singular state requires controlling the 192 never-injected cells (impossible at round 0) and was not found."
+  },
+  "v_star": 195225786,
+  "z3_multi_cell": {
+    "n2": {
+      "n_cells": 2,
+      "needed_cells": [
+        2,
+        3,
+        17,
+        18,
+        19,
+        20,
+        34,
+        35
+      ],
+      "result": "unknown",
+      "runtime_s": 30.006,
+      "targets": [
+        18,
+        19
+      ],
+      "timeout_ms": 30000
+    },
+    "n3": {
+      "n_cells": 3,
+      "needed_cells": [
+        2,
+        3,
+        4,
+        17,
+        18,
+        19,
+        20,
+        21,
+        34,
+        35,
+        36
+      ],
+      "result": "unknown",
+      "runtime_s": 30.034,
+      "targets": [
+        18,
+        19,
+        20
+      ],
+      "timeout_ms": 30000
+    },
+    "n4": {
+      "n_cells": 4,
+      "needed_cells": [
+        2,
+        3,
+        4,
+        5,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        34,
+        35,
+        36,
+        37
+      ],
+      "result": "unknown",
+      "runtime_s": 30.01,
+      "targets": [
+        18,
+        19,
+        20,
+        21
+      ],
+      "timeout_ms": 30000
+    }
+  }
+}

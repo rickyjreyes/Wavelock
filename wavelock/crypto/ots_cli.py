@@ -22,6 +22,8 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
+from wavelock.crypto.keyfiles import write_json, mark_secret_used
 
 from wavelock.crypto.wavelock_ots import (
     SCHEME,
@@ -41,29 +43,24 @@ SECRET_NAME = "wl_ots_secret.json"
 
 
 def _write_json(path: str, obj: dict) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as fh:
-        json.dump(obj, fh, indent=2)
+    write_json(path, obj)
 
 
 def cmd_keygen(args) -> int:
-    params = default_params(n=args.n)
-    kp = generate_ots_keypair(params=params, entropy_bits=args.entropy_bits)
-
     out_dir = args.out
     pub_path = os.path.join(out_dir, PUBLIC_NAME)
     sec_path = os.path.join(out_dir, SECRET_NAME)
-
-    _write_json(pub_path, export_public_key(kp["public_key"]))
-    _write_json(
-        sec_path,
-        export_secret_key(
-            kp["secret_key"],
-            encrypt=args.encrypt,
-            passphrase=args.passphrase,
-            unsafe_export_secret_state=args.unsafe_export_secret_state,
-        ),
+    if Path(pub_path).exists() or Path(sec_path).exists():
+        raise FileExistsError("key files already exist; choose a fresh output directory")
+    params = default_params(n=args.n)
+    kp = generate_ots_keypair(params=params, entropy_bits=args.entropy_bits)
+    secret_export = export_secret_key(
+        kp["secret_key"], encrypt=args.encrypt, passphrase=args.passphrase,
+        unsafe_export_secret_state=args.unsafe_export_secret_state,
     )
+
+    write_json(sec_path, secret_export, exclusive=True, private=True)
+    write_json(pub_path, export_public_key(kp["public_key"]), exclusive=True)
     # Lock down the secret file as best we can.
     try:
         os.chmod(sec_path, 0o600)
@@ -107,28 +104,12 @@ def cmd_sign(args) -> int:
         return 2
 
     sig_path = args.sig or "sig.json"
+    mark_secret_used(args.secret)
     _write_json(sig_path, sig)
-
-    # Persist the used=True flag back to the secret file (file is the
-    # authoritative one-time-usage record).
-    if os.path.exists(args.secret):
-        on_disk = load_secret_key(args.secret, passphrase=args.passphrase)
-        on_disk["used"] = True
-        # Preserve encrypted-at-rest form: re-export without re-encrypting the
-        # already-stored seed by writing back what we read (seed_hex present).
-        _write_json(args.secret, _reserialize_secret(args.secret, on_disk))
 
     print(f"Signed. Signature written to {sig_path}")
     print(f"  one_time_key_id: {sig.get('one_time_key_id')}")
     return 0
-
-
-def _reserialize_secret(path: str, sk: dict) -> dict:
-    """Write back the secret file preserving its original at-rest encoding."""
-    with open(path, "r") as fh:
-        original = json.load(fh)
-    original["used"] = True
-    return original
 
 
 def cmd_verify(args) -> int:
@@ -173,9 +154,7 @@ def cmd_mark_used(args) -> int:
     if sk.get("scheme") != SCHEME:
         print("Not a WaveLock-OTS secret key.", file=sys.stderr)
         return 1
-    sk["used"] = True
-    with open(args.secret, "w") as fh:
-        json.dump(sk, fh, indent=2)
+    mark_secret_used(args.secret)
     print(f"Marked {args.secret} as used=True.")
     return 0
 

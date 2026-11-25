@@ -1,0 +1,10 @@
+{
+  "target": "High 4",
+  "attempt": "8-byte production seed",
+  "expected": "reject",
+  "observed": {
+    "result": "reject",
+    "error": "production input requires at least 16 bytes (128 bits)"
+  },
+  "status": "PASS"
+}

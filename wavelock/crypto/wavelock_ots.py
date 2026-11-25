@@ -55,7 +55,6 @@ import hashlib
 import json
 import os
 import struct
-import tempfile
 import uuid
 from typing import Optional
 
@@ -398,6 +397,35 @@ def public_key_fingerprint(public_key: dict) -> str:
     return _h(_DOM_PK_FINGERPRINT, _canon(payload)).hex()
 
 
+def ots_material_id(public_key: dict) -> str:
+    """Identifier of a public key's one-time signing commitments (hex).
+
+    The Merkle root recomputed from ``pk_commitments``; the key's ``merkle_root``
+    field must equal it. It depends only on the decoded commitment bytes, so a
+    new ``one_time_key_id``, ``psi_commitment`` or fingerprint, or another hex
+    spelling of a commitment, leaves it unchanged. Replay ledgers consume it so
+    that one commitment table authorizes at most one accepted signature.
+
+    Not ``Block.merkle_root``, which is the tree over a block's messages.
+    Raises :class:`WaveLockOTSError` if the table is malformed or the stored
+    root does not match it.
+    """
+    if not isinstance(public_key, dict):
+        raise WaveLockOTSError("public key must be a dict")
+    commitments = public_key.get("pk_commitments")
+    if not isinstance(commitments, list) or len(commitments) != _N_BITS:
+        raise WaveLockOTSError(
+            f"pk_commitments must be a list of {_N_BITS} [half0, half1] rows"
+        )
+    try:
+        root = _merkle_root_from_commitments(commitments).hex()
+    except (TypeError, ValueError) as error:
+        raise WaveLockOTSError("malformed pk_commitments") from error
+    if not _ct_eq(root, str(public_key.get("merkle_root"))):
+        raise WaveLockOTSError("merkle_root does not match pk_commitments")
+    return root
+
+
 def signature_transcript(signature: dict) -> str:
     """Deterministic transcript hash over the canonical signature (hex).
 
@@ -536,25 +564,38 @@ def generate_ots_keypair(params: Optional[dict] = None,
 # ---------------------------------------------------------------------------
 # The `used` bool in the secret-key dict/file is advisory: a copy taken BEFORE
 # signing has used=False and would sign again. This registry adds a host-local,
-# atomic guard: signing atomically *claims* a one_time_key_id (O_CREAT|O_EXCL),
-# so a second signing attempt under the same id on the same host fails closed —
-# even from a separate copy of the secret file.
+# atomic guard: before any slice is revealed, signing atomically *claims*
+# (O_CREAT|O_EXCL publication) both
+#   * the one_time_key_id label, and
+#   * the signing material: every revealed slice is derived from the seed and
+#     params_hash (and the ψ-commitment re-derived from the seed), so equal
+#     (seed, params_hash) means the same secret values.
+# A second signing attempt on the same host therefore fails closed — from a
+# separate copy of the secret file, and from another key file holding the same
+# seed under a fresh one_time_key_id (generate_ots_keypair(seed=...) twice, or a
+# relabelled copy). Claiming only the label let one seed sign twice
+# (docs/WAVELOCK_OTS_SIGNER_GUARD.md, lean/WaveLockProofs/OTSSignerGuard.lean).
 #
 # HONEST LIMITS: this is NOT cryptographic reuse prevention. A secret key copied
-# to a DIFFERENT host (no shared registry), or a wiped registry, still bypasses
-# it. Production MUST additionally reject duplicate one_time_key_id / duplicate
-# Merkle-leaf usage at the verifier/server/ledger layer (see OTSReplayLedger and
+# to a DIFFERENT host (no shared registry), a different WAVELOCK_OTS_STATE_DIR,
+# a wiped registry, allow_reuse=True, or custom signing code still bypasses it.
+# Material signed before material markers existed (only its key id was
+# recorded) can sign once more under a fresh key id. Production MUST
+# additionally reject duplicate one_time_key_id / fingerprint / commitment table
+# at the verifier/server/ledger layer (see PersistentOTSReplayLedger and
 # docs/WAVELOCK_MERKLE_ROADMAP.md).
 
 
 def _state_dir() -> str:
     """Directory backing the local key-state registry.
 
-    Override with ``WAVELOCK_OTS_STATE_DIR``; defaults to a per-user temp dir.
+    Override with ``WAVELOCK_OTS_STATE_DIR``; defaults to the persistent
+    ``ots-state`` directory inside the node data directory.
     """
     d = os.environ.get("WAVELOCK_OTS_STATE_DIR")
     if not d:
-        d = os.path.join(tempfile.gettempdir(), "wavelock-ots-state")
+        from wavelock.storage.runtime import RUNTIME_DIR
+        d = str(RUNTIME_DIR / "ots-state")
     return d
 
 
@@ -563,30 +604,67 @@ def _key_id_marker_path(one_time_key_id: str) -> str:
     return os.path.join(_state_dir(), h + ".used")
 
 
-def _claim_one_time_key(one_time_key_id: str) -> bool:
-    """Atomically claim ``one_time_key_id``. True if newly claimed, else False.
+def _signing_material_marker_path(secret_key: dict) -> str:
+    """Registry path of the secret values a signature with ``secret_key`` reveals.
 
-    Uses ``O_CREAT | O_EXCL`` so two concurrent signers race-safely: exactly one
-    wins the create; the loser sees the marker already exists and is refused.
+    ``sign_ots`` derives each revealed slice as
+    ``_secret_slice(seed, psi_commitment(evolve_psi_star(seed, params)), params_hash, i, b)``,
+    so the slices of a key file are a function of ``(seed, params, params_hash)``; two key files
+    with equal ``(params_hash, seed)`` therefore claim one marker whenever their slices are equal
+    (equal inputs give equal markers: no hash assumption).  Key files that differ only in
+    ``params`` share the marker although their slices differ: a refusal, never a missed reuse.
+    The name is ``_h`` (domain-separated, length-prefixed SHAKE-256) of that pair and reveals
+    nothing usable about the (>= 128-bit) seed.  Raises :class:`WaveLockOTSError` before anything
+    is claimed when the key has no usable seed or params_hash.
     """
-    if not one_time_key_id:
-        return True  # nothing to bind on; in-memory `used` guard still applies
-    path = _key_id_marker_path(one_time_key_id)
+    seed_bytes = _seed_from_secret(secret_key)
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        p_hash = bytes.fromhex(secret_key["params_hash"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise WaveLockOTSError("secret key has no valid params_hash") from error
+    name = _h(b"WL-OTS-SIGNER-MATERIAL-v1", p_hash, seed_bytes).hex()
+    return os.path.join(_state_dir(), "material-" + name + ".used")
+
+
+def _claim_marker(path: str, content: bytes) -> bool:
+    """Atomically publish a fully flushed marker without replacement.
+
+    True if newly claimed, False if it already exists.  Exactly one concurrent
+    signer wins; parent directory durability precedes the return.
+    """
+    try:
+        from wavelock.storage.durability import atomic_write
+        atomic_write(path, content, exclusive=True)
     except FileExistsError:
         return False
-    except OSError:
-        # If we cannot use the registry at all, fall back to the in-memory guard
-        # rather than blocking signing. (Documented: registry is best-effort.)
-        return True
-    try:
-        os.write(fd, (str(one_time_key_id) + "\n").encode("utf-8"))
-        os.fsync(fd)
-    finally:
-        os.close(fd)
+    except OSError as error:
+        raise WaveLockOTSError("cannot durably claim the one-time signing key") from error
     return True
+
+
+def _claim_one_time_key(one_time_key_id: str) -> bool:
+    """Atomically claim ``one_time_key_id``. True if newly claimed, else False."""
+    if not one_time_key_id:
+        raise WaveLockOTSError("secret key is missing its one-time identity")
+    return _claim_marker(_key_id_marker_path(one_time_key_id),
+                         (str(one_time_key_id) + "\n").encode("utf-8"))
+
+
+def _claim_signing_material(material_marker: str) -> bool:
+    """Atomically claim the signing material named by ``material_marker``."""
+    return _claim_marker(material_marker, b"signing-material\n")
+
+
+def claim_signing_material(secret_key: dict) -> bool:
+    """Record on this host that ``secret_key``'s signing material must not sign again.
+
+    Migration aid for key files that signed before material markers existed (their
+    registry entry names only the key id, so a relabelled copy could sign once more).
+    Returns ``True`` if the material is newly claimed, ``False`` if it already was.
+    """
+    if secret_key.get("scheme") != SCHEME:
+        raise WaveLockOTSError(f"not a {SCHEME} secret key")
+    return _claim_signing_material(_signing_material_marker_path(secret_key))
 
 
 def _seed_from_secret(secret_key: dict) -> bytes:
@@ -620,15 +698,26 @@ def sign_ots(secret_key: dict, message, allow_reuse: bool = False) -> dict:
             "enables forgery. Generate a fresh key. (override: allow_reuse=True)"
         )
 
-    # Host-local atomic guard: claim the one_time_key_id before signing so a
-    # copy of the secret file (used=False) cannot sign a second message on this
-    # host. Skipped under allow_reuse (tests/demo only).
-    if not allow_reuse and not _claim_one_time_key(one_time_key_id):
-        raise OTSKeyReuseError(
-            "WaveLock-OTS one_time_key_id has already been consumed on this "
-            f"host (local key-state registry): {one_time_key_id}. A copied "
-            "secret key cannot sign twice here. (override: allow_reuse=True)"
-        )
+    # Host-local atomic guard: claim the one_time_key_id and the signing
+    # material before anything is revealed, so neither a copy of the secret file
+    # (used=False) nor another key file holding the same seed under a fresh key
+    # id can sign a second message on this host. Skipped under allow_reuse
+    # (tests/demo only).
+    if not allow_reuse:
+        material_marker = _signing_material_marker_path(secret_key)
+        if not _claim_one_time_key(one_time_key_id):
+            raise OTSKeyReuseError(
+                "WaveLock-OTS one_time_key_id has already been consumed on this "
+                f"host (local key-state registry): {one_time_key_id}. A copied "
+                "secret key cannot sign twice here. (override: allow_reuse=True)"
+            )
+        if not _claim_signing_material(material_marker):
+            raise OTSKeyReuseError(
+                "WaveLock-OTS signing material (seed, params_hash) has already "
+                "signed on this host under another one_time_key_id; signing again "
+                "would reveal both halves of the same secret table. "
+                "(override: allow_reuse=True)"
+            )
 
     params = secret_key["params"]
     p_hash = bytes.fromhex(secret_key["params_hash"])
@@ -850,10 +939,15 @@ class OTSReplayLedger:
 
     This is a reference/model object — it is NOT yet wired into block/consensus
     acceptance (see docs/WAVELOCK_MERKLE_ROADMAP.md and the report).
+
+    It consumes the key id, the fingerprint and the commitment table
+    (:func:`ots_material_id`), like the durable ledger.
     """
 
     def __init__(self):
         self._consumed_key_ids: set[str] = set()
+        self._consumed_fingerprints: set[str] = set()
+        self._consumed_materials: set[str] = set()
 
     def is_consumed(self, one_time_key_id: str) -> bool:
         return str(one_time_key_id) in self._consumed_key_ids
@@ -861,15 +955,20 @@ class OTSReplayLedger:
     def accept(self, public_key: dict, message, signature: dict) -> bool:
         """Verify then consume. Returns True only on first valid use.
 
-        Rejects (returns False) if the signature is invalid OR if its
-        ``one_time_key_id`` has already been consumed (replay/reuse).
+        Rejects (returns False) if the signature is invalid OR if its key id,
+        fingerprint or commitment table has already been consumed.
         """
         if not verify_ots(public_key, message, signature):
             return False
         kid = str(signature.get("one_time_key_id"))
-        if kid in self._consumed_key_ids:
+        fingerprint = str(signature.get("public_key_fingerprint"))
+        material = ots_material_id(public_key)
+        if (kid in self._consumed_key_ids or fingerprint in self._consumed_fingerprints
+                or material in self._consumed_materials):
             return False
         self._consumed_key_ids.add(kid)
+        self._consumed_fingerprints.add(fingerprint)
+        self._consumed_materials.add(material)
         return True
 
 
@@ -1037,6 +1136,8 @@ __all__ = [
     "evolve_psi_star",
     "psi_commitment",
     "public_key_fingerprint",
+    "ots_material_id",
+    "claim_signing_material",
     "signature_transcript",
     "generate_ots_keypair",
     "sign_ots",

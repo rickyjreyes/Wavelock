@@ -1,0 +1,53 @@
+{
+  "profile": "WL-Consensus-Commitment-v1",
+  "target": "Critical 3 / High 5",
+  "attempt": "identical public vectors with default, AVX512-disabled and AVX-disabled NumPy dispatch",
+  "expected": "identical commitments and preservation of original reference bodies",
+  "observations": {
+    "default": {
+      "16": {
+        "commitment": "WL-Consensus-Commitment-v1:6983241d9dee059dd82de32b996cf68fafa451a2bbe3775a675b3e791ce992eb",
+        "body_sha256": "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c"
+      },
+      "24": {
+        "commitment": "WL-Consensus-Commitment-v1:0bf16e7bb05d2f3c3d572c60922465302cb2d8c30eecade6c8f2bc61e56b39d3",
+        "body_sha256": "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b"
+      },
+      "32": {
+        "commitment": "WL-Consensus-Commitment-v1:f0d67235e3d0e712c31598f22a51fd303ac0334ecfa9fc0a7aec16e59fed3e46",
+        "body_sha256": "53d7939101db324fa86ed7d0c145d25269de005224a6615e453867cd043a61ff"
+      }
+    },
+    "AVX512F": {
+      "16": {
+        "commitment": "WL-Consensus-Commitment-v1:6983241d9dee059dd82de32b996cf68fafa451a2bbe3775a675b3e791ce992eb",
+        "body_sha256": "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c"
+      },
+      "24": {
+        "commitment": "WL-Consensus-Commitment-v1:0bf16e7bb05d2f3c3d572c60922465302cb2d8c30eecade6c8f2bc61e56b39d3",
+        "body_sha256": "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b"
+      },
+      "32": {
+        "commitment": "WL-Consensus-Commitment-v1:f0d67235e3d0e712c31598f22a51fd303ac0334ecfa9fc0a7aec16e59fed3e46",
+        "body_sha256": "53d7939101db324fa86ed7d0c145d25269de005224a6615e453867cd043a61ff"
+      }
+    },
+    "AVX512F,AVX2,FMA3,AVX": {
+      "16": {
+        "commitment": "WL-Consensus-Commitment-v1:6983241d9dee059dd82de32b996cf68fafa451a2bbe3775a675b3e791ce992eb",
+        "body_sha256": "352457d789c2f830d76899eb4405bf008bf0ce5f1a7576b8b19e00cd56ccea8c"
+      },
+      "24": {
+        "commitment": "WL-Consensus-Commitment-v1:0bf16e7bb05d2f3c3d572c60922465302cb2d8c30eecade6c8f2bc61e56b39d3",
+        "body_sha256": "0a4bb86c48e7068eb83703f07488adfea34490456041a0a4ffa0f60de54ce68b"
+      },
+      "32": {
+        "commitment": "WL-Consensus-Commitment-v1:f0d67235e3d0e712c31598f22a51fd303ac0334ecfa9fc0a7aec16e59fed3e46",
+        "body_sha256": "53d7939101db324fa86ed7d0c145d25269de005224a6615e453867cd043a61ff"
+      }
+    }
+  },
+  "dispatch_equivalent": true,
+  "original_reference_bodies_preserved": true,
+  "status": "PASS"
+}

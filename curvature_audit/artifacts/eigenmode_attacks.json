@@ -1,0 +1,96 @@
+{
+  "accumulator_collapse_search": {
+    "accumulator_preimage_of_zero_found": false,
+    "budget": 4000,
+    "candidates_checked": 530544,
+    "note": "no structured or random C mapped to zero under the accumulator step within budget; not a proof of absence."
+  },
+  "accumulator_jacobian_local": {
+    "note": "a single C-cell perturbation propagates via the accumulator Laplacian; a single psi-cell perturbation propagates via the wave round then the injection. Local diffusion only; no global injectivity is claimed.",
+    "one_C_cell_perturbation_changes_n_cells": 5,
+    "one_psi_cell_perturbation_changes_n_cells": 5
+  },
+  "coupled_nondegeneracy": {
+    "accumulator_changes_each_block_with_zero_wave": true,
+    "note": "even at the wave zero fixed point the round-dependent constant rho_t and the accumulator self-dynamics keep C evolving, so the digest is non-degenerate (unlike Design A, where the zero state squeezes to all-zero bytes).",
+    "zero_wave_digest_is_all_zero_bytes": false,
+    "zero_wave_trajectory_digest": "c4ed8b688e14f2127c8e03ea62eee0ecd10cc15ed5dd695afc8a193efc9198d3"
+  },
+  "equations": {
+    "accumulator": "C'[x] = MU*Cd + A_C*Cd^2 + W_t(x)*j(x) + rho_t mod p, Cd = C + D_C*Lap(C), j = u + G*u*v + E*u^2 + Z*v",
+    "eigenmode_collapse": "F(s*sigma)=0 iff s^2 = b - (2rD-1)/a mod p",
+    "wave_round": "psi' = psi + D*Lap(psi) + a*psi*(b - psi^2) mod p (Design A)"
+  },
+  "limitations": [
+    "collapse search is bounded (structured tiles + random); not a proof",
+    "Jacobian is a local finite difference, no global injectivity claim",
+    "separation shown for the enumerated Design A family only"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "eigenmode_attacks",
+  "runtime_s": 43.55,
+  "seed": 90200,
+  "symmetry_attack": {
+    "any_symmetry_preserves_digest": false,
+    "note": "no toroidal symmetry preserves the trajectory digest; the position-dependent weights W_t(x) and round constants break the lattice equivariance that Design A's bare wave round possesses.",
+    "per_symmetry": {
+      "flip_cols": {
+        "equal_to_base": false,
+        "hamming": 125
+      },
+      "flip_rows": {
+        "equal_to_base": false,
+        "hamming": 120
+      },
+      "global_sign": {
+        "equal_to_base": false,
+        "hamming": 129
+      },
+      "rot90": {
+        "equal_to_base": false,
+        "hamming": 119
+      },
+      "translate_0_1": {
+        "equal_to_base": false,
+        "hamming": 130
+      },
+      "translate_1_0": {
+        "equal_to_base": false,
+        "hamming": 136
+      },
+      "transpose": {
+        "equal_to_base": false,
+        "hamming": 143
+      }
+    }
+  },
+  "trajectory_separation_regression": {
+    "all_distinct": true,
+    "min_pairwise_hamming": 116,
+    "n_distinct_digests": 9,
+    "n_states": 9,
+    "note": "all Design A zero-collapse states yield distinct trajectory digests -- the terminal-state collision is NOT a digest collision."
+  },
+  "wave_collapse": {
+    "all_collapse_to_terminal_zero": true,
+    "per_state": {
+      "checker_r4+": true,
+      "checker_r4-": true,
+      "cols_r2+": true,
+      "cols_r2-": true,
+      "p4cols_r1+": true,
+      "p4cols_r1-": true,
+      "rows_r2+": true,
+      "rows_r2-": true,
+      "zero": true
+    }
+  }
+}

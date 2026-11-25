@@ -1,0 +1,10 @@
+{
+  "target": "High 2",
+  "attempt": "+Inf state injection",
+  "expected": "reject",
+  "observed": {
+    "result": "reject",
+    "error": "non-finite consensus state"
+  },
+  "status": "PASS"
+}

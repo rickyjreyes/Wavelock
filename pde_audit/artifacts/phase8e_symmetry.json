@@ -1,0 +1,54 @@
+{
+  "block_swap_repeat": {
+    "n": 400,
+    "repeat_output_hd_mean": 127.8875,
+    "repeat_output_hd_min": 103,
+    "swap_full_collisions": 0,
+    "swap_output_hd_mean": 127.915,
+    "swap_output_hd_min": 103,
+    "swap_state_collisions": 0
+  },
+  "equivariance_note": "evolve_T commutes with torus translations/rotations/reflections/transpose. This symmetry is BROKEN end-to-end by the position-dependent IV, the fixed-cell counter/finalization injections, and the fixed squeeze-pair table; the tests below check that no usable collision or relation survives.",
+  "evolve_T_equivariance": {
+    "flip_cols": true,
+    "flip_rows": true,
+    "rot180": true,
+    "rot90": true,
+    "translate_(0,1)": true,
+    "translate_(1,0)": true,
+    "translate_(3,5)": true,
+    "transpose": true
+  },
+  "geometric_message_relations": {
+    "full_collisions": 0,
+    "n": 300,
+    "output_hd_mean": 128.01666666666668,
+    "output_hd_min": 108,
+    "shifted_state_matches": 0,
+    "state_collisions": 0
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "modular_additive": {
+    "n": 200,
+    "note": "packed elements < 2**24 < p; no modular aliasing at injection",
+    "single_byte_state_collisions": 0
+  },
+  "phase": "8E_symmetry",
+  "runtime_s": 93.2,
+  "seed": 80050,
+  "symmetry_collision_corpus": {
+    "n_digests": 6000,
+    "trunc_collisions": {
+      "16": 248,
+      "24": 1,
+      "32": 0,
+      "8": 5744
+    }
+  }
+}

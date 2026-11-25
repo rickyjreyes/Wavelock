@@ -1,0 +1,75 @@
+{
+  "artifact": "cc3_ci_status",
+  "base": "master",
+  "branch": "research/curvature-capacity-wavelock",
+  "commit": "bdfd85580d463fcf3e682dda4d4d17d3409b9fa6",
+  "description": "Actual GitHub Actions CI status for PR #19 at the CC-3 head",
+  "environment": {
+    "ci_runner": "ubuntu-latest (GitHub Actions), python 3.11, deps: numpy pytest",
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "python": "3.11.15"
+  },
+  "equations": "n/a (CI status record)",
+  "fast_test_result": "205 passed in 31.16s",
+  "github_actions": {
+    "check_runs": [
+      {
+        "completed_at": "2026-06-18T20:45:07Z",
+        "conclusion": "success",
+        "event": "push",
+        "job_id": 82230066157,
+        "name": "audit-fast",
+        "run_id": 27788159667,
+        "started_at": "2026-06-18T20:44:14Z",
+        "status": "completed",
+        "url": "https://github.com/rickyjreyes/Wavelock/actions/runs/27788159667/job/82230066157"
+      },
+      {
+        "completed_at": "2026-06-18T20:45:08Z",
+        "conclusion": "success",
+        "event": "pull_request",
+        "job_id": 82230062287,
+        "name": "audit-fast",
+        "run_id": 27788158440,
+        "started_at": "2026-06-18T20:44:14Z",
+        "status": "completed",
+        "url": "https://github.com/rickyjreyes/Wavelock/actions/runs/27788158440/job/82230062287"
+      }
+    ],
+    "combined_status_api": {
+      "note": "The legacy combined-status API is EMPTY by design: GitHub Actions reports results via CHECK-RUNS, not commit statuses. The blocker 'no reported combined GitHub status' is resolved by reading the check-runs (both success), not the legacy status API.",
+      "state": "pending",
+      "total_count": 0
+    },
+    "head_sha_checked": "bdfd855 (CC-3 head; see commit field for exact HEAD)",
+    "workflow_file": ".github/workflows/curvature_audit.yml"
+  },
+  "interpretation": "GitHub Actions DOES trigger on PR #19 and on branch pushes, and the audit-fast job passes on the CC-3 head (both push and pull_request events). All ten required check categories are covered by CI steps. Heavy solver and exhaustive runs are kept out of ordinary CI (they live in run_audit.py).",
+  "limitations": [
+    "check-runs reflect the head at fetch time; re-verify after any new push",
+    "combined-status API remains empty (Actions uses check-runs) -- not a failure"
+  ],
+  "parameters": {
+    "job": "audit-fast",
+    "workflow": "curvature_audit.yml"
+  },
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "pull_request": 19,
+  "required_checks_coverage": {
+    "candidate_a_frozen_regression": "test_candidate_a_frozen.py (CI step)",
+    "candidate_b_parity": "test_candidate_b.py parity (CI step)",
+    "candidate_b_pinned_vectors": "test_candidate_b.py pinned (CI step)",
+    "complete_fast_suite": "curvature_audit/ -m 'not slow' (CI step)",
+    "design_a_preservation": "test_design_a_preserved.py (CI step)",
+    "domain_version_separation": "test_candidate_b.py + test_cc3_reachability.py",
+    "forbidden_primitive_guard": "test_forbidden_imports.py (CI step)",
+    "full_47_state_binding": "test_candidate_b.py::TestFullFamilySeparation (CI step)",
+    "restricted_theorem_tests": "test_candidate_b.py odd/sign_pair + test_cc3_reachability.py",
+    "singular_hyperplane_tests": "test_candidate_b.py collapse_state + test_cc3_reachability.py"
+  },
+  "result": "ci_executes_and_passes",
+  "runtime_s": "job ~50-55s per run",
+  "search_budget": "n/a",
+  "seed": null
+}

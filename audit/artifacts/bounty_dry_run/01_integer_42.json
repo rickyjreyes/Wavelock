@@ -1,0 +1,10 @@
+{
+  "target": "High 4",
+  "attempt": "seed=42",
+  "expected": "reject",
+  "observed": {
+    "result": "reject",
+    "error": "production input must be bytes; integer/string/demo seeds are not supported"
+  },
+  "status": "PASS"
+}

@@ -11,13 +11,17 @@ from . import spec
 from .absorb import absorb, pad, pack_block
 from .squeeze import squeeze
 from .state import PDEState, initial_state
-from .evolve import permute
+from .evolve import evolve_T
 
 
-def pde_hash(message: bytes, *, output_bits: int = spec.DEFAULT_OUTPUT_BITS) -> bytes:
-    """Compute H_PDE(message) = Q(Phi_P^T(A(message)))."""
+def pde_hash(message: bytes) -> bytes:
+    """Compute the fixed-output 256-bit digest H_PDE(message).
+
+    H_PDE : {0,1}* -> {0,1}^256. Always returns exactly 32 bytes. This is NOT
+    an XOF: the output length is fixed by the specification.
+    """
     state = absorb(message)
-    return squeeze(state, output_bits)
+    return squeeze(state, spec.OUTPUT_BITS)
 
 
 def trace(message: bytes) -> dict:
@@ -40,19 +44,21 @@ def trace(message: bytes) -> dict:
         block = pack_block(padded, k)
         for c in range(spec.RATE):
             cells[c] = (cells[c] + block[c]) % p
-        cells[spec.CAP0] = (cells[spec.CAP0] + ((k + 1) % p) * spec.G) % p
+        q0, q1 = spec.encode_block_counter(k)
+        cells[spec.CAP0] = (cells[spec.CAP0] + q0 * spec.G) % p
+        cells[spec.CAP2] = (cells[spec.CAP2] + q1 * spec.G) % p
         if k == n_blocks - 1:
             cells[spec.CAP1] = (cells[spec.CAP1] + spec.D_TAG) % p
         pre = PDEState(cells)
         if k == 0:
             snaps["S_absorb0"] = pre.snapshot_bytes()
-        state = permute(pre)
+        state = evolve_T(pre)
         if k == 0:
             snaps["S_perm0"] = state.snapshot_bytes()
 
     snaps["S_final"] = state.snapshot_bytes()
-    snaps["S_squeeze1"] = permute(state).snapshot_bytes()
-    snaps["digest"] = squeeze(state, spec.DEFAULT_OUTPUT_BITS)
+    snaps["S_squeeze1"] = evolve_T(state).snapshot_bytes()
+    snaps["digest"] = squeeze(state, spec.OUTPUT_BITS)
     return snaps
 
 

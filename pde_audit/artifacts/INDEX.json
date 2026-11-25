@@ -1,0 +1,86 @@
+{
+  "artifacts": [
+    "partIII_baselines.json",
+    "phase8a_avalanche.json",
+    "phase8b_state_map.json",
+    "phase8c_squeeze.json",
+    "phase8d_distinguishers.json",
+    "phase8e_symmetry.json",
+    "phase8f_collision_scaling.json",
+    "phase8g_preimage.json",
+    "phase8h_algebraic.json",
+    "phase8i_parameter_sweep.json",
+    "phase8j_eigenmode_collisions.json",
+    "phase8k_multiblock_reachability.json",
+    "phase8k_reduced_lifting.json"
+  ],
+  "headline": {
+    "8A_meanHD_T32": 127.91917067307692,
+    "8B_all_zero_fixed": true,
+    "8B_jac_full_rank_frac": 1.0,
+    "8C_max_monobit_z": 2.97397041007472,
+    "8D_any_distinguisher": false,
+    "8E_swap_collisions": 0,
+    "8F_T32_ratios": {
+      "12": 1.132946521184074,
+      "16": 0.9884062325460783,
+      "20": 1.050663747706056,
+      "24": 1.2876163179206892,
+      "28": 1.2516273444356898,
+      "32": null,
+      "36": null,
+      "40": null,
+      "8": 0.7542587568818319
+    },
+    "8G_local_vs_random": {
+      "GA": 5,
+      "random": 5
+    },
+    "8H_affine_relation": false,
+    "8I_regimes": 20,
+    "8J_constructive_zero_preimages": 47,
+    "8J_distinct_patterns_by_r": {
+      "1": 8,
+      "2": 36,
+      "4": 2
+    },
+    "8J_message_lift_found": false,
+    "8J_state_transformation_globally_injective": false,
+    "8K_byte_search_exact_lift": false,
+    "8K_capacity_rank_by_blocks": {
+      "1": 64,
+      "2": 128,
+      "3": 189
+    },
+    "8K_first_block_min_mismatch": 189,
+    "8K_newton_reached_capacity": false,
+    "8K_reduced_models_lift_to_zero": 2,
+    "III_candidate": {
+      "avalanche_mean_hd": 128.05,
+      "avalanche_std_hd": 8.01,
+      "external_reference": false,
+      "hashes_per_sec": 97.1,
+      "max_bit_bias_from_half": 0.029
+    }
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "note": "assembled from existing phase artifacts (phases not re-run)",
+  "reachability_layers": {
+    "direct_first_block_eigenmode_reachability": "Impossible (proven)",
+    "full_message_collision_resistance": "Unresolved",
+    "full_message_preimage_resistance": "Unresolved",
+    "generic_arbitrary_target_state_inversion": "Unresolved",
+    "global_injectivity_state_transformation": "False",
+    "internal_preimage_resistance_target_zero": "Broken",
+    "internal_state_collision_resistance": "Broken",
+    "multi_block_eigenmode_reachability": "Unresolved"
+  },
+  "verdict_digest": "Unresolved experimental candidate",
+  "verdict_state_transformation": "Constructively non-injective; internal collision & target-zero preimage resistance BROKEN; generic arbitrary-target inversion UNRESOLVED"
+}

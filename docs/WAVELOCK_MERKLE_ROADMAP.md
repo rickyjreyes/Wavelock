@@ -92,8 +92,8 @@ node. The honest caveats that remain:
 - Finding D is only *fully* closed when **every** accepting node runs this
   rejection against a ledger derived from agreed chain state. A single isolated
   node with no shared chain state still only protects itself.
-- The host-local signing registry (`_claim_one_time_key`) is **defense-in-depth
-  only** — never the primary control.
+- The host-local signing registry (`_claim_one_time_key`, `_claim_signing_material`) is
+  **defense-in-depth only** — never the primary control.
 - WaveLock-OTS is still single-time Lamport (Finding C is inherent) and is
   **not** safe for value transfer or repeated signing. Do not treat it as
   production-ready.

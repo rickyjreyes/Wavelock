@@ -1,0 +1,787 @@
+{
+  "schema": 1,
+  "about": "Python/Lean conformance traces of the preexisting WaveLock-OTS signing guard (wavelock_ots.sign_ots and its key-state registry) against lean/WaveLockProofs/OTSSignerGuard.lean. scripts/gen_ots_signer_conformance.py generates OTSSignerConformance.lean; tests/test_ots_signer_conformance.py replays the traces against Python.",
+  "traces": [
+    {
+      "name": "signer_fresh_key_signs_once",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ]
+        ],
+        "results": [
+          "signed",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_copy_refused",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "key",
+          "f1",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ]
+        ],
+        "results": [
+          "signed",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_same_seed_two_key_ids_c3cb0d1",
+      "rev": "c3cb0d1",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "key",
+          "f1",
+          2,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            2,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "kid",
+              2
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_same_seed_two_key_ids_current",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "key",
+          "f1",
+          2,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ]
+        ],
+        "results": [
+          "signed",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ],
+            [
+              "kid",
+              2
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_relabelled_copy_current",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "key",
+          "f1",
+          9,
+          7
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ]
+        ],
+        "results": [
+          "signed",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ],
+            [
+              "kid",
+              9
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_flag_only_copy_signs_twice",
+      "rev": "flag_only",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "key",
+          "f1",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            1,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": []
+        }
+      }
+    },
+    {
+      "name": "signer_allow_reuse_bypasses_guard",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign_allow_reuse",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign_allow_reuse",
+          "p1",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            1,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": []
+        }
+      }
+    },
+    {
+      "name": "signer_second_registry_bypasses_guard",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "key",
+          "f1",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d1",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            1,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ],
+          "d1": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_wiped_registry_forgets",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "key",
+          "f1",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "wipe",
+          "d0"
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            1,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_crash_after_claims_burns_key",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign_crash_after_claims",
+          "p0",
+          "f0",
+          "d0",
+          100
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [],
+        "results": [
+          "crash",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_claim_fail_before_then_retry",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign_claim_fail",
+          "p0",
+          "f0",
+          "d0",
+          100,
+          0,
+          "fail_before"
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "error",
+          "signed"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_claim_fail_after_blocks_retry",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign_claim_fail",
+          "p0",
+          "f0",
+          "d0",
+          100,
+          0,
+          "fail_after"
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [],
+        "results": [
+          "error",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_material_claim_fails_after_kid",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign_claim_fail",
+          "p0",
+          "f0",
+          "d0",
+          100,
+          1,
+          "fail_before"
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [],
+        "results": [
+          "error",
+          "refused"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "signer_legacy_material_signs_once_more",
+      "rev": "current",
+      "events": [
+        [
+          "key",
+          "f0",
+          1,
+          7
+        ],
+        [
+          "sign",
+          "p0",
+          "f0",
+          "d0",
+          100,
+          "c3cb0d1"
+        ],
+        [
+          "key",
+          "f1",
+          2,
+          7
+        ],
+        [
+          "sign",
+          "p1",
+          "f1",
+          "d0",
+          200
+        ]
+      ],
+      "expected": {
+        "sigs": [
+          [
+            1,
+            7,
+            100
+          ],
+          [
+            2,
+            7,
+            200
+          ]
+        ],
+        "results": [
+          "signed",
+          "signed"
+        ],
+        "markers": {
+          "d0": [
+            [
+              "kid",
+              1
+            ],
+            [
+              "kid",
+              2
+            ],
+            [
+              "mat",
+              7
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

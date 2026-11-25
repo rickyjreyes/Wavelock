@@ -1,0 +1,473 @@
+{
+  "branch": "research/pde-eigenmode-collision-audit",
+  "constants": {
+    "D": 5,
+    "N": 16,
+    "T": 32,
+    "a": 3,
+    "a_inverse": 1431655765,
+    "b": 1431655765,
+    "p": 2147483647
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "part1_algebraic_verification": {
+    "named_states": [
+      {
+        "amplitude_is_qr": true,
+        "is_laplacian_eigenvector": true,
+        "lambda": 2147483639,
+        "name": "checkerboard_r4",
+        "opp_neighbor_const": true,
+        "opp_neighbor_value": 4,
+        "r": 4,
+        "verifications": {
+          "minus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 1995537278
+          },
+          "plus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 151946369
+          }
+        }
+      },
+      {
+        "amplitude_is_qr": true,
+        "is_laplacian_eigenvector": true,
+        "lambda": 2147483643,
+        "name": "stripe_rows_r2",
+        "opp_neighbor_const": true,
+        "opp_neighbor_value": 2,
+        "r": 2,
+        "verifications": {
+          "minus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 751855831
+          },
+          "plus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 1395627816
+          }
+        }
+      },
+      {
+        "amplitude_is_qr": true,
+        "is_laplacian_eigenvector": true,
+        "lambda": 2147483643,
+        "name": "stripe_cols_r2",
+        "opp_neighbor_const": true,
+        "opp_neighbor_value": 2,
+        "r": 2,
+        "verifications": {
+          "minus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 751855831
+          },
+          "plus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 1395627816
+          }
+        }
+      },
+      {
+        "amplitude_is_qr": true,
+        "is_laplacian_eigenvector": true,
+        "lambda": 2147483645,
+        "name": "period4_cols_r1",
+        "opp_neighbor_const": true,
+        "opp_neighbor_value": 1,
+        "r": 1,
+        "verifications": {
+          "minus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 930418544
+          },
+          "plus_s": {
+            "all_agree_zero": true,
+            "evolve_T_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "one_round_zero": {
+              "harness": true,
+              "optimized": true,
+              "reference": true
+            },
+            "s": 1217065103
+          }
+        }
+      }
+    ],
+    "r_classes": {
+      "0": {
+        "a_inverse": 1431655765,
+        "is_quadratic_residue": false,
+        "r": 0,
+        "roots": null,
+        "s_squared": 715827883,
+        "two_rD_minus_1": -1
+      },
+      "1": {
+        "a_inverse": 1431655765,
+        "is_quadratic_residue": true,
+        "r": 1,
+        "roots": [
+          1217065103,
+          930418544
+        ],
+        "s_squared": 1431655762,
+        "two_rD_minus_1": 9
+      },
+      "2": {
+        "a_inverse": 1431655765,
+        "is_quadratic_residue": true,
+        "r": 2,
+        "roots": [
+          1395627816,
+          751855831
+        ],
+        "s_squared": 2147483641,
+        "two_rD_minus_1": 19
+      },
+      "3": {
+        "a_inverse": 1431655765,
+        "is_quadratic_residue": false,
+        "r": 3,
+        "roots": null,
+        "s_squared": 715827873,
+        "two_rD_minus_1": 29
+      },
+      "4": {
+        "a_inverse": 1431655765,
+        "is_quadratic_residue": true,
+        "r": 4,
+        "roots": [
+          151946369,
+          1995537278
+        ],
+        "s_squared": 1431655752,
+        "two_rD_minus_1": 39
+      }
+    },
+    "zero_fixed_point": {
+      "evolve_T": true,
+      "one_round": true,
+      "ref_one_round": true
+    }
+  },
+  "part2_3_jacobian": {
+    "_note": "A full-rank Jacobian shows only LOCAL non-singularity; checkerboard_plus and checkerboard_minus have identical psi^2 (=s^2) hence identical Jacobians yet are distinct states both mapping to zero -- a direct demonstration that local non-singularity does NOT imply global injectivity.",
+    "checkerboard_minus": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    },
+    "checkerboard_plus": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    },
+    "period4_cols": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    },
+    "stripe_cols": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    },
+    "stripe_rows": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    },
+    "zero": {
+      "full_rank": true,
+      "rank": 256,
+      "rank_deficiency": 0
+    }
+  },
+  "part2_tile_enumeration": {
+    "constructive_count_note": "len(distinct sign-eigenmode patterns) [sigma and -sigma both counted] + 1 for the all-zero state. This is a LOWER BOUND from periodic tiles up to 4x4 only; the full set of +/-1 Laplacian eigenvectors over F_p (hence preimages of zero) is conjectured larger but is NOT claimed exponential without a constructive argument.",
+    "constructive_zero_preimage_count_one_round": 47,
+    "distinct_full_sign_patterns": 46,
+    "distinct_full_states_from_orbits_x2amp": 12,
+    "distinct_patterns_by_r": {
+      "1": 8,
+      "2": 36,
+      "4": 2
+    },
+    "num_symmetry_orbits": 6,
+    "per_tile": {
+      "1x1": {
+        "eigenvector_qr_configs": 0,
+        "tiles_scanned": 2
+      },
+      "1x2": {
+        "eigenvector_qr_configs": 2,
+        "tiles_scanned": 4
+      },
+      "2x1": {
+        "eigenvector_qr_configs": 2,
+        "tiles_scanned": 4
+      },
+      "2x2": {
+        "eigenvector_qr_configs": 6,
+        "tiles_scanned": 16
+      },
+      "2x4": {
+        "eigenvector_qr_configs": 10,
+        "tiles_scanned": 256
+      },
+      "4x2": {
+        "eigenvector_qr_configs": 10,
+        "tiles_scanned": 256
+      },
+      "4x4": {
+        "eigenvector_qr_configs": 46,
+        "tiles_scanned": 65536
+      }
+    },
+    "representatives": [
+      {
+        "lambda": 2147483643,
+        "r": 2,
+        "s": 1395627816,
+        "tile": [
+          1,
+          2
+        ],
+        "verified_zero": true
+      },
+      {
+        "lambda": 2147483639,
+        "r": 4,
+        "s": 151946369,
+        "tile": [
+          2,
+          2
+        ],
+        "verified_zero": true
+      },
+      {
+        "lambda": 2147483645,
+        "r": 1,
+        "s": 1217065103,
+        "tile": [
+          2,
+          4
+        ],
+        "verified_zero": true
+      },
+      {
+        "lambda": 2147483643,
+        "r": 2,
+        "s": 1395627816,
+        "tile": [
+          4,
+          4
+        ],
+        "verified_zero": true
+      },
+      {
+        "lambda": 2147483643,
+        "r": 2,
+        "s": 1395627816,
+        "tile": [
+          4,
+          4
+        ],
+        "verified_zero": true
+      },
+      {
+        "lambda": 2147483643,
+        "r": 2,
+        "s": 1395627816,
+        "tile": [
+          4,
+          4
+        ],
+        "verified_zero": true
+      }
+    ]
+  },
+  "part4_reachability": {
+    "analytic_one_block": {
+      "controllable_cells_before_first_evolve_T": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66
+      ],
+      "direct_reachability_before_first_round": "IMPOSSIBLE: capacity cells 67..255 are never written by absorption and hold fixed IV-derived values (all < ~300), which can never equal +/-s (~1.5e8); a structured collision state requires every cell to be +/-s*sigma. Exact mismatch count below.",
+      "example_iv_values": {
+        "100": 212,
+        "200": 269,
+        "255": 301,
+        "67": 136
+      },
+      "iv_cells_mismatch_required_checkerboard": 189,
+      "num_uncontrolled": 189,
+      "required_pm_s": {
+        "minus_s": 1995537278,
+        "plus_s": 151946369
+      },
+      "uncontrolled_capacity_cells": [
+        67,
+        255
+      ]
+    },
+    "search": {
+      "budget": 50000,
+      "final_absorbed_is_structured_collision": null,
+      "found": false,
+      "method": "sequential 8-byte messages; exact state equality vs zero and vs the enumerated structured-collision set",
+      "pre_squeeze_zero_message": null
+    },
+    "zero_digest_is_all_zero_bytes": true,
+    "zero_state_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "phase": "8J_eigenmode_collisions",
+  "runtime_s": 185.66
+}

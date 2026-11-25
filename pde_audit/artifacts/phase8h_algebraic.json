@@ -1,0 +1,250 @@
+{
+  "affine_relation": {
+    "affine_relation_exists": false,
+    "column_rank": 513,
+    "full_column_rank": 513,
+    "matrix_cols": 513,
+    "n_samples": 600,
+    "note": "rank == min(cols, rows) => no nonzero affine relation a.in+b.out=c"
+  },
+  "degree_note": "formal degree 3^T does NOT imply hardness: as a function over F_p the degree is bounded by p-1 (Fermat); full-system hardness is empirical, not implied by 3^T.",
+  "full_system_solver_note": "z3 SMT inversion of the full N=16, p=2**31-1 evolve_T is far beyond the installed solver's reach and was not attempted; this is a limitation, not a pass.",
+  "functional_degree": [
+    {
+      "N": 1,
+      "T": 1,
+      "formal_degree": 3,
+      "functional_degree": 3,
+      "max_possible": 4,
+      "p": 5
+    },
+    {
+      "N": 1,
+      "T": 2,
+      "formal_degree": 9,
+      "functional_degree": 3,
+      "max_possible": 4,
+      "p": 5
+    },
+    {
+      "N": 1,
+      "T": 3,
+      "formal_degree": 27,
+      "functional_degree": 3,
+      "max_possible": 4,
+      "p": 5
+    },
+    {
+      "N": 1,
+      "T": 4,
+      "formal_degree": 81,
+      "functional_degree": 3,
+      "max_possible": 4,
+      "p": 5
+    },
+    {
+      "N": 1,
+      "T": 8,
+      "formal_degree": 6561,
+      "functional_degree": 3,
+      "max_possible": 4,
+      "p": 5
+    },
+    {
+      "N": 1,
+      "T": 1,
+      "formal_degree": 3,
+      "functional_degree": 3,
+      "max_possible": 6,
+      "p": 7
+    },
+    {
+      "N": 1,
+      "T": 2,
+      "formal_degree": 9,
+      "functional_degree": 5,
+      "max_possible": 6,
+      "p": 7
+    },
+    {
+      "N": 1,
+      "T": 3,
+      "formal_degree": 27,
+      "functional_degree": 3,
+      "max_possible": 6,
+      "p": 7
+    },
+    {
+      "N": 1,
+      "T": 4,
+      "formal_degree": 81,
+      "functional_degree": 5,
+      "max_possible": 6,
+      "p": 7
+    },
+    {
+      "N": 1,
+      "T": 8,
+      "formal_degree": 6561,
+      "functional_degree": 5,
+      "max_possible": 6,
+      "p": 7
+    },
+    {
+      "N": 1,
+      "T": 1,
+      "formal_degree": 3,
+      "functional_degree": 3,
+      "max_possible": 10,
+      "p": 11
+    },
+    {
+      "N": 1,
+      "T": 2,
+      "formal_degree": 9,
+      "functional_degree": 9,
+      "max_possible": 10,
+      "p": 11
+    },
+    {
+      "N": 1,
+      "T": 3,
+      "formal_degree": 27,
+      "functional_degree": 9,
+      "max_possible": 10,
+      "p": 11
+    },
+    {
+      "N": 1,
+      "T": 4,
+      "formal_degree": 81,
+      "functional_degree": 9,
+      "max_possible": 10,
+      "p": 11
+    },
+    {
+      "N": 1,
+      "T": 8,
+      "formal_degree": 6561,
+      "functional_degree": 9,
+      "max_possible": 10,
+      "p": 11
+    },
+    {
+      "N": 1,
+      "T": 1,
+      "formal_degree": 3,
+      "functional_degree": 3,
+      "max_possible": 12,
+      "p": 13
+    },
+    {
+      "N": 1,
+      "T": 2,
+      "formal_degree": 9,
+      "functional_degree": 9,
+      "max_possible": 12,
+      "p": 13
+    },
+    {
+      "N": 1,
+      "T": 3,
+      "formal_degree": 27,
+      "functional_degree": 11,
+      "max_possible": 12,
+      "p": 13
+    },
+    {
+      "N": 1,
+      "T": 4,
+      "formal_degree": 81,
+      "functional_degree": 11,
+      "max_possible": 12,
+      "p": 13
+    },
+    {
+      "N": 1,
+      "T": 8,
+      "formal_degree": 6561,
+      "functional_degree": 9,
+      "max_possible": 12,
+      "p": 13
+    }
+  ],
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "8H_algebraic",
+  "runtime_s": 24.95,
+  "seed": 80080,
+  "smt_inversion": {
+    "available": true,
+    "inversions": [
+      {
+        "N": 2,
+        "T": 1,
+        "available": true,
+        "p": 5,
+        "result": "sat",
+        "solve_time_s": 0.008,
+        "solved": true,
+        "timeout_ms": 20000
+      },
+      {
+        "N": 2,
+        "T": 2,
+        "available": true,
+        "p": 5,
+        "result": "sat",
+        "solve_time_s": 0.008,
+        "solved": true,
+        "timeout_ms": 20000
+      },
+      {
+        "N": 2,
+        "T": 1,
+        "available": true,
+        "p": 7,
+        "result": "sat",
+        "solve_time_s": 0.023,
+        "solved": true,
+        "timeout_ms": 20000
+      },
+      {
+        "N": 2,
+        "T": 2,
+        "available": true,
+        "p": 7,
+        "result": "unknown",
+        "solve_time_s": 20.01,
+        "solved": false,
+        "timeout_ms": 20000
+      },
+      {
+        "N": 2,
+        "T": 2,
+        "available": true,
+        "p": 11,
+        "result": "unknown",
+        "solve_time_s": 2.026,
+        "solved": false,
+        "timeout_ms": 20000
+      },
+      {
+        "N": 2,
+        "T": 3,
+        "available": true,
+        "p": 13,
+        "result": "unknown",
+        "solve_time_s": 1.021,
+        "solved": false,
+        "timeout_ms": 20000
+      }
+    ]
+  },
+  "z3_available": true
+}

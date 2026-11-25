@@ -1,0 +1,10 @@
+{
+  "target": "High 3",
+  "attempt": "-0.0 versus +0.0",
+  "expected": "equal canonical bytes and commitments",
+  "observed": {
+    "canonical_bytes_equal": true,
+    "commitments_equal": true
+  },
+  "status": "PASS"
+}

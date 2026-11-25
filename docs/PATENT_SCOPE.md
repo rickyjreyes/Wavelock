@@ -1,153 +1,140 @@
-# Patent Scope and Filing Decisions
+# Patent / Repository Relationship
 
-This document records the **deliberate scoping decisions** made for the
-WaveLock provisional and any continuation/CIP filings. It is the audit
-trail that pairs each patent claim with the implementation that supports
-it (or does not), so an examiner, licensee, or future-litigation expert
-witness can see what we knew, when we knew it, and what we chose to file.
+This document explains the relationship between the public WaveLock repository
+and the inventor's patent filings. It is an engineering notice, not a claim
+chart, prosecution statement, legal opinion, disclaimer, or admission.
 
-If you are tempted to commercialize a feature whose claim language is
-broader than what the implementation reliably does, read this document
-first.
+## Controlling patent record
 
----
+WaveLock-related subject matter is described in the pending U.S. nonprovisional
+application under docket **REYES-WAVELOCK-2026-NP**, titled:
 
-## Group I — Curvature-Regulated Evolution and Commitment
+**Curvature-Regulated Wavefield Evolution Methods, Protocol-Binding Commitment
+Systems, and Drift Detection Apparatus**
 
-**Status: supported and filed.**
+The application was filed June 7, 2026 and claims the benefit of U.S.
+Provisional Patent Application No. **63/826,336**, filed June 18, 2025.
 
-The PDE operator F, dual-hash commitment, canonical serialization with
-kernel binding, and SHAKE-256 ψ₀ derivation are all implemented in this
-repo (see `docs/CANONICAL.md`). Empirical attack-suite tests exercise
-chaotic divergence, Lyapunov bounds, and absence of an algebraic
-inverse.
+The filed application describes, among other subject matter:
 
-### Caveats logged
+- curvature-regulated wavefield evolution and commitments;
+- canonical serialization and kernel-bound state representations;
+- commitment-and-replay ledger systems;
+- curvature-derived invariants;
+- computational-system drift detection and attestation;
+- protocol-binding material;
+- public-verifier embodiments;
+- one-time-use and consumed-use authorization;
+- replay prevention tied to accepted ledger or attestation state;
+- authenticated-encryption context binding and access-control embodiments; and
+- computational-agent and distributed-system embodiments.
 
-- **BLAKE3.** The previous Python implementation silently fell back to
-  BLAKE2b when the `blake3` PyPI package was missing. This has been
-  hardened to raise `RuntimeError` instead of producing a non-BLAKE3
-  digest under the BLAKE3 label. See `wavelock/chain/hash_families.py`.
-  Any C-layer BLAKE3 implementation in a separate repo must vendor the
-  official BLAKE3 reference from <https://github.com/BLAKE3-team/BLAKE3>
-  (CC0/Apache-2.0) before its claim language is filed.
-
-- **SHAKE-256 ψ₀ derivation (Claim 9).** Implemented in
-  `wavelock/chain/xof_init.py` and exposed via `use_xof_init=True` on
-  `CurvatureKeyPairV3`. The legacy `np.random.seed(int)` path is retained
-  for backward compatibility with the existing test corpus; new
-  consensus-grade commitments should use the XOF path. Claim 9 may be
-  filed naming SHAKE-256 specifically OR generically as "an extendable-
-  output function" — both are now supportable. The generic phrasing is
-  preferred for downstream agility.
+The patent application itself, any later prosecution record, and any issued
+claims control the legal patent analysis. Repository documentation does not
+amend the patent application.
 
 ---
 
-## Group II — Commitment-and-Replay Ledger
+## Repository purpose
 
-**Status: supported with a clarification.**
+This repository is a changing research and reference implementation. It
+contains prototypes, test harnesses, deprecated code, experimental branches,
+security audits, attack reproductions, partial implementations, and engineering
+roadmaps.
 
-Claim 15 specifies "a Merkle-root field computed over fields (i)–(v) and
-over a hash of the prior record." This repo implements that exact
-binding in `wavelock/chain/ledger_merkle.py` (`compute_record_merkle_root`).
+A technical statement about this repository is not a statement about patent
+scope. In particular:
 
-Note the layering: a ledger record's Merkle root is **distinct** from the
-chain-block Merkle root in `Block.calculate_merkle_root()`. The chain
-block Merkles its ordered `messages`; a record's Merkle binds the
-record's commitment + operator + kernel + invariants + timestamp +
-prior-record-hash. A record can be stored as one message inside a chain
-block, in which case the block's Merkle covers the record's Merkle as a
-leaf. This layering is intentional and worth disclosing in the spec so
-the examiner does not conflate the two.
+- an implementation being absent from this repository does not disclaim or
+  abandon patent subject matter;
+- an implementation being experimental or incomplete does not establish lack
+  of written description, enablement, utility, validity, or enforceability;
+- a failed test, security weakness, deprecated implementation, or redesign does
+  not by itself narrow or surrender any patent claim;
+- a repository implementation being present does not establish that a patent
+  claim covers it; and
+- later repository changes do not retroactively alter what was disclosed in a
+  filed patent application.
 
----
-
-## Group III — Drift Detection Apparatus
-
-**Status: NOT implemented in this repo. See decision below.**
-
-### The known gap
-
-The published validation runner (in a separate repository) computed a
-diagonal-Mahalanobis-style drift metric over `/proc/stat`, `/proc/loadavg`,
-and `/proc/meminfo`. In containerized environments, five of seven
-observable channels flatlined at zero, collapsing the metric to a
-one-dimensional signal on `cpu_pct` only. This caused inter-attack
-distinguishability to fail and missed ~90% of attack samples at a
-4σ threshold.
-
-Bare-metal validation with `perf_event_open` against a richer observable
-set has not yet been completed.
-
-### The decision
-
-We will NOT file Group III claims that imply inter-attack
-distinguishability until bare-metal validation has either confirmed or
-refuted that property. Two acceptable framings:
-
-**Option A — narrow on filing (preferred).** Limit Claim 21(d) to
-baseline-vs-runtime deviation detection ("produce a halt signal when
-the distance metric exceeds a calibrated threshold"). Inter-attack
-distinguishability becomes an aspiration of certain embodiments
-described in the spec, never a claim limitation.
-
-**Option B — defer.** Hold Group III back as a continuation or CIP and
-file it only after bare-metal validation. If validation succeeds, file
-the broader claim language. If it fails, file the narrowed Option A
-claims.
-
-In either case: **do not commercialize Group III** (raise money against
-it, sell licenses citing it, or use it in marketing) until bare-metal
-validation results are documented. Selling a feature whose own kill
-criteria we know to fail in containerized environments creates written
-evidence of inequitable conduct.
-
-### Bare-metal validation gating criteria
-
-Before Group III is unblocked for filing or commercialization, we must:
-
-1. Run the validation suite on bare metal with `perf_event_open` enabled.
-2. Confirm that all seven (or replacement) observable channels carry
-   non-zero variance during baseline.
-3. Recompute the drift metric (preferably full-covariance Mahalanobis,
-   not the diagonal approximation) and confirm:
-   - Baseline-to-attack separation >= configured threshold (this is the
-     narrow claim).
-   - Pairwise inter-attack separation, if claimed.
-4. Publish the results — favorable or not — in `docs/inevitability/` so
-   the gating decision is visible to anyone evaluating the filing.
+Technical results should continue to be reported accurately. Negative results
+and known limitations are engineering evidence and should not be hidden or
+rewritten as legal conclusions.
 
 ---
 
-## Cross-cutting issues
+## Current engineering map
 
-### Observable-injection function Φ
+### Curvature-regulated evolution and commitment
 
-If/when Group III is unblocked, the production code must contain a
-documented Φ implementation that matches the spec's "fixed deterministic
-spatial-distribution function partitioning the lattice into K
-sub-regions." A README pointer to this implementation should land in
-the same commit that re-enables Group III filing.
+The Python repository contains implementations of the curvature-regulated PDE
+operator, deterministic state evolution, canonical serialization, hash-family
+binding, and related commitment experiments. See `docs/CANONICAL.md` for the
+current reference-implementation map.
 
-### SHA3-256 in a C kernel
+### Commitment and replay ledger
 
-Any C-layer dual-hash implementation must include a real SHA3-256
-implementation. The Python layer here uses `hashlib.sha3_256` (CPython
-stdlib, FIPS 202). Cross-language interop should be tested with a
-golden-vector test before shipping.
+The repository contains ledger, Merkle-binding, one-time-signature,
+consumed-identifier, and replay-rejection experiments. These implementation
+notes are intended to document software behavior, not to define patent claim
+boundaries.
+
+### Drift detection and attestation
+
+The filed patent application includes drift-detection and attestation subject
+matter. The public Python repository does not need to contain every embodiment
+or every production implementation described in the patent filing.
+
+Any current or future drift-detection experiments may be documented here as
+engineering work without characterizing them as filed, unfiled, supported,
+unsupported, valid, invalid, enabled, disabled, patentable, or unpatentable.
+
+### Protocol binding and public verification
+
+The filed application includes protocol-binding, public-verifier,
+replay-prevention, consumed-use, context-authentication, authenticated-encryption
+context, access-control, and computational-agent embodiments. Repository code
+may implement some, all, alternate, or later-developed versions of those ideas.
+The implementation status is not a legal scope statement.
 
 ---
 
-## How to update this document
+## Safe documentation rule
 
-This file is part of the patent audit trail. Every time a scope decision
-is made or a gap is closed:
+Repository documentation should describe **what the code does and what testing
+shows**. It should avoid making unnecessary legal conclusions such as:
 
-1. Update the relevant section above with the new status.
-2. Reference the commit that closed the gap.
-3. Do NOT delete the historical text — strike through or add a "Resolved"
-   note, so the audit trail remains intact.
+- "this claim is unsupported";
+- "this feature is outside the patent";
+- "we will not file this claim";
+- "this implementation creates an enablement gap";
+- "this test failure invalidates the patent";
+- "this code is required for the patent to be valid"; or
+- similar statements purporting to decide patent scope, validity, priority,
+  enablement, enforceability, or infringement.
 
-The point is not to maintain a pristine document. The point is to be
-able to show, under oath, exactly what we knew and exactly what we
-filed.
+When a technical limitation exists, state the limitation directly and precisely.
+For example: "the current containerized telemetry experiment produced low
+variance in five channels" is an engineering result. Whether that result has any
+legal patent consequence is a separate question for the patent record and legal
+analysis.
+
+---
+
+## Licensing and reserved rights
+
+Public availability of this repository does not grant a patent license and does
+not dedicate WaveLock inventions to the public. Patent and copyright rights are
+expressly reserved as stated in the repository's [`LICENSE`](../LICENSE) and
+[`PATENT_NOTICE.md`](../PATENT_NOTICE.md).
+
+No repository file should be read as granting commercial, deployment,
+manufacturing, derivative-work, or patent rights unless a separate written
+license expressly grants those rights.
+
+---
+
+## Maintenance
+
+Keep engineering documentation current, reproducible, and candid. Keep legal
+scope conclusions out of engineering audit files unless they reproduce an
+actual filed statement or are added by qualified counsel for that purpose.

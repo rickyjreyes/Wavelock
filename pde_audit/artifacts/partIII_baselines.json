@@ -1,0 +1,72 @@
+{
+  "discipline_note": "External SHA-256/BLAKE2b columns are reference only. Matching their avalanche/bias is NOT evidence of equivalent cryptographic security.",
+  "ideal_avalanche_hd": 128.0,
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "PartIII_baselines",
+  "rows": {
+    "blake2b_external_ref": {
+      "avalanche_mean_hd": 127.07,
+      "avalanche_std_hd": 7.97,
+      "external_reference": true,
+      "hashes_per_sec": 1394466.8,
+      "max_bit_bias_from_half": 0.0347
+    },
+    "linear_ca": {
+      "avalanche_mean_hd": 2.0,
+      "avalanche_std_hd": 0.0,
+      "external_reference": false,
+      "hashes_per_sec": 949.4,
+      "max_bit_bias_from_half": 0.0567
+    },
+    "mod_linear": {
+      "avalanche_mean_hd": 15.51,
+      "avalanche_std_hd": 3.74,
+      "external_reference": false,
+      "hashes_per_sec": 3129.8,
+      "max_bit_bias_from_half": 0.5
+    },
+    "pde_T1_reduced": {
+      "avalanche_mean_hd": 20.03,
+      "avalanche_std_hd": 4.89,
+      "external_reference": false,
+      "hashes_per_sec": 2272.3,
+      "max_bit_bias_from_half": 0.4943
+    },
+    "pde_T32_candidate": {
+      "avalanche_mean_hd": 128.05,
+      "avalanche_std_hd": 8.01,
+      "external_reference": false,
+      "hashes_per_sec": 97.1,
+      "max_bit_bias_from_half": 0.029
+    },
+    "sha256_external_ref": {
+      "avalanche_mean_hd": 128.08,
+      "avalanche_std_hd": 7.99,
+      "external_reference": true,
+      "hashes_per_sec": 1568689.0,
+      "max_bit_bias_from_half": 0.0243
+    },
+    "truncation": {
+      "avalanche_mean_hd": 0.79,
+      "avalanche_std_hd": 0.41,
+      "external_reference": false,
+      "hashes_per_sec": 3897078.2,
+      "max_bit_bias_from_half": 0.0897
+    },
+    "xor_fold": {
+      "avalanche_mean_hd": 1.0,
+      "avalanche_std_hd": 0.0,
+      "external_reference": false,
+      "hashes_per_sec": 59220.9,
+      "max_bit_bias_from_half": 0.0967
+    }
+  },
+  "runtime_s": 48.03,
+  "seed": 80090
+}

@@ -1,0 +1,65 @@
+{
+  "limitations": [
+    "op counts are order-of-magnitude, not gate-exact",
+    "physical bounds constrain implementations, not the problem",
+    "no proof connects curvature resolution to attack operations"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "model_1_computation": {
+    "R_comp_definition": "R_comp(n) = field operations as a function of message length n (linear in #blocks).",
+    "asymptotic": "O(blocks * T * N^2) field ops (polynomial in all parameters); forward cost is poly(n).",
+    "field_ops_per_digest": 655360,
+    "ops_per_round": 5120,
+    "rounds": 128
+  },
+  "model_2_physical": {
+    "attack_vs_physical_256bit": {
+      "comparison_scales_J": {
+        "annual_world_energy_use": 6e+20,
+        "mass_energy_observable_universe": 4e+69,
+        "sun_luminosity_one_year": 1.2e+34
+      },
+      "honest_statement": "the energy figure is only meaningful IF the attack provably needs 2^k IRREVERSIBLE operations. No lower bound of this kind is proved for the curvature-capacity core. Generic-cost behaviour was observed only on truncations <= 24 bits. Therefore the heat/energy argument is INTERPRETIVE and decorative, not a security proof.",
+      "hypothetical_attack_operations": "2^256",
+      "landauer_energy_if_irreversible_J": 3.3243664325948616e+56
+    },
+    "definition_and_bounds": {
+      "R_phys_definition": "R_phys(E,V,t,T_env): given energy E, volume V, time t and temperature T_env, the max #irreversible operations is bounded by min(E/(k_B T_env ln2) [Landauer], (2E/(pi*hbar))*t [Margolus-Levitin], Bekenstein(V,E) [holographic info]). These bound an implementation, not the problem.",
+      "T_env_K": 300.0,
+      "assumed_irreversible_operations": 655360,
+      "bremermann_ops_per_s_per_kg": 5.425569961932879e+50,
+      "caveat": "Landauer alone does NOT prove computational hardness.",
+      "landauer_energy_per_bit_J": 2.870978885078724e-21,
+      "landauer_total_energy_J": 1.8815247221251927e-15,
+      "landauer_total_energy_note": "energy to ERASE this many bits irreversibly at T_env. It bounds an implementation's dissipation; it does NOT lower-bound the number of operations an attacker must perform. A reversible circuit can in principle approach zero erasure energy."
+    }
+  },
+  "model_3_machine": {
+    "R_machine_definition": "R_machine = (ops/s) * (wall-clock s) bounded by power/cooling; e.g. a 1 exaflop cluster for one year ~ 3.15e25 field-ops, far below 2^256 ~ 1.16e77. A generic 256-bit digest is out of reach for any machine model here -- IF the attack is generic, which is unproved.",
+    "commodity_cpu": {
+      "memory_GB": 32,
+      "ops_per_s": 10000000000.0,
+      "power_W": 200,
+      "wall_clock_budget_s": 86400
+    },
+    "forward_throughput_measured_hashes_per_s": 49.3,
+    "large_cluster": {
+      "memory_PB": 10,
+      "ops_per_s": 1e+18,
+      "power_MW": 30,
+      "wall_clock_budget_s": 31500000.0
+    }
+  },
+  "phase": "resource_bounds",
+  "runtime_s": 2.03,
+  "seed": 90400,
+  "verdict_on_heat_argument": "The heat / Landauer argument is INTERPRETIVE. It quantifies the dissipation of an implementation, not a lower bound on attack operations. No exponential lower bound on attack cost is proved; therefore 'heat makes inversion impossible' is NOT a supported claim."
+}

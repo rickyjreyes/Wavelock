@@ -1,0 +1,10 @@
+{
+  "target": "Critical 8 / OTS replay",
+  "attempt": "replay after ledger restart",
+  "expected": "first accepted; replay rejected",
+  "observed": {
+    "first_accepted": true,
+    "replay_accepted": false
+  },
+  "status": "PASS"
+}

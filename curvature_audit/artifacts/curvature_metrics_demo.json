@@ -1,0 +1,60 @@
+{
+  "definitions": "see module docstring; functionals on lift_centered",
+  "limitations": [
+    "curvature magnitudes are convention-dependent (see lifting_sensitivity)",
+    "spectral measures use float FFT and are approximate",
+    "these are forward-trajectory diagnostics, NOT hardness measures"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "7ccd4d0c0f7f01de1629c02237d1a7a46bcff754",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "curvature_metrics_demo",
+  "results": {
+    "digest_byte_entropy_example": 5.0,
+    "eigenmode_curvature_integral": {
+      "checker_r4+": 378268861272623693824,
+      "checker_r4-": 378268861272623693824,
+      "cols_r2+": 2315416332733237497856,
+      "cols_r2-": 2315416332733237497856,
+      "p4cols_r1+": 886454955027537854464,
+      "p4cols_r1-": 886454955027537854464,
+      "rows_r2+": 2315416332733237497856,
+      "rows_r2-": 2315416332733237497856,
+      "zero": 0
+    },
+    "lifting_sensitivity": {
+      "structured_low_magnitude_state": {
+        "K2_centered": 80,
+        "K2_naive": 92233720110849720500,
+        "note": "for structured states with residues near 0 or near P the two lifts diverge by ~18 orders of magnitude; curvature MAGNITUDE is therefore convention-dependent and is a diagnostic, not a cryptographic invariant. Cryptographic claims must not rest on raw curvature magnitude.",
+        "ratio_naive_over_centered_log10": 18.061799738625467
+      },
+      "well_mixed_state": {
+        "K2_centered_mean": 1.9572565076867691e+21,
+        "K2_naive_mean": 1.9361560510054584e+21,
+        "note": "for well-mixed (post-evolution) fields the residues fill [0,P) so both lifts give statistically similar magnitude (ratio ~ 1).",
+        "ratio_naive_over_centered_log10": -0.004958537838629277
+      }
+    },
+    "random_state": {
+      "distinct_modes": 256,
+      "gradient_energy_G": 381453196791817916886,
+      "signature_complexity": {
+        "curvature_integral": 64589464753663378692068,
+        "distinct_modes_sum": 8439,
+        "mean_spectral_effrank": 165.84742934318726
+      },
+      "spatial_curvature_K2": 1892115061291169028854,
+      "spectral_effrank": 165.21868512414622
+    }
+  },
+  "rounds": 32,
+  "runtime_s": 0.1,
+  "seed": 90100
+}

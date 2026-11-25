@@ -1,0 +1,89 @@
+{
+  "artifact": "candidate_b_algebraic_solver",
+  "description": "Exact algebraic solver (SymPy + z3) attacks on reduced Candidate B",
+  "limitations": [
+    "Only 2x2 toy and single-coordinate injection systems were tractable",
+    "Full N=16 / T=32 system is not encodable for any available solver",
+    "z3 'unknown' results are timeouts, not proofs",
+    "N=2 collisions (if any) are degenerate and not extrapolated"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "25cdfe6786c41e9989928172253795f10343b3c7",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "runtime_s": 60.61,
+  "seed": 99000,
+  "solver_versions": {
+    "sympy": "1.14.0",
+    "z3": "4.16.0"
+  },
+  "summary": {
+    "coupled_2x2_collision": "unknown",
+    "injective_in_u_off_hyperplane_z3": "unsat",
+    "note": "A timeout ('unknown') is NOT a security result. Full N=16, T=32 systems are far beyond solver reach; only reduced/restricted systems were attempted."
+  },
+  "sympy_structure": {
+    "injection": "j_B = u + GAMMA*u*v",
+    "injection_degree_in_u": 1,
+    "injection_degree_in_v": 1,
+    "injection_factored": "u*(11*v + 1)",
+    "note": "j_B factors as u*(1+GAMMA*v) (degree 1 in u, vs Candidate A's degree 2). The scalar accumulator self-square A_C*c^2 doubles the degree in c each round (2 -> 4 -> ...), same as Candidate A; the injection contributes degree 1 in u (vs A's 2). Lower injection degree is the structural change.",
+    "scalar_1round_degree_in_c": 2,
+    "scalar_1round_degree_in_u": 1,
+    "scalar_2round_degree_in_c": 4,
+    "scalar_2round_degree_in_u": 2,
+    "solver": "sympy"
+  },
+  "z3_coupled_2x2_collision": {
+    "degree": "wave round degree 3, accumulator degree 2 (in C)",
+    "equations": 8,
+    "interpretation": "Searches for a one-round coupled collision on a 2x2 toy over the REAL prime p=2^31-1. 'unknown' = solver timeout (NOT a security result). N=2 is degenerate; any collision here is not extrapolated to N=16.",
+    "result": "unknown",
+    "runtime_s": 30.008,
+    "timeout_ms": 30000,
+    "variables": 16
+  },
+  "z3_injection": {
+    "collapse_at_v_star": {
+      "interpretation": "SAT: at v=v_star every u gives j_B=0, so any two distinct u collide. Confirms the singular collapse.",
+      "result": "sat",
+      "runtime_s": 0.008,
+      "v_star": 195225786
+    },
+    "collision_variety_exists": {
+      "interpretation": "SAT expected: j_B(u,v)=j_B(u',v') is a codimension-1 variety; collisions trivially exist in the free (u,v) plane.",
+      "result": "sat",
+      "runtime_s": 0.006
+    },
+    "injective_in_u_off_hyperplane": {
+      "interpretation": "UNSAT proves: for this fixed v != v_star, j_B(.,v) is injective in u (computer-assisted, single concrete v). Generalized symbolically in CC_CORE_V1_RESTRICTED_BINDING.md.",
+      "result": "unsat",
+      "runtime_s": 0.004,
+      "unsat_means_injective": true,
+      "v_fixed": 12345678
+    }
+  },
+  "z3_preimage_2x2": {
+    "interpretation": "Preimage of a known-reachable target on the 2x2 toy over the real prime. SAT is expected (the original is a preimage); the interest is whether z3 finds it quickly and whether multiple preimages exist. 'unknown' = timeout.",
+    "result": "unknown",
+    "runtime_s": 30.012,
+    "target_C": [
+      1968739520,
+      1223278477,
+      824442804,
+      1301838644
+    ],
+    "target_psi": [
+      1537407681,
+      1396221074,
+      617086347,
+      2138399695
+    ],
+    "timeout_ms": 30000
+  }
+}

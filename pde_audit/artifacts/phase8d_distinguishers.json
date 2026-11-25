@@ -1,0 +1,145 @@
+{
+  "advantage_threshold_auc": 0.55,
+  "any_distinguisher": false,
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "multiple_comparison_note": "7 tasks x up to 2 classifiers tested; treat marginal AUC>0.5 cautiously. A task is only called a distinguisher if AUC >= 0.55 reproduces on a fresh holdout seed.",
+  "per_class": 1500,
+  "phase": "8D_distinguishers",
+  "runtime_s": 193.74,
+  "seed": 80040,
+  "sklearn": true,
+  "tasks": {
+    "input_hw_bucket": {
+      "best_auc": 0.5164813494531499,
+      "eval": {
+        "class1_frac_after_dedup": 0.5059021922428331,
+        "label_permutation_control_auc": 0.4775268115832107,
+        "logreg": {
+          "auc": 0.5120216009586942,
+          "balanced_acc": 0.49984577967224386
+        },
+        "n_after_dedup": 2965,
+        "random_forest": {
+          "auc": 0.5164813494531499,
+          "balanced_acc": 0.5131517072948744
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 26.85
+    },
+    "length_bucket": {
+      "best_auc": 0.48836330550735596,
+      "eval": {
+        "class1_frac_after_dedup": 0.5003335557038026,
+        "label_permutation_control_auc": 0.4761722459491575,
+        "logreg": {
+          "auc": 0.48836330550735596,
+          "balanced_acc": 0.5004300679656543
+        },
+        "n_after_dedup": 2998,
+        "random_forest": {
+          "auc": 0.48794318130969366,
+          "balanced_acc": 0.494227642680641
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 30.1
+    },
+    "lowent_vs_highent": {
+      "best_auc": 0.5422646097424859,
+      "eval": {
+        "class1_frac_after_dedup": 0.49765572672471536,
+        "label_permutation_control_auc": 0.47143825241170373,
+        "logreg": {
+          "auc": 0.5422646097424859,
+          "balanced_acc": 0.5247548433389141
+        },
+        "n_after_dedup": 2986,
+        "random_forest": {
+          "auc": 0.5133964163278323,
+          "balanced_acc": 0.5059694650402615
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 28.05
+    },
+    "pde_vs_uniform": {
+      "best_auc": 0.49351683742375296,
+      "eval": {
+        "class1_frac_after_dedup": 0.5,
+        "label_permutation_control_auc": 0.48376117424148724,
+        "logreg": {
+          "auc": 0.49351683742375296,
+          "balanced_acc": 0.49612642785410044
+        },
+        "n_after_dedup": 3000,
+        "random_forest": {
+          "auc": 0.4796971390973538,
+          "balanced_acc": 0.4759027204052657
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 15.89
+    },
+    "repeated_block": {
+      "best_auc": 0.49944345227788806,
+      "eval": {
+        "class1_frac_after_dedup": 0.5,
+        "label_permutation_control_auc": 0.49109770999163943,
+        "logreg": {
+          "auc": 0.49944345227788806,
+          "balanced_acc": 0.5063792736681194
+        },
+        "n_after_dedup": 3000,
+        "random_forest": {
+          "auc": 0.490157762727628,
+          "balanced_acc": 0.4940882264184546
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 37.02
+    },
+    "shared_prefix": {
+      "best_auc": 0.509001231825625,
+      "eval": {
+        "class1_frac_after_dedup": 0.5,
+        "label_permutation_control_auc": 0.500512023904343,
+        "logreg": {
+          "auc": 0.4963465733975136,
+          "balanced_acc": 0.49499849113728667
+        },
+        "n_after_dedup": 3000,
+        "random_forest": {
+          "auc": 0.509001231825625,
+          "balanced_acc": 0.5009869446272119
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 28.42
+    },
+    "zero_vs_random": {
+      "best_auc": 0.5157842770987885,
+      "eval": {
+        "class1_frac_after_dedup": 0.16387959866220736,
+        "label_permutation_control_auc": 0.45204675241500775,
+        "logreg": {
+          "auc": 0.5031488498692427,
+          "balanced_acc": 0.5256577894006511
+        },
+        "n_after_dedup": 1794,
+        "random_forest": {
+          "auc": 0.5157842770987885,
+          "balanced_acc": 0.5
+        }
+      },
+      "is_distinguisher": false,
+      "runtime_s": 27.39
+    }
+  }
+}

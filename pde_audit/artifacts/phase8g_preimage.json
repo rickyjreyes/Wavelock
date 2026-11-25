@@ -1,0 +1,122 @@
+{
+  "brute_force": {
+    "T32_n12": {
+      "birthday_free_expected": 4096,
+      "evals": 12642,
+      "found": true,
+      "msg": "000000cd11fbd5e1"
+    },
+    "T32_n16": {
+      "birthday_free_expected": 65536,
+      "evals": 47381,
+      "found": true,
+      "msg": "000000cd11fc5d94"
+    },
+    "T32_n8": {
+      "birthday_free_expected": 256,
+      "evals": 120,
+      "found": true,
+      "msg": "000000cd11fba4f7"
+    },
+    "T4_n12": {
+      "birthday_free_expected": 4096,
+      "evals": 3,
+      "found": true,
+      "msg": "000000cd11fba482"
+    },
+    "T4_n16": {
+      "birthday_free_expected": 65536,
+      "evals": 313,
+      "found": true,
+      "msg": "000000cd11fba5b8"
+    },
+    "T4_n20": {
+      "birthday_free_expected": 1048576,
+      "evals": 7082,
+      "found": true,
+      "msg": "000000cd11fbc029"
+    },
+    "T4_n8": {
+      "birthday_free_expected": 256,
+      "evals": 3,
+      "found": true,
+      "msg": "000000cd11fba482"
+    },
+    "T8_n12": {
+      "birthday_free_expected": 4096,
+      "evals": 428,
+      "found": true,
+      "msg": "000000cd11fba62b"
+    },
+    "T8_n16": {
+      "birthday_free_expected": 65536,
+      "evals": 141509,
+      "found": true,
+      "msg": "000000cd11fdcd44"
+    },
+    "T8_n20": {
+      "birthday_free_expected": 1048576,
+      "evals": 300000,
+      "found": false
+    },
+    "T8_n8": {
+      "birthday_free_expected": 256,
+      "evals": 244,
+      "found": true,
+      "msg": "000000cd11fba573"
+    }
+  },
+  "local_search_n32_T8": {
+    "budget": 20000,
+    "genetic": {
+      "best_distance": 5,
+      "evals": 20000,
+      "solved": false
+    },
+    "hill_climb": {
+      "best_distance": 6,
+      "evals": 20000,
+      "solved": false
+    },
+    "interpretation": "if metaheuristics do not beat random_baseline, the truncated objective has no exploitable gradient",
+    "objective_bits": 32,
+    "random_baseline": {
+      "best_distance": 5
+    },
+    "simulated_annealing": {
+      "best_distance": 6,
+      "evals": 20000,
+      "solved": false
+    }
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "phase": "8G_preimage",
+  "runtime_s": 2310.5,
+  "second_preimage": {
+    "16": {
+      "evals": 145760,
+      "found": true,
+      "nbits": 16,
+      "second": "0000005d417501df",
+      "target_msg": "7365636f6e642d707265696d6167652d746172676574"
+    },
+    "20": {
+      "evals": 200000,
+      "found": false,
+      "nbits": 20
+    }
+  },
+  "seed": 80070,
+  "state_recovery": {
+    "expected_if_uniform": 2.1684043449710089e-16,
+    "note": "64 exposed bits vs ~7936-bit state => preimage of the squeeze is hugely underdetermined",
+    "states_matching_64_squeeze_bits": 0,
+    "trials": 4000
+  }
+}

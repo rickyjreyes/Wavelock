@@ -1,0 +1,600 @@
+# WaveLock Curvature-Capacity Core — Adversarial Audit Results & Final Report
+
+> **No security claim.** Observed attack cost is not a lower bound and is not a
+> proof of one-wayness, collision resistance, or cryptographic security. Negative
+> results carry their budgets and are not proofs.
+
+---
+
+## Current Verdict — Phase CC-3
+
+**Branch:** `research/curvature-capacity-wavelock` · PR #19 (draft) · base `master`
+· **Date:** 2026-06-18. **Current primary experimental candidate:** `CC-Core-v1-B`
+(`wavelock/curvature_capacity_v1/`). Environment: Python 3.11, NumPy 2.4.6, with
+**z3 4.16.0 and SymPy 1.14.0 installed and used** in Phases CC-2/CC-3.
+
+1. **Verdict — Merge research-only:** Candidate B survives the protocol-level
+   singular audit; no security claim. (Merge criteria: `CC_CORE_V1` docs + below.)
+2. **Test count:** the fast suite (`curvature_audit/`, `-m "not slow"`) passes;
+   current count is recorded in `curvature_audit/artifacts/cc3_ci_status.json`.
+3. **CI status:** GitHub Actions `audit-fast` check-runs report **success** on the
+   PR head; the legacy *combined-status* API is empty by design (Actions reports
+   via check-runs, not commit statuses). Run links in `cc3_ci_status.json`.
+4. **Reachability of `v_star = 195225786`:** **unreachable at round 0** for every
+   valid message [theorem]; **reachable at one coordinate at round 1** via a
+   replay-verified 191-byte witness [computer-assisted theorem]; the hit is
+   **harmless** — only the round-0 wave-injection is zeroed while the bytes already
+   entered C at absorption, no collision found [theorem + bounded evidence];
+   multi-coordinate / full-lattice / persistent reachability **unresolved**
+   (z3 timeouts; no witness). Details: `docs/CC_CORE_V1_VSTAR_REACHABILITY.md`.
+5. **Merge recommendation:** safe to merge **research-only** (isolated code, no
+   security claim, no default/production import); **unsafe for production** (no
+   Layer-3 hardness proof). PR #19 remains a draft until merged research-only.
+6. **Allowed claims:** B removes Candidate A's generic 2-to-1 injection; B is
+   injective in u off one measure-1/p hyperplane; all 47 Phase 8J states separate
+   (min HD 105); `v_star` is round-0 unreachable (proved); the round-1 singular hit
+   is harmless in tested cases; no valid-message structural collision was found.
+7. **Forbidden claims:** "provably secure", "collision-resistant", "one-way",
+   "forces full execution", "curvature-capacity security", "256-bit security" —
+   none is proved and none is claimed.
+
+---
+
+## Historical results (superseded conclusions, preserved)
+
+The sections below record earlier-phase conclusions verbatim. **They are
+historical.** Some contain environment notes that were true at the time (e.g.
+"z3 / sympy not installed" in Phase 1 / early CC-1) but changed later — those
+notes are preserved only here, inside the phase where they were accurate.
+
+### Phase 1 historical result (environment: z3 / sympy / Sage not installed then)
+
+### Experimental: mechanism partially supported, no proof
+
+The path-commitment idea is **partially supported**: the explicit Design A
+eigenmode collisions, which collapse the *terminal wave state* to zero, are
+**no longer digest collisions** under the trajectory commitment (9/9 distinct,
+min pairwise Hamming 116/256), known low-complexity bypasses (eigenmode,
+symmetry, fixed-point, additive/sign cancellation) were removed or not found
+within budget, and no practical attack succeeded within stated budgets. **But no
+lower-bound theorem exists**, the coupled round is **not** proven injective
+(toy models show residual collisions), curvature magnitude is a
+convention-dependent diagnostic with no link to attack cost, and the heat
+argument is interpretive. The construction therefore qualifies as *Experimental*
+under the task's rubric, **not** "conditionally supported" (which would require a
+restricted-model theorem) and **not** "rejected" (no decisive break was found).
+
+---
+
+## Phase CC-1 Final Conclusion (2026-06-18)
+
+### Verdict: Experimental (unchanged)
+
+Phase CC-1 deepens and confirms the Phase 1 verdict. Five new modules, six new
+artifacts, 31 additional tests (113 total), and five new documents were added.
+
+**Key Phase CC-1 findings:**
+
+1. **Complete Phase 8J family (47 states)**: All 46 nonzero zero-collapse states
+   (r=1: 8, r=2: 36, r=4: 2) plus the zero fixed point were enumerated, all
+   verified, and all produce **distinct trajectory digests** (47/47, min HD 98).
+   This supersedes the Phase 1 result of 9 representative states (min HD 116).
+
+2. **Cancellation structure proved**: j(u,v) = j(u',v) with u' = −(1+γv)/η − u
+   is a **provable 2-to-1 map** for every (u,v). Confirmed for 500/500 sampled
+   pairs. No digest collision found by this pairing (200 trials; wave evolution
+   breaks the cancellation).
+
+3. **Candidate B identified**: Linear injection (ETA=0) also achieves 47/47
+   separation (min HD 105) and avoids the 2-to-1 weakness. Adopting Candidate B
+   is a spec-level trade-off (less algebraic degree vs no provable 2-to-1 flaw).
+
+4. **Full joint coupled-round non-injectivity confirmed**: At p=3, N=2 (6561
+   joint states): 5562 coupled collisions found. At p=5, N=2 (390,625 states):
+   375,073 coupled collisions. The coupled round is NOT injective on the full
+   joint domain at toy scale. NOT extrapolated to N=16.
+
+5. **No shortcut demonstrated**: Backward computation, MITM, cycle detection,
+   low-degree solve, and 2-to-1 injection exploit — none yielded a practical
+   shortcut. All absences are bounded, not proved.
+
+6. **Protocol defined**: Four prover/verifier protocol variants (A–D) defined
+   and claim-separated: path binding for eigenmode family (confirmed) ≠
+   trajectory uniqueness (unresolved) ≠ hardness (unproved).
+
+**Merge recommendation (Part XII):** See §"PR #19 Merge Recommendation" below.
+
+---
+
+## 25-point final report
+
+**1. Exact statement recovered from the P-vs-NP and curvature work.**
+The repository's "inevitability" material asserts a *constraint claim*: no
+verifier-accepted commitment exists unless a curvature-bounded evolution to a
+reproducible ψ★ is executed, and producing ψ★ "cannot be cheap" (E_min > 0).
+This is an **acceptance definition plus a cluster of structural arguments**, not
+a complexity theorem. Full classification: `docs/CURVATURE_CAPACITY_CLAIM_AUDIT.md`.
+
+**2. What is proved vs conjectured.**
+*Proved (class 2):* the Laplacian-eigenmode collision theorem `F(s·σ)=0 iff
+s²≡b−(2rD−1)/a`, its ≥47-state enumeration, the constructive non-injectivity of
+the Design A state map, the refutation of "full-rank Jacobian ⇒ injective", and
+first-block unreachability. *Conjecture / physical intuition (class 4):* every
+"cannot be cheap" / Lyapunov / entropy / heat lower bound, and all five
+attack-bounding arguments (which only defeat *approximate* attacks). No attack
+cost or heat lower bound is proved.
+
+**3. Formal curvature measure chosen.**
+Diagnostic functionals on the centered integer lift: spatial curvature
+K2 = Σ(Δψ)², gradient energy, temporal curvature, trajectory separation D_Γ,
+spectral effective rank, digest entropy (`curvature_audit/curvature_metrics.py`).
+**Finding:** curvature *magnitude* is lifting-convention dependent (K2 = 80
+centered vs ≈9.2×10¹⁹ naive for one structured state — 18 orders of magnitude).
+No curvature functional is a cryptographic invariant; all are diagnostics.
+
+**4. Formal physical / computational resource model chosen.**
+Three models in `docs/CURVATURE_HEAT_RESOURCE_MODEL.md`: R_comp (field ops;
+forward = O(blocks·T·N²) ≈ 6.55×10⁵ ops/digest, polynomial), R_phys (Landauer
+2.87×10⁻²¹ J/bit, Margolus–Levitin/Bremermann, Bekenstein — each bounds an
+*implementation*, not the problem), R_machine (commodity → exascale budgets).
+
+**5. Whether any exponential lower bound was actually proved.**
+**No.** Neither 𝒞_attack(n) ≥ 2^{Ω(n)} nor Q_heat(n) ≥ 2^{Ω(n)} is established.
+Forward cost and forward heat are polynomial; attack cost is not bounded below
+at all. Curvature growth saturates in T and is ≈ constant in message length
+(scaling artifact: exponential-fit R² ≈ 5×10⁻⁵, i.e. no exponential trend).
+
+**6. Whether the heat argument is mathematically necessary or interpretive.**
+**Interpretive only.** Landauer bounds irreversible-erasure energy of a
+particular implementation; the WaveLock map is reversible-circuit-embeddable, so
+its evaluation has no nonzero Landauer floor in principle. The energy figure for
+a hypothetical 2²⁵⁶-operation attack (3.32×10⁵⁶ J) is meaningful *only if* such
+an operation lower bound were proved — it is not. "Heat makes inversion
+impossible" is unsupported and forbidden.
+
+**7. Path-commitment candidates implemented.**
+Candidate A (coupled accumulator field) — **primary, fully implemented and
+analyzed** (reference + optimized, byte-parity). Candidate B (irreversible
+trajectory injection) is subsumed by A. Candidate C (two-way ψ↔C coupling) is
+described and reserved (kept out of the primary so Design A eigenmodes apply
+cleanly to ψ). Candidate D (delayed state) is future work.
+
+**8. Whether known Design A eigenmode collisions remain digest collisions.**
+**No** — this is the central positive result. All representative eigenmode states
+(checkerboard ±s, row/col stripes ±s, period-4 ±s, and the zero state) collapse
+to terminal wave 0 under the unchanged Design A round (verified), yet produce
+**9 distinct trajectory digests**, min pairwise Hamming 116. The accumulator's
+odd-in-u injection (j=u when v=0) preserves the sign that Design A's
+terminal-state map discarded. Pinned in
+`test_eigenmode_regression.py::test_trajectory_commitment_separates_eigenmodes`.
+
+**9. New eigenmode or symmetry bypasses found.**
+**None within budget.** No sign-eigenmode / structured / random C mapped to zero
+under the accumulator step (530,544 candidates checked). No toroidal symmetry
+(translation, rotation, reflection, transpose, global sign) preserved the
+trajectory digest. The zero-wave digest is non-degenerate (not all-zero bytes),
+unlike Design A's zero state.
+
+**10. Trajectory uniqueness results (pebble property).**
+Over 1,200 random message pairs, **100%** gave distinct pre-squeeze coupled
+states *and* distinct 256-bit digests; 0 full collisions. The basic pebble
+condition (m≠m′ ⇒ Γ(m)≠Γ(m′)) holds across the sample; bounded-domain transcript
+injectivity (no two messages share C_T) held over 2,000 samples. **Not** a proof
+of global injectivity.
+
+**11. Path-commitment collision results.**
+Truncated 24-bit collision found at 3,291 evals vs birthday-expected 5,134
+(ratio 0.64 — generic). Max 16-bit multicollision = 3 (generic). No structural
+collision weakness within budget; full 128/256-bit behaviour extrapolated, not
+observed.
+
+**12. Curvature-growth scaling.**
+Wave curvature reaches a stationary band quickly (saturates, like avalanche by
+T≈8) — **no exponential growth in T**. Accumulator curvature vs message length
+is essentially flat (no exponential, no meaningful power-law growth). The digest
+description size is fixed at 256 bits regardless of n. Conclusion: **no measured
+quantity grows exponentially.**
+
+**13. Forward-cost scaling.**
+Polynomial: O(blocks·T·N²); ≈6.55×10⁵ field ops per single-block digest, linear
+in #blocks. Measured throughput 49.3 digests/s (unoptimized; ~2× Design A's
+cost because two fields co-evolve). Forward execution does **not** require
+exponential work (a rejection criterion that is satisfied/avoided).
+
+**14. Attack-cost scaling.**
+Only measured on truncations (≤24-bit collisions, generic rate). No exponential
+attack-cost lower bound is proved or even strongly evidenced beyond small
+truncations. **The asymmetry C_forward∈poly vs C_attack≥2^{Ω(n)} is assumed, not
+demonstrated.**
+
+**15. Reduced-model behavior.**
+Toy coupled cores (N=2; p=5,7,11) enumerated. The bare wave round is heavily
+non-injective (Design A finding reproduced: hundreds–thousands of colliding
+buckets). The coupled (ψ,C) round **reduces** collisions by a large factor but
+does **not** eliminate them (51, 51, 180 residual), dominated by N=2 neighbour
+degeneracy. So the accumulator demonstrably helps but does **not** restore
+injectivity even at toy scale; lift to N=16 is **unresolved**, not extrapolated.
+z3/Gröbner unavailable — algebraic inversion at scale untested (limitation).
+
+**16. Whether any attack bypasses curvature resolution.**
+No attack that bypasses the path commitment was found *within budget*. However,
+because no link between curvature resolution and attack cost is established, the
+phrase "bypass curvature resolution" is not well-defined as a hardness statement
+— there is no proved cost to bypass. This is the core conceptual gap.
+
+**17. Exact artifacts and tests.**
+Artifacts: `curvature_audit/artifacts/{INDEX,curvature_scaling,eigenmode_attacks,
+path_commitment_attacks,resource_bound_analysis,curvature_metrics_demo,
+reduced_models}.json`. Tests (70, all passing, <3 s): `test_parity.py`
+(wave round = Design A, ref/opt parity, pinned vectors), `test_design_a_preserved.py`
+(Design A digests + eigenmode theorem frozen), `test_eigenmode_regression.py`
+(collapse + separation + non-degeneracy + symmetry), `test_forbidden_imports.py`
+(no SHA/BLAKE/AES/etc. in package or audit). CI: `.github/workflows/curvature_audit.yml`.
+
+**18. Rejected / experimental / conditionally supported.**
+**Experimental.** Known shortcuts removed, exact trajectory commitment
+implemented, no practical attack within budgets, curvature metrics defined and
+measured — but **no lower-bound theorem**, and curvature growth is statistical/
+diagnostic, not a proven hardness driver.
+
+**19. (Phase CC-1) Complete Phase 8J family and full-family binding.**
+All 47 zero-preimage states enumerated and verified. 47/47 produce distinct
+trajectory digests, min pairwise HD 98 (vs 116 for the 9 representatives in
+Phase 1). This is the strongest separation result to date. Artifact:
+`phase8j_full_collision_family.json`, `full_family_path_binding.json`.
+
+**20. (Phase CC-1) Accumulator algebraic structure.**
+j(u,v) is degree-2 in u; the 2-to-1 pairing j(u,v)=j(u',v) is proved for all
+(u,v) (500/500 confirmed). Degree-growth upper bound: heuristically exceeds p−1
+by round 4 (Fermat caps it; Gröbner result unavailable). No fixed point or
+2-cycle found within budget. No digest collision found by 2-to-1 exploit.
+Documented in `docs/CC_CORE_ACCUMULATOR_ALGEBRA.md`.
+
+**21. (Phase CC-1) Candidate comparison.**
+Candidate B (η=0, linear injection) achieves 47/47 separation (min HD 105) and
+is injective in u for all v with (1+γv)≠0 mod p. Trade-off: lower algebraic
+degree, no 2-to-1 weakness. Adopting Candidate B requires a spec revision.
+
+**22. (Phase CC-1) Full joint coupled-round enumeration.**
+At p=3, N=2 (joint space 6561): 5562 coupled collisions. At p=5, N=2 (390,625):
+375,073 coupled collisions. The coupled round is demonstrably non-injective on
+the full (ψ,C) domain at toy scale. N=2 degeneracy dominates; not extrapolated.
+
+**23. (Phase CC-1) Shortcut computation audit.**
+Six candidate shortcuts (skip wave, backward inversion, MITM, cycle detection,
+low-degree solve, 2-to-1 exploit) audited. None demonstrated. Per-cell scalar
+backward inversion is solvable (quadratic has roots) but requires the coupled
+256-variable system, not attempted. No cycle found in 1000 steps.
+
+**24. (Phase CC-1) Prover/verifier protocol and claim separation.**
+Four protocol variants (A: plain digest, B: trajectory-state, C: prefix-binding,
+D: interactive sketch) defined with explicit soundness/ZK status (all unproved).
+Three claims formally separated: path binding for eigenmode family (confirmed),
+trajectory uniqueness (unresolved), hardness (unproved).
+
+**25. (Phase CC-1) 113 tests, all passing.**
+New: `test_phase_cc1.py` (31 tests). Full suite: 113 tests in <15s. CI updated.
+Artifacts: `phase8j_full_collision_family.json`, `full_family_path_binding.json`,
+`accumulator_algebraic_attacks.json`, `accumulator_comparison.json`,
+`shortcut_computation.json`, `reduced_exhaustive_cc1.json`.
+
+**Precise security claims that ARE allowed.**
+- "Every representative Design A eigenmode collision (terminal wave state 0) maps
+  to a *distinct* CC-Core-v0 trajectory digest (verified, enumerated family)."
+- "The wave round inside CC-Core-v0 is byte-identical to the frozen Design A
+  round (tested)."
+- "Reference and optimized implementations agree byte-for-byte (tested)."
+- "Forward evaluation is polynomial: O(blocks·T·N²)."
+- "Within the stated budgets, the digest shows full avalanche (mean HD 127.7),
+  low monobit bias (max |z| 2.7, 0 bits |z|>3), generic truncated collision/
+  multicollision behaviour, and no symmetry/eigenmode/fixed-point bypass."
+- "Curvature magnitude is convention-dependent and is a diagnostic, not an
+  invariant."
+
+**26. Precise claims that remain FORBIDDEN.**
+- "provably secure" / "collision-resistant" / "one-way" (no proof, no lower bound).
+- "P versus NP proves security" (no such result; the inequality is unproved).
+- "heat makes inversion impossible" (interpretive only; reversible embedding).
+- "exponential curvature" (curvature saturates; no exponential growth measured).
+- "the accumulator makes the map injective" (toy models show residual collisions;
+  unresolved at scale).
+- any claim of 256-bit security (only ≤24-bit truncations were searched).
+
+---
+
+## Decision-criteria checklist (Phase 1 Part XIV, updated for Phase CC-1)
+
+| Reject if… | Observed? |
+|---|---|
+| simple eigenmodes collapse the *digest* | **No** — separated (47/47, min HD 98). |
+| accumulator permits additive / sign cancellation | **Structural 2-to-1 in u proved** (η·u² term); no digest collision found by this means (200 trials). Documented limitation. |
+| trajectories merge via a low-degree relation | none found at digest level; full joint coupled round has many toy-scale collisions (not extrapolated). |
+| curvature growth only visual/statistical | **Yes (diagnostic only)** — keeps it out of "supported", into "experimental". |
+| no curvature↔attack link | **Yes** — none established. |
+| thermal argument = Landauer only | **Yes** — interpretive; not used as a proof. |
+| forward execution exponential | **No** — polynomial. |
+| reduced models reveal easy lifting / broad collapse | **Confirmed**: full joint (ψ,C) enumeration at p=3/p=5 finds thousands of coupled collisions. N=2 degenerate; not extrapolated. |
+| security relies on unproved P-vs-NP | **No such claim is made**. |
+
+Two reject-triggers remain (curvature is statistical-only; no curvature↔attack link).
+Phase CC-1 adds a third finding: **full joint coupled-round collisions at toy scale**
+(not a rejection, because N=2 degeneracy is acknowledged and not extrapolated, but
+it weakens the toy-scale injectivity story from Phase 1's C-fixed-slice result).
+
+The verdict remains **Experimental**.
+
+## Limitations
+
+- All searches budgeted (≤ a few thousand digests); collisions only on ≤24-bit
+  truncations; preimage/lower-bound behaviour at 128/256 bits **extrapolated, not
+  observed**.
+- No z3 / Gröbner / SAT solver installed → algebraic inversion at N=16 untested.
+- Coupled-round injectivity unresolved; full joint toy enumeration shows collisions;
+  not extrapolated to N=16.
+- Curvature functionals are lifting-convention dependent.
+- Unoptimized implementation (~40 digests/s for trajectory_digest).
+- **No proof. Nothing here bounds any attack from below.**
+- η·u² injection is a provable 2-to-1 weakness; Candidate B avoids it but has
+  not been formally analyzed at the same depth as Candidate A.
+
+## PR #19 Merge Recommendation (Phase CC-1 Part XII)
+
+**Recommendation: DO NOT merge as-is. Retain as draft for further research.**
+
+Rationale:
+
+| Criterion | Status |
+|---|---|
+| Design A (frozen primitive) preserved | ✓ confirmed (all tests) |
+| Phase 8J/8K findings preserved | ✓ unchanged |
+| No forbidden primitive | ✓ (AST guard passes) |
+| CC-Core-v0 implemented and audited | ✓ |
+| All 113 tests pass | ✓ |
+| Path binding for eigenmode family | ✓ (47/47 distinct, min HD 98) |
+| No shortcut demonstrated | ✓ (bounded) |
+| Provable 2-to-1 weakness in injection | documented; not resolved |
+| Coupled round injective (full joint) | ✗ (toy-scale collisions found) |
+| Lower bound on attack cost | ✗ (unproved) |
+| Trajectory uniqueness at N=16 | unresolved |
+| Candidate B evaluated | ✓ (avoids 2-to-1; same separation) |
+
+The branch is **safe to merge** in a pure research/documentation sense: it does
+not touch the frozen Design A primitive, all existing tests pass, and the new
+analysis is honest about limitations. However, the **security gaps are material**:
+
+1. The coupled round is demonstrably non-injective at toy scale (full joint domain),
+   which is a stronger negative finding than Phase 1's C-fixed-slice result.
+2. The η·u² injection has a provable 2-to-1 weakness that Candidate B avoids.
+3. No lower bound exists on inversion cost.
+
+Merge only after at least one of:
+- Injectivity of the coupled round is proved or disproved at N=16 (Gröbner/algebraic
+  geometry computation, or an explicit collision at N=16 is found).
+- The 2-to-1 η injection is either removed (adopt Candidate B) or shown not to
+  yield a digest collision under the full protocol.
+- A restricted-model theorem establishes a lower bound in any model.
+
+Until one of these conditions is met, the PR should remain a **draft, open for
+review and further experiment**.
+
+## Reproduce
+
+```bash
+python -m curvature_audit.run_audit          # all artifacts + INDEX.json (~8 min)
+python -m curvature_audit.eigenmode_attacks  # central separation result
+python -m curvature_audit.phase_cc1_family   # complete 47-state family + binding
+python -m curvature_audit.accumulator_algebraic_attacks  # algebraic attacks
+python -m curvature_audit.accumulator_comparison         # candidate A vs B
+python -m curvature_audit.reduced_exhaustive_cc1         # full joint toy enumeration
+python -m pytest curvature_audit/ -c curvature_audit/pytest.ini -m "not slow" -q
+```
+
+---
+
+# Phase CC-2 — Candidate B Promotion, Full Re-Audit, Restricted Binding (2026-06-18)
+
+**Versions:** `CC-Core-v0-A` (frozen baseline, `wavelock/curvature_capacity`) and
+`CC-Core-v1-B` (`wavelock/curvature_capacity_v1`). Design A and all Phase 8J/8K/CC-1
+results are preserved unchanged. PR #19 remains a draft.
+
+## Three-layer claim separation (Part XII) — no conclusion crosses a layer
+
+- **Layer 1 — Path preservation.** Candidate B retains every distinction the
+  terminal wave state loses: all 47 Phase 8J zero-collapse states map to distinct
+  Candidate B digests (min HD 105). ✔ supported (exhaustive over the known family).
+- **Layer 2 — Algebraic binding.** Candidate B removes Candidate A's *generic*
+  2-to-1 injection; j_B is injective in u for every v except the single hyperplane
+  v_star (measure 1/p), which is not broadly reachable and not path-erasing. No
+  low-complexity collision family was found. *Restricted* binding is proved
+  (sign-pair separation, injectivity off-hyperplane); *general* binding is not.
+- **Layer 3 — Hardness.** Unresolved for both candidates. **No hardness claim is
+  made.** Removing a Layer-2 weakness does not establish Layer-3 hardness.
+
+## Final report (23 points)
+
+1. **Candidate B equation.** `j_B(u,v) = u + GAMMA·u·v = u·(1 + 11·v) mod p`
+   (ETA = ZETA = 0); full transition `C_{t+1}[x] = MU·cd + A_C·cd² + W_t(x)·j_B + rho_t`.
+2. **Singular value.** `v_star = −GAMMA⁻¹ mod p = 195225786` (where `1+11·v ≡ 0`).
+3. **Is v_star reachable?** Not broadly: 0 hits in 1,280,000 random wave-output
+   coordinates; 0 of 47 family states; 0 transits over T rounds from 400 states;
+   v_star is not a fixed point. **Constructible** for one round only, by the unique
+   constant state `c = 357959172` (the sole GF(p) root of `F(c)=v_star`), giving a
+   full-lattice collapse for that single round.
+4. **Coordinate / global path erasure?** **None.** Perturbing the full-collapse
+   constant state changed the digest in 256/256 trials; a singular round zeroes only
+   that round's injection at that cell, while the cell still enters C at adjacent
+   rounds and via diffusion. No erasure.
+5. **Full 47-state separation.** 47/47 distinct Candidate B digests. ✔
+6. **Minimum pairwise Hamming distance.** 105 / 256 (Candidate A: 98).
+7. **A vs B structural comparison.** A is generically 2-to-1 in u (everywhere);
+   B is injective in u except on one measure-1/p hyperplane. A's injection zero set
+   is a parabola (~p points); B's is `{u=0}∪{v=v_star}` (2p−1 points).
+8. **Injection multiplicity.** A: 2-to-1 for every v (proved). B: 1-to-1 for all v
+   except v_star (collapse there).
+9. **Algebraic-degree comparison.** Injection degree in u: A = 2, B = 1. **But the
+   trajectory degree in u₀ is identical** ([4,12,36,108,…]): the shared cross-term
+   γ·u·v (degree 4, since v=F(ψ) is degree 3) and the shared self-square A_C·cd²
+   dominate. B is not lower-degree where it matters.
+10. **Reduced-model collision comparison.** Joint coupled-map image size and max
+    preimage multiplicity comparable at p∈{3,5,7,11,13}; at p=11 B is injective on
+    the psi-slice (maxmult 1) vs A's 2. B is no worse, sometimes better.
+11. **Fixed points and cycles.** None found for either candidate (accumulator
+    fixed-point and two-cycle search, budget 3000).
+12. **Low-degree collision families found.** None (one-round, structured, and
+    singular-line searches all negative within budget).
+13. **Algebraic solver results.** z3 proves UNSAT for `j_B(a,v)=j_B(b,v) ∧ a≠b` at
+    fixed v≠v_star (computer-assisted injectivity). One-round coupled 2×2 collision
+    and preimage over the real prime: z3 timeout (UNKNOWN — **not** a security result).
+14. **Shortcut-computation results.** No exact or partial shortcut. Trajectory
+    degree identical to A; linear predictor ~50%; no blockwise factorization; MITM
+    inversion degree (2, from shared A_C·cd²) unchanged. Shortcut resistance no worse.
+15. **Restricted theorem / exhaustive result.** [theorem] j_B injective in u off
+    v_star; [theorem] F is odd ⇒ first-round sign-pair separation = 2·s·σ[x] ≠ 0 at
+    every cell, independent of the wave output; [exhaustive finite verification]
+    47/47 digest separation. General binding/hardness: not proved.
+16. **Prover/verifier protocol version.** `CC-Core-v1-B` is the provisional
+    experimental candidate (survived the singular audit); distinct D_TAG/VERSION
+    domain-separate it from `CC-Core-v0-A`; verifiers reject version mismatch.
+17. **Test count.** 181 fast tests pass (adds Candidate A frozen regression and
+    32 Candidate B tests).
+18. **CI status.** Green locally; new isolated jobs for Design A preservation,
+    Candidate A frozen regression, Candidate B parity/vectors, singular-hyperplane,
+    restricted binding, full-family binding, domain separation, forbidden-primitive
+    guard. Heavy solver/exhaustive runs stay out of CI.
+19. **Allowed claims.** B removes A's *generic* 2-to-1 injection (proved); B is
+    injective in u off a single measure-1/p hyperplane (proved + z3); B separates
+    all 47 Phase 8J states (min HD 105); B's shortcut resistance and reduced-model
+    multiplicity are no worse than A; first-round sign-pair separation is structural.
+20. **Forbidden claims.** "provably secure", "collision-resistant", "one-way",
+    "forces full execution", "curvature-capacity security", "256-bit security" — none
+    is proved and none is claimed.
+21. **Does Candidate B dominate Candidate A?** **Experimentally yes on Layer 1–2,
+    not on Layer 3.** B meets every "prefer B" decision criterion: preserves all 47
+    paths; the singular hyperplane is tightly restricted (unreachable in bounded
+    search, not path-erasing); no new low-degree collision family; reduced-model
+    multiplicity no worse; shortcut resistance no worse; and it removes A's generic
+    2-to-1 weakness. The single residual is that global unreachability of v_star
+    under the message protocol is **not proved** (bounded evidence only).
+22. **PR #19 disposition.** **Remain a draft (research-only).** Do NOT merge to
+    master. Both candidates are retained: Candidate A frozen for comparison,
+    Candidate B as the provisional experimental candidate. If the team wants it on
+    master, merge **research-only** with the explicit "no security claim" labeling;
+    do not split.
+23. **Next research bottleneck.** (a) Prove or refute global unreachability of
+    v_star under the normative message-absorption protocol (currently bounded
+    search only). (b) Lift the restricted sign-pair binding to a digest-level
+    binding statement beyond the finite 47-state family. (c) Layer-3 hardness — a
+    genuine lower bound on second-preimage cost — remains untouched for both
+    candidates and is the ultimate open problem.
+
+## FINAL VERDICT (Phase CC-2)
+
+### Candidate B preferred experimentally: known Candidate A weakness removed, general hardness unresolved
+
+Candidate B (`CC-Core-v1-B`) removes Candidate A's proved generic 2-to-1 injection
+and replaces it with a single measure-1/p singular hyperplane that is not broadly
+reachable and provably not path-erasing in bounded testing; it preserves all 47
+known path distinctions (min HD 105 ≥ A's 98), is no worse on reduced-model
+multiplicity or shortcut resistance, and admits a restricted first-round sign-pair
+binding **theorem**. This is a Layer-1/Layer-2 preference only. **No Layer-3
+hardness is claimed for either candidate.** The one residual open item is a proof
+(or refutation) of v_star's global unreachability under the message protocol.
+
+---
+
+# Phase CC-3 — Singular Reachability, Protocol Closure, Merge Readiness
+
+This section is the detailed CC-3 record; the headline is in **Current Verdict —
+Phase CC-3** at the top of this document. Design A, Phase 8J/8K, CC-Core-v0-A,
+CC-Core-v1-B pinned vectors, and all prior artifacts/limitations/claims are
+preserved unchanged.
+
+## Research-only merge criteria (Part XII)
+
+**Merge research-only is recommended iff all hold** — current status in brackets:
+- Design A untouched [✔ verified: `git diff` over `wavelock/pde_hash` empty].
+- Candidate A frozen [✔ `test_candidate_a_frozen.py`].
+- Candidate B versioning explicit [✔ `CC-Core-v1-B`, distinct D_TAG/VERSION].
+- All fast tests pass [✔ 205 fast tests].
+- Actual GitHub CI checks pass [✔ `audit-fast` check-runs success; see
+  `cc3_ci_status.json`].
+- No valid-message structural collision found [✔ none; Part VIII].
+- `v_star` either proved unreachable (bounded) or reachable without
+  erasure/collision [✔ round-0 unreachable (theorem); round-1 one-coordinate
+  reachable but harmless].
+- Code isolated, not imported by production/default APIs [✔ `curvature_capacity_v1`
+  is standalone; no default/production import].
+- README/docs state "no security claim" [✔].
+- PR labeled experimental research [✔ draft].
+
+**Do NOT merge if** (none currently true): a valid-message structural collision
+exists; singular events erase enough history to forge equal commitments;
+reference/optimized disagree; CI does not execute; protocol ambiguous; production
+imports Candidate B by default; docs overclaim.
+
+A Layer-3 hardness proof is **not** required to merge research-only; it **is**
+required before any security or production claim.
+
+## Final report (23 points)
+
+1. **Normative protocol:** `docs/CC_CORE_V1_NORMATIVE_PROTOCOL.md` — byte messages,
+   192-byte blocks, `0x01`+zero+length-block padding, 3-byte→element packing
+   (`elem ∈ [0,2²⁴)`), shared IVs, rate-only injection (cells 0..63 + CAP), T=32
+   rounds/block with non-resetting round index, distinct `D_TAG`/`VERSION`.
+2. **Valid-message reachability:** states producible by `cc_hash_B` on byte
+   strings; arbitrary lattice states are NOT valid inputs.
+3. **One coordinate reaches `v_star`?** **Yes**, at round 1 — replay-verified
+   191-byte witness (`vstar_message_solver.json` task D).
+4. **Structured subsets reach `v_star`?** Not found by valid messages; z3 multi-cell
+   (2–4) returned UNKNOWN (timeout); annealing count 0. Unresolved.
+5. **Full lattice reaches `v_star`?** No witness; round-0 impossible (theorem);
+   one-round full-constant UNSAT. Not found.
+6. **Constant preimage `c·1` valid-message reachable?** No as `ψ_0` (theorem:
+   cells 67..255 fixed at IV, rate cells < 2²⁴ < c); no round-1 witness.
+7. **Solver results:** round-0 `v_star`/`c` UNSAT; round-1 single-coordinate SAT
+   (witness); round-1 full-constant UNSAT; multi-cell UNKNOWN.
+8. **Exhaustive bounds:** all 1-byte, 1024 two-byte, all `{0,255}` length 3–8, and
+   a structured battery → 0 incidental hits (closest centered distance 46).
+9. **Guided search:** annealing best count 0 (min distance ~4539); z3 multi-cell
+   UNKNOWN. No multi-coordinate or full-lattice singular state found.
+10. **Witness messages:** one pinned 191-byte witness (`test_cc3_reachability.py`).
+11. **Replay verification:** reference == optimized on the witness; `ψ_1[20]=v_star`
+    reproduced exactly (1 singular cell).
+12. **Effect on path sensitivity:** the hit zeroes only the round-0 wave-injection;
+    the same bytes already entered C at absorption (`C[20]+=G·elem`), and round-1
+    injection is nonzero → sensitivity restored. No erasure.
+13. **Any singular-event collision?** **No.** 0/64 single-cell perturbations
+    collide; the cell-20 cubic has one in-window root (no same-neighbour pair).
+14. **Theorem / counterexample:** round-0 unreachability [theorem]; round-1
+    reachability witness [computer-assisted theorem]; harmless hit [theorem +
+    bounded evidence]. (`docs/CC_CORE_V1_VSTAR_REACHABILITY.md`.)
+15. **Test count:** 205 fast tests pass.
+16. **GitHub Actions run status:** `audit-fast` workflow executes on PR #19 and the
+    branch; check-runs conclusion **success**. Combined-status API is empty by
+    design (Actions uses check-runs). Recorded in `cc3_ci_status.json`.
+17. **Failing/passing jobs:** `audit-fast` — passing (all steps).
+18. **Documentation cleanup:** done — this report now leads with **Current Verdict
+    — Phase CC-3**; Phase 1 / CC-1 / CC-2 conclusions moved to historical sections;
+    stale "z3 not installed" confined to the Phase-1 historical note.
+19. **Allowed claims:** see Current Verdict §6.
+20. **Forbidden claims:** see Current Verdict §7.
+21. **Safe to merge research-only?** **Yes** — all merge criteria met.
+22. **Unsafe for production?** **Yes, unsafe for production** — no Layer-3 hardness
+    proof; experimental, no security claim.
+23. **Next Layer-3 problem:** a genuine lower bound on the cost of finding a
+    second valid message with the same commitment (collision/second-preimage
+    hardness), untouched for both candidates; secondarily, resolve multi-coordinate
+    / full-lattice `v_star` reachability (currently solver-timeout UNKNOWN).
+
+## FINAL VERDICT (Phase CC-3)
+
+### Merge research-only: Candidate B survives the protocol-level singular audit; no security claim
+
+`v_star` is unreachable before the first wave round for every valid message
+(theorem) and reachable at a single coordinate at round 1 (verified witness) but
+provably harmless there (the message bytes are committed to C at absorption
+regardless; no collision found). No valid-message structural collision exists in
+any tested construction; reference and optimized agree; GitHub Actions `audit-fast`
+check-runs pass; the code is isolated with no production import and no security
+claim. PR #19 is therefore **safe to merge as research-only** and **remains unsafe
+for production** pending a Layer-3 hardness result.

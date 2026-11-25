@@ -43,11 +43,10 @@ _damping = 0.00002
 
 KERNEL_VERSION = "WL-psi-001"
 SCHEMA_V2 = "WLv2"
-# WLv3.1 marks the canonical commitment schema after the seed-derivation
+# WLv3.1 marks the historical commitment schema after the seed-derivation
 # upgrade from numpy.random (Mersenne Twister) to SHAKE-256 with the
-# WL-PSI-INIT-v1 domain tag. Commitments labeled WLv3.1 are byte-stable
-# across implementations; commitments labeled WLv2 are NumPy-version-bound
-# and historical-format-only after the upgrade.
+# WL-PSI-INIT-v1 domain tag. The XOF is byte-stable; the old serializer/kernel
+# do not enforce the bounty contract. Production uses consensus_commitment.py.
 SCHEMA_V3_SHAKE = "WLv3.1"
 
 
@@ -104,6 +103,8 @@ def _curvature_functional(psi) -> Tuple[float, float, float, float]:
 
 
 def _serialize_commitment(psi, schema: str = SCHEMA_V2) -> bytes:
+    if schema not in (SCHEMA_V2, SCHEMA_V3_SHAKE):
+        raise ValueError("unsupported historical commitment schema")
     header_bytes = _canonical_json({
         "schema": schema,
         "dtype": "float64",
@@ -133,7 +134,9 @@ def _serialize_commitment_v2(psi) -> bytes:
 # ===========================================================================
 
 class CurvatureKeyPairV3:
-    """Curvature keypair with dual-hash binding (NumPy version)."""
+    """Historical NumPy keypair; not a production consensus commitment API."""
+    consensus_valid = False
+    operating_mode = "historical/research"
     
     def __init__(
         self,

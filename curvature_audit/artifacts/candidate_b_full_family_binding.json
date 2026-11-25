@@ -1,0 +1,360 @@
+{
+  "acceptance_condition_met": true,
+  "acceptance_statement": "psi^(i) != psi^(j) => C_{T,B}^(i) != C_{T,B}^(j) for all 47 known Phase 8J zero-collapse states. This is separation of the known terminal-state collision family, NOT general collision resistance.",
+  "artifact": "candidate_b_full_family_binding",
+  "candidate_b": {
+    "all_distinct": true,
+    "max_pairwise_hamming": 157,
+    "mean_pairwise_hamming": 128.06,
+    "min_pairwise_hamming": 105,
+    "n_distinct_digests": 47,
+    "n_pairs": 1081,
+    "n_states": 47
+  },
+  "clustering_by_amplitude_label": {
+    "minus_s": {
+      "min_intra_hamming": 105,
+      "size": 23
+    },
+    "plus_s": {
+      "min_intra_hamming": 111,
+      "size": 23
+    },
+    "zero": {
+      "min_intra_hamming": null,
+      "size": 1
+    }
+  },
+  "clustering_by_eigenvalue_r": {
+    "0": {
+      "min_intra_hamming": null,
+      "size": 1
+    },
+    "1": {
+      "min_intra_hamming": 111,
+      "size": 8
+    },
+    "2": {
+      "min_intra_hamming": 106,
+      "size": 36
+    },
+    "4": {
+      "min_intra_hamming": 118,
+      "size": 2
+    }
+  },
+  "cross_candidate": {
+    "note": "the zero state gives identical A/B digests (j_A=j_B=0 when psi=0); all nonzero states differ between A and B.",
+    "states_with_identical_A_and_B_digest": 1
+  },
+  "description": "Full 47-state Phase 8J trajectory-binding regression for Candidate B",
+  "family_stats": {
+    "all_distinct": true,
+    "all_verified_zero": true,
+    "distinct_sign_patterns": 46,
+    "note": "Enumerates all periodic-tile-derived Laplacian eigenvectors on the 16x16 torus over F_p using tiles up to 4x4. This matches the Phase 8J report of 46 distinct sign patterns + the zero state = 47 zero-preimage states. States outside this periodic-tile family are NOT excluded; the 47 is a LOWER BOUND. A state is included once (both +s and -s variants tracked separately; sigma and -sigma give the same pair of states in opposite order, and de-duplication by exact cell values is applied).",
+    "per_r_count": {
+      "0": 1,
+      "1": 8,
+      "2": 36,
+      "4": 2
+    },
+    "total_nonzero": 46,
+    "total_states": 47
+  },
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "83de19a47897b0972632e2f58042d7ec1217cf00",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "per_state": [
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "33a37a552140aad4e9605d9f07208be0cb390b76857a8866691344509feee0f8",
+      "id": 0,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "0b21da3c3456e2f8e1695bbaa89a87ab3b9cdb434868d28a587e3309f865b986",
+      "id": 1,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "0589346f7cb1d2ed240146d11b5d5bdd8f6d90c3ce8ff82d92436a2821120395",
+      "id": 2,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "8375e8ac88d938bbea02837ff5a7827b339c2dbfca3fdba77b591588b5781b86",
+      "id": 3,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "5006e1708b7d41bb1bdf5f3c13445bc6bae135fb46ffd2e38ba5b3e90d3c472a",
+      "id": 4,
+      "r": 4
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "8dcb3537c0be63435b35355d0ab63d8a5b857c837db686b5b38e7ae6aebc55c0",
+      "id": 5,
+      "r": 4
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "fab02bb5dc048a481c93cb13e1a19dffe20a7b2725c6f4d468932cf3a8d20e0c",
+      "id": 6,
+      "r": 1
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "80a4812d7058ded9955168e0bae03f76fa1ebb8be39f08ac92a2edee57283944",
+      "id": 7,
+      "r": 1
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "03a056ff648f5a7ae6f13de07b75d17f2ed2b575016f0ea454f7e6d9fafe9a8d",
+      "id": 8,
+      "r": 1
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "40bc8823d1928aef44fe93ee63f7b8b57e82ca79adea7f20a912c3a42d3d34c3",
+      "id": 9,
+      "r": 1
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "21a8c79065dc96ae3003edaed461fd436f73ffc70d1d87a2f54e3cda5b7f7d43",
+      "id": 10,
+      "r": 1
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "b86fcd5deb9f293dfc6e67fd816bd6090323681900b1a2cf517bbe70793991ea",
+      "id": 11,
+      "r": 1
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "51eed1df9ac936d1e6e9d3357d2b5845ab3625eb9cbcee1645ac637fac242bd8",
+      "id": 12,
+      "r": 1
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "41053c26f69c7e54c319dd4dc138522576217dfebc8f20779f477fd0cb421462",
+      "id": 13,
+      "r": 1
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "35ef0bfdcd7147c364a882ee6bc778ea30b03989643448e5f3df939b81e07bab",
+      "id": 14,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "4653888978676a80db4947686b42d45bfe1b1b37d0ca14159ded9e8b8ffec87a",
+      "id": 15,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "a351b11d710cf695b9c610f31ca6b9da2d7c150edf81a4dc53761c31a26fc40d",
+      "id": 16,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "0fd1a715eb3ccd3d29ae0e344fdbe423086379c13e70c1a17292dc468848b996",
+      "id": 17,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "7063e2e733dd2ef1b03ecb9973ca239a931d1d586878141363b1c0bb2e719d5c",
+      "id": 18,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "c8f6c37b58dd652e272cfb9b4eaf07f57be245d7a3fb6c0460a4818eccdab17d",
+      "id": 19,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "4c5088ecf6b24bb0a7adffcd807576553ffe3106d9d16bcd24f0c3906d97d54e",
+      "id": 20,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "c6a3a582be39b323dd849086774fcb1991fb24fe0b7b02dbb970cff2f03d6b71",
+      "id": 21,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "4c0cb3dfe3ebb4b035694750a8b40196531785825692f444f8de2208086c4be7",
+      "id": 22,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "73319163f29a82b393f656b105e1e15bf93786d8afc03163bdcec5892a1836ee",
+      "id": 23,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "616d0d419f0bd4ef72e9c2fdebd6e7c33eced45623cf20fc3a00beaf177be06c",
+      "id": 24,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "fa3ded841e67bce1ba15f72674f306e44c9dc9ba8f46131ca08c5d2404d676bf",
+      "id": 25,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "dc9eb27560a9cd26cfb04e97fee7cdc26793e9952cf904e3f7b99b402206223f",
+      "id": 26,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "c1061cc337a9e11cbbd413e84d3487ab537b0d5f4deb2ab2e5b2cdb05f9d1f17",
+      "id": 27,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "b20c2bb14a76669845b281857e7a43fbf56ca69290d608bca35dbe4ad76dd9be",
+      "id": 28,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "cdead7f78f268045cb395814d015ad882cefd44f8fc08dc81effbac62ac860a1",
+      "id": 29,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "c23dcc152a7ef4b1ab37759ccc0ef8b915300a1861bf28de74f1a51aac9f4eaf",
+      "id": 30,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "c970d912a0ab277272b084e80c30617160b2758ee7c3bcb50cf3a2c3ba737362",
+      "id": 31,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "77a76f8a7fe6c034148d79affa80385cfeb004afab905de26bb4c4f6322a3bb7",
+      "id": 32,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "70e95baf7c8bd39451907acc17fe3ab03e9910de88558a5837b6111d6a30d651",
+      "id": 33,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "4a2c8c8ed108ad31c8c87a7447c48a6b512de6b0cdfdcf3e21e3e42525584058",
+      "id": 34,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "954ac643b1d28abde4447a5c6b1862849332378926f036958c500b4946444f19",
+      "id": 35,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "e255fefeeabb694858c3a1887422d9de778d6ff747283e9f70669251aca28ed4",
+      "id": 36,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "db7856ffafd5c2bf6226e931025c91d3cd67c846dbd70210e5c316f746f823d0",
+      "id": 37,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "b52b815c076577544b766070df23b591dca8784ea2337a498e33f34d29cc2f7f",
+      "id": 38,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "415a7cab1d1e553d125b0e9ab23553be41aab9cb87237df602a9939014002db6",
+      "id": 39,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "ab9d325889e78522546f579f424263b590f06603ccffe878c09a3da6afa7bc79",
+      "id": 40,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "3e7f5ec5824239d549c3ab3d4aa1f286feffd97b32a6cdf8f1a23ef718e06607",
+      "id": 41,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "01e32e11de944ba5e6311841980a7258a00aef780af3a4f1f22a420d29187097",
+      "id": 42,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "7b820bcbbcfc8d00685b16f14615ad84aad7ba2beb9fe763c84e4d22f3cec1aa",
+      "id": 43,
+      "r": 2
+    },
+    {
+      "amplitude_label": "plus_s",
+      "digest_b": "e4997b74375aa05344b66c228e8b94825de6b9f8ddba9bc6f990ad6cb75b47bf",
+      "id": 44,
+      "r": 2
+    },
+    {
+      "amplitude_label": "minus_s",
+      "digest_b": "0359d048678a22865720c905d5b85f765efb27e565b09bfb187b69dccda553e5",
+      "id": 45,
+      "r": 2
+    },
+    {
+      "amplitude_label": "zero",
+      "digest_b": "c4ed8b688e14f2127c8e03ea62eee0ecd10cc15ed5dd695afc8a193efc9198d3",
+      "id": 46,
+      "r": 0
+    }
+  ],
+  "runtime_s": 8.68,
+  "seed": 96000
+}

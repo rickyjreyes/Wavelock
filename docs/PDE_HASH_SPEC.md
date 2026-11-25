@@ -25,10 +25,11 @@ constants, or `Q`.
 
 ---
 
-## 1. The governing PDE (Design A)
+## 1. The governing dynamical system (Design A)
 
-The canonical continuous equation is the **Allen–Cahn / Nagumo
-reaction–diffusion equation**, a standard nonlinear reaction–diffusion PDE:
+WaveLock-PDE-256-v0 is a **finite-field polynomial dynamical system derived
+from the algebraic form of the Allen–Cahn reaction–diffusion equation**. The
+*source* continuous PDE is the Allen–Cahn / Nagumo equation:
 
 ```
 ∂ψ/∂t = D ∇²ψ + a·ψ·(b − ψ²)
@@ -38,10 +39,18 @@ reaction–diffusion equation**, a standard nonlinear reaction–diffusion PDE:
 - `D ∇²ψ` is the diffusion (Laplacian) term.
 - `a·ψ·(b − ψ²)` is the bistable cubic reaction term (the Allen–Cahn nonlinearity).
 
-This is *recognizably* a nonlinear reaction–diffusion PDE, not an arbitrary
-cellular automaton or generic cryptographic permutation. The finite-field
-discretization below preserves this structure exactly; it does not replace the
-reaction–diffusion dynamics with bit-shuffling.
+**Scope and honesty of the connection.** The finite-field discretization below
+preserves the *algebraic structure* of this PDE — a discrete Laplacian plus a
+cubic reaction — exactly, so the construction is genuinely PDE-derived and is
+not an arbitrary cellular automaton or generic mixing function. **However:** the
+system operates over 𝔽_p, not over real-valued Allen–Cahn space and time. The
+words "diffusion", "reaction", and "bistability" describe the *source* structure
+only. Standard Allen–Cahn analytical results — energy decay, smoothing,
+stability, convergence to ±√b — do **not** automatically transfer to arithmetic
+over 𝔽_p and must not be treated as proven finite-field properties. In
+particular, the T-round map is **not** known to be bijective; **injectivity,
+preimage multiplicity, state collapse, and short cycles are unresolved
+properties under test** (Phase 8).
 
 ### 1.1 Finite-field discretization (exact, bit-reproducible)
 
@@ -57,7 +66,10 @@ R(ψ)[i,j] = ( a · ψ[i,j] · ( b − ψ[i,j]² mod p ) ) mod p                
 
 Indices wrap modulo `N` (periodic / toroidal boundary). `−4 ≡ p−4 (mod p)` and
 `b − ψ²` is computed as `(b + (p − (ψ² mod p))) mod p` to stay non-negative.
-One application of `Φ` is **one PDE round**; `Φ_P^T` is `T` rounds.
+One application of `Φ` is **one round of the state transformation**; the
+`T`-round transformation `evolve_T` (written `Φ^T` below) applies it `T` times.
+`evolve_T` is **not** asserted to be a permutation; "transform" / "evolve" are
+used throughout in place of "permute".
 
 **Why p = 2³¹ − 1.** A product of two elements `< 2³¹` is `< 2⁶²`, which fits
 in a signed/unsigned 64-bit integer with room to spare. Reduction mod a Mersenne
@@ -74,15 +86,18 @@ Cubing `ψ³` is done as two reductions: `t = ψ·ψ mod p`, then `t·ψ mod p`.
 |---|---|---|
 | `N` | lattice side | **16** (256 cells) |
 | `p` | field modulus | **2³¹ − 1** |
-| `T` | PDE rounds per permutation call | **32** (provisional; fixed by diffusion study) |
+| `T` | rounds per state-transformation call | **32** (provisional; tested in Phase 8) |
 | rate cells | indices absorbed into / squeezed from | **first 64 cells (row-major)** |
-| capacity cells | hidden cells (never directly written by absorb) | remaining **192 cells** |
+| capacity cells | cells not directly written by absorb | remaining **192 cells** |
 
-State `S ∈ 𝔽_p^{N×N}`, stored row-major (C order). The split into a 64-cell
-rate `R` and 192-cell capacity `C` follows the sponge paradigm: capacity
-(~192·31 ≈ 5952 bits) vastly exceeds the 256-bit output, so the sponge's
-generic collision/preimage heuristics are not the binding constraint — the
-*diffusion and nonlinearity of `Φ`* are what is under test.
+State `S ∈ 𝔽_p^{N×N}`, stored row-major (C order). The construction is
+**sponge-*like*** (absorb / evolve / squeeze), but it is **not** a proven
+cryptographic sponge: `rate` and `capacity` are state-region *names only*. The
+192 capacity cells do **not** automatically provide ~(192·31) ≈ 5952 bits of
+generic sponge security, because that heuristic assumes a bijective
+permutation and the T-round transformation here is not known to be bijective.
+Whether the capacity does anything useful, and whether distinct messages
+collapse into shared states, is exactly what Phase 8 measures.
 
 `PDEState` (implementation type) wraps the `N×N` `int64` array plus the fixed
 parameters `(N, p, T, D, a, b, rate)`.
@@ -111,14 +126,16 @@ fixed by flat index:
 | Name | Flat indices | Purpose |
 |---|---|---|
 | **rate** `R` | `0 … 63` | message absorption (§3.4) |
-| **capacity** `C` | `64 … 255` | hidden state; never written by message absorption |
-| `cap0` | `64` | block-counter injection (§3.5) |
+| **capacity** `C` | `64 … 255` | not written by message absorption |
+| `cap0` | `64` | block-counter low digit `q0` (§3.5) |
 | `cap1` | `65` | finalization domain injection (§3.5) |
+| `cap2` | `66` | block-counter high digit `q1` (§3.5) |
 
-These are the only named cells. `cap0` and `cap1` are the first two capacity
-cells; the absorption write of §3.4 touches only rate cells `0…63`, so the
-counter (`cap0`) and finalization (`cap1`) injections never collide with a
-message write.
+These are the only named cells, all in the capacity region. The absorption
+write of §3.4 touches only rate cells `0…63`, so the counter (`cap0`/`cap2`)
+and finalization (`cap1`) injections never collide with a message write.
+(`rate`/`capacity` are region names only — see §2; no generic sponge security
+is implied.)
 
 ---
 
@@ -127,9 +144,10 @@ message write.
 ### 3.1 Accepted input and size
 
 Input is an arbitrary byte string `m ∈ {0,1}*` (bit strings are handled at byte
-granularity; sub-byte inputs are out of scope for v0). Maximum practical input
-size is bounded only by memory; the length field (below) supports up to
-`2⁶⁴ − 1` bits.
+granularity; sub-byte inputs are out of scope for v0). The 64-bit length field
+(below) supports inputs up to `MAX_INPUT_BITS = 2⁶⁴ − 1` bits; **messages whose
+bit length exceeds this bound MUST be rejected** (the reference and optimized
+implementations raise on oversize input).
 
 ### 3.2 Byte → field-element packing (injective)
 
@@ -160,7 +178,7 @@ produce distinct padded streams, and the empty message has a valid, defined
 padded image (one `0x01` byte → pad to a block → length block). Empty-input
 output is therefore well defined.
 
-### 3.4 Block construction and absorption schedule (sponge)
+### 3.4 Block construction and absorption schedule (sponge-like)
 
 After padding (§3.3), the padded byte stream has length `192·B` for some
 `B ≥ 2`. It is cut into `B` consecutive **byte-blocks** of 192 bytes each, in
@@ -176,55 +194,79 @@ for k in 0 … B-1:
     block ← pack_block(P, k)                    # 64 field elements, §3.2
     for c in 0 … 63:                            # add into the 64 rate cells 0..63
         S[c] ← ( S[c] + block[c] ) mod p
-    inject_counter(S, k)                        # §3.5 (mutates S[cap0])
+    inject_counter(S, k)                        # §3.5 (mutates S[cap0], S[cap2])
     if k == B-1:                                # final/length block only
         inject_finalize(S)                      # §3.5 (mutates S[cap1])
-    S ← Φ_P^T(S)                                # T PDE rounds, §1.1 + §5
+    S ← Φ^T(S)                                  # T-round transform, §1.1 + §5
 return S
 ```
 
 Every message bit influences `S`: each bit sits in a distinct 24-bit field
-element added into a rate cell, then `Φ` diffuses it across the lattice over
+element added into a rate cell, then `Φ` spreads it across the lattice over
 `T` rounds before the next block. Absorption is **additive into existing
 cells**, not a copy-and-truncate of the first bytes — all `B` blocks are
-processed, and the final `Φ_P^T` runs after the length block so the length and
-domain constant fully diffuse before squeezing.
+processed, and the final `Φ^T` runs after the length block so the length and
+domain constant fully propagate before squeezing.
 
 ### 3.5 Counter and finalization injection (order/repeat/domain)
 
-Both injections are exact modular additions into named capacity cells (§2.2):
+The block counter uses an **injective two-digit base-`p` encoding** of the
+0-based block index `k`, so it does not repeat after `p` blocks (the
+single-digit `(k+1) mod p` would). Let `q = k + 1`, `q0 = q mod p`,
+`q1 = ⌊q / p⌋`. All injections are exact modular additions into named capacity
+cells (§2.2):
 
 ```
-inject_counter(S, k):   S[cap0] ← ( S[cap0] + (k + 1)·g ) mod p     # cap0 = 64,  g = 7
+inject_counter(S, k):   S[cap0] ← ( S[cap0] + q0·g ) mod p          # cap0 = 64,  g = 7
+                        S[cap2] ← ( S[cap2] + q1·g ) mod p          # cap2 = 66,  g = 7
 inject_finalize(S):     S[cap1] ← ( S[cap1] + d ) mod p             # cap1 = 65,  d = D_TAG
 ```
 
+**Why two digits, and coverage proof.** The maximum block index is bounded by
+the number of 192-byte padded blocks of the largest permitted input. With
+`MAX_INPUT_BITS = 2⁶⁴ − 1`, the message is `< 2⁶⁴ / 8 = 2⁶¹` bytes, padded to
+`< 2⁶¹/192 + 2 < 2⁵⁴` blocks, so `q = k + 1 < 2⁵⁴`. Since
+`p² = (2³¹ − 1)² > 2⁶¹ ≫ 2⁵⁴`, we have `q < p²`, hence `q1 = ⌊q/p⌋ < p` and the
+pair `(q0, q1)` is the unique base-`p` representation of `q` — it **never
+aliases** within the declared range. The same generator `g = 7` is used in both
+cells; the two cells live at distinct positions (`cap0`, `cap2`), so equal
+`q0·g` and `q1·g` contributions land in different state coordinates and do not
+collapse. `g` is shared because no asymmetry between the digits is required for
+injectivity (the positions already separate them).
+
+For ordinary messages `q < p`, so `q1 = 0`, `inject_counter` reduces to the
+original single-digit injection into `cap0` only, and `cap2` is unchanged — all
+pre-existing test vectors are preserved.
+
 - `inject_counter` runs once per block, with the 0-based block index `k`, so an
   identical byte-block at a different position injects a different value into
-  `cap0`; a repeated block therefore cannot additively cancel and block order is
-  significant.
+  `cap0`/`cap2`; a repeated block therefore cannot additively cancel and block
+  order is significant.
 - `inject_finalize` runs **only** on the last block (`k = B−1`, the length
   block), adding the fixed domain constant `D_TAG` (§7) into `cap1`. This is the
   sole domain-separation mechanism and uses no conventional hash.
-- `g·(k+1)` and `d` are reduced mod `p`; with `g = 7` and the maximum practical
-  `k`, the product is computed as `((k+1) % p) * g % p`.
+- `q0·g`, `q1·g`, and `d` are reduced mod `p`.
 
 ---
 
-## 4. Squeeze `Q` (PDE-native, → 256 bits)
+## 4. Squeeze `Q` (PDE-native, fixed 256-bit output)
 
-After absorption, output bits are read **directly from the evolved state** by
-canonical cell-pair comparison ("sign of a field difference"), interleaving
-further PDE evolution so the squeeze is itself part of the dynamics:
+WaveLock-PDE-256-v0 is **fixed-output**: `H_PDE : {0,1}* → {0,1}^256` always
+produces exactly 32 bytes. It is **not** an XOF. The squeeze reads bits
+**directly from the evolved state** by canonical cell-pair comparison ("sign of
+a field difference"), interleaving further `T`-round transforms so the squeeze
+is itself part of the dynamics. The bit budget below is fixed at 256 for the
+public digest; an internal `output_bits` knob exists only for audit experiments
+(e.g. truncated-collision tests) and is not part of the public API.
 
 ```
 out_bits = []                                        # list of 0/1 ints, append order = bit order
-while len(out_bits) < output_bits:                   # output_bits = 256 for v0
+while len(out_bits) < output_bits:                   # output_bits = 256 (fixed for the digest)
     for t in 0 … 63:                                 # 64 bits per squeeze round
         a_cell, b_cell = SQUEEZE_PAIRS[t]            # fixed disjoint cell-index pair
         out_bits.append( 1 if S[a_cell] > S[b_cell] else 0 )   # strict >; tie ⇒ 0
     if len(out_bits) < output_bits:
-        S ← Φ_P^T(S)                                 # re-permute between squeeze rounds
+        S ← Φ^T(S)                                   # re-evolve between squeeze rounds
 return pack_msb_first(out_bits[:output_bits])
 ```
 
@@ -240,11 +282,11 @@ distinct, so each squeeze round reads 64 disjoint comparisons → 64 bits. The
 comparison is the integer order of the two residues in `[0, p)`; a tie
 (`S[a]==S[b]`) yields `0`.
 
-**Bit count and rounds.** With 64 bits per squeeze round and `output_bits =
-256`, exactly **4** squeeze rounds run, with **3** intermediate `Φ_P^T`
-re-permutations (the loop re-permutes only when more bits are still needed, so
-no `Φ` runs after the final round's bits are produced). `output_bits` must be a
-positive multiple of 64 for v0.
+**Bit count and rounds.** With 64 bits per squeeze round and the fixed
+`output_bits = 256`, exactly **4** squeeze rounds run, with **3** intermediate
+`Φ^T` re-evolutions (the loop re-evolves only when more bits are still needed,
+so no `Φ` runs after the final round's bits are produced). The audit-only
+`output_bits` knob must be a positive multiple of 64.
 
 **`pack_msb_first` (normative).** The `output_bits` bits are packed into
 `output_bits/8` bytes, MSB-first: `out_bits[0]` is bit 7 (the most significant
@@ -296,8 +338,8 @@ implementation:
 1. For all cells, compute `react` and `lap` from the **pre-update** `ψ` only
    (Jacobi, not Gauss–Seidel — no cell sees another cell's new value).
 2. Form `ψ'` for all cells simultaneously, then replace `ψ ← ψ'`.
-3. One execution of steps 1–2 is one PDE round; `Φ_P^T` applies it `T` times.
-4. Within a permutation call, rate cells are written by absorption (§3.4)
+3. One execution of steps 1–2 is one round; `Φ^T` (`evolve_T`) applies it `T` times.
+4. Within a `T`-round transform call, rate cells are written by absorption (§3.4)
    *before* the first round; counter/finalization injection (§3.5) happens
    between the absorption write and the first round.
 
@@ -343,7 +385,7 @@ a     = 3            # reaction gain
 b     = 1431655765   # fixed mid-field bistable offset, in [0, p)
 g     = 7            # counter generator (inject_counter)
 D_TAG = 1464619076   # 0x574C5044 = ASCII "WLPD"; already < p, no reduction needed
-T     = 32           # PDE rounds per permutation Φ_P^T (provisional)
+T     = 32           # rounds per T-round transform Φ^T = evolve_T (provisional)
 ```
 
 `D_TAG` is the constant `d` referenced in §3.5. `D, a, b, g, D_TAG, T` are
@@ -356,7 +398,7 @@ vectors.
 
 ## 8. Multi-block compression and domain separation
 
-Multi-block messages are compressed by the sponge loop of §3.4 (absorb-permute
+Multi-block messages are compressed by the sponge-like loop of §3.4 (absorb-evolve
 per block). Domain separation between different uses is provided **without a
 hash** by (a) the IV tag injection (§2.1), (b) the per-block counter (§3.5), and
 (c) the trailing length block + `"WLPD"` constant (§3.5). No keyed mode is
@@ -390,9 +432,11 @@ bookkeeping; it is *not* part of the primitive and is never fed back into it.)
 - `S_iv` — snapshot of `S` immediately after `S ← IV` (before any absorption).
 - `S_absorb0` — snapshot after block 0's rate write + `inject_counter(·,0)`,
   **before** the first `Φ` round.
-- `S_perm0` — snapshot after the first `Φ_P^T` (post block 0).
+- `S_perm0` — snapshot after the first `Φ^T` = `evolve_T` (post block 0). (The
+  key name `S_perm0` is a frozen identifier and does not imply the map is a
+  permutation.)
 - `S_final` — snapshot of `S` after the full absorption loop, **before** squeeze.
-- `S_squeeze1` — snapshot after the first intermediate `Φ_P^T` inside squeeze.
+- `S_squeeze1` — snapshot after the first intermediate `Φ^T` inside squeeze.
 
 These intermediate snapshots let Phase 7 compare the two implementations at
 round granularity (not only final output), catching shared-bug masking.
@@ -403,20 +447,21 @@ round granularity (not only final output), catching shared-bug masking.
 
 - **Time:** `O(blocks · T · N²)` field operations to absorb, plus
   `O(4 · T · N²)` to squeeze. For `N=16, T=32`: ≈ `32·256 = 8192` cell-updates
-  per block permutation, each a constant number of `int64` mul/add/reduce ops.
+  per block transform, each a constant number of `int64` mul/add/reduce ops.
 - **Memory:** `O(N²)` field elements = 256 `int64` (the optimized path may hold
-  a few `N×N` temporaries). Constant in message length (streaming sponge).
+  a few `N×N` temporaries). Constant in message length (streaming, sponge-like).
 
 ---
 
 ## 11. Required API (Phase 6)
 
 ```python
-def pde_hash(message: bytes, *, output_bits: int = 256) -> bytes: ...
+def pde_hash(message: bytes) -> bytes: ...          # fixed 256-bit digest (NOT an XOF)
 
 def absorb(message: bytes) -> PDEState: ...
 def evolve(state: PDEState, rounds: int) -> PDEState: ...
-def squeeze(state: PDEState, output_bits: int) -> bytes: ...
+def evolve_T(state: PDEState) -> PDEState: ...      # the T-round transform (not a permutation)
+def squeeze(state: PDEState, output_bits: int = 256) -> bytes: ...   # output_bits is audit-only
 ```
 
 Package layout: `wavelock/pde_hash/{__init__,spec,absorb,state,evolve,squeeze,

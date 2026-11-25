@@ -1,0 +1,44 @@
+{
+  "artifact": "shortcut_computation",
+  "backward_inversion": {
+    "method": "cell-by-cell quadratic solve ignoring Laplacian coupling",
+    "n_trials": 200,
+    "note": "The per-cell quadratic is solvable (discriminant is a QR) in most trials, but the solution ignores the Laplacian coupling: cd[x] = C[x] + D_C*Lap(C)[x] involves ALL C cells, not just C[x]. A true inversion requires solving a coupled 256-variable degree-2 system. No such system solver was invoked; this is an approximate upper-bound estimate of the difficulty of the scalar sub-problem only.",
+    "scalar_inversion_approx_success_rate": 1.0
+  },
+  "cycle_detection": {
+    "cycle_detected": false,
+    "cycle_length": null,
+    "cycle_start": null,
+    "n_steps": 1000,
+    "note": "With psi=0, the accumulator is driven only by the round-dependent constant rho_t and its own self-dynamics. The constant schedule has period p-1 = 2^31-2, far exceeding the search budget."
+  },
+  "description": "Empirical shortcut computation search for CC-Core-v0",
+  "forward_cost": {
+    "estimated_field_ops": 655000,
+    "mean_time_ms": 23.876,
+    "n_trials": 10,
+    "note": "Forward cost is O(T*N^2) per block; confirmed polynomial in input size."
+  },
+  "limitations": [
+    "Backward inversion uses per-cell scalar approximation only; full system inversion not attempted",
+    "Cycle detection budget (1000 steps) << period (2^31-2)",
+    "All null results are bounded; not proofs of absence"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "bb96765ef2fa760482a325e95c57ccc8bccb6377",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "runtime_s": 0.37,
+  "seed": 93100,
+  "summary": {
+    "backward_inversion_demonstrated": false,
+    "cycle_detected": false,
+    "shortcut_found": false
+  }
+}

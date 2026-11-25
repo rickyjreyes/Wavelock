@@ -1,0 +1,126 @@
+{
+  "artifact": "vstar_bounded_exhaustive",
+  "description": "Bounded exhaustive / structured message search for v_star hits",
+  "limitations": [
+    "only tiny / reduced-alphabet / structured message domains enumerated",
+    "wave-field reachability only (sufficient: psi is autonomous under F)",
+    "bounded absence is NOT a global unreachability proof"
+  ],
+  "metadata": {
+    "branch": "research/curvature-capacity-wavelock",
+    "commit": "5e2388ad3009385a84bf6e0133e50dee9fb4bd7e",
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "protocol_version": "WaveLock-CC-Core-v1",
+  "results": {
+    "binary_alphabet_3_8": {
+      "global_min_centered_distance_to_vstar": 198,
+      "hit_events_sample": [],
+      "max_persistence_run_rounds": 0,
+      "messages_with_at_least_one_hit": 0,
+      "n_messages": 504,
+      "total_singular_hits": 0
+    },
+    "len1_exhaustive": {
+      "global_min_centered_distance_to_vstar": 443,
+      "hit_events_sample": [],
+      "max_persistence_run_rounds": 0,
+      "messages_with_at_least_one_hit": 0,
+      "n_messages": 256,
+      "total_singular_hits": 0
+    },
+    "len2_partial": {
+      "global_min_centered_distance_to_vstar": 46,
+      "hit_events_sample": [],
+      "max_persistence_run_rounds": 0,
+      "messages_with_at_least_one_hit": 0,
+      "n_messages": 1024,
+      "total_singular_hits": 0
+    },
+    "structured": {
+      "all_ff": {
+        "global_min_centered_distance_to_vstar": 38409,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 5,
+        "total_singular_hits": 0
+      },
+      "all_zero": {
+        "global_min_centered_distance_to_vstar": 28188,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 6,
+        "total_singular_hits": 0
+      },
+      "alternating": {
+        "global_min_centered_distance_to_vstar": 2863,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 3,
+        "total_singular_hits": 0
+      },
+      "counters": {
+        "global_min_centered_distance_to_vstar": 3611,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 3,
+        "total_singular_hits": 0
+      },
+      "empty": {
+        "global_min_centered_distance_to_vstar": 9283,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 1,
+        "total_singular_hits": 0
+      },
+      "low_hamming": {
+        "global_min_centered_distance_to_vstar": 1637,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 8,
+        "total_singular_hits": 0
+      },
+      "mirrored": {
+        "global_min_centered_distance_to_vstar": 12469,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 1,
+        "total_singular_hits": 0
+      },
+      "periodic": {
+        "global_min_centered_distance_to_vstar": 29836,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 3,
+        "total_singular_hits": 0
+      },
+      "repeated_byte": {
+        "global_min_centered_distance_to_vstar": 3040,
+        "hit_events_sample": [],
+        "max_persistence_run_rounds": 0,
+        "messages_with_at_least_one_hit": 0,
+        "n_messages": 5,
+        "total_singular_hits": 0
+      }
+    }
+  },
+  "runtime_s": 13.3,
+  "seed": 112000,
+  "summary": {
+    "note": "Across all bounded/structured messages tested, incidental v_star hits in the wave trajectory are at the ~1/p rate (typically zero). This does NOT contradict Part V: the round-1 witness was specially CONSTRUCTED by a solver, not a typical small/structured message. Bounded absence is not a global proof.",
+    "total_incidental_singular_hits": 0
+  },
+  "v_star": 195225786
+}

@@ -1,0 +1,27 @@
+{
+  "baseline_commit": "9430442ae93e26c192d9be1f5ee9137369f5df37",
+  "header_ambiguity": {
+    "hash": "4914a9e6406485270303bdc82222e8a2c57a74f99bfd4d5ea4df88ce4d2785e8",
+    "left": [
+      1,
+      "23"
+    ],
+    "right": [
+      12,
+      "3"
+    ],
+    "same_hash": true
+  },
+  "historical_api": "Wavelock_numpy._serialize_commitment",
+  "integer_seed_42": "WLv3.1:5287fcb0e0e7df322e9012443a82c3c1550545c56034615c82582423a17c6c38:c793d7a1953a5a4c733289c613ef9f8590d86ab45486abbf92393e5ac5dd4d9f",
+  "nan": {
+    "emitted_bytes": 405
+  },
+  "neg_inf": {
+    "emitted_bytes": 405
+  },
+  "pos_inf": {
+    "emitted_bytes": 405
+  },
+  "signed_zero_diverges": true
+}

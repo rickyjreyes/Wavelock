@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelock"
-version = "0.1.2"
+version = "0.2.0"
 description = "WaveLock: Curvature-locked cryptographic kernel, chain, and PDE identity system"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [

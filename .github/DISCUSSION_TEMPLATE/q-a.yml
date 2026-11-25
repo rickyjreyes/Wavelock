@@ -1,0 +1,73 @@
+title: "[Question] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask a focused question about the experimental path commitment, one-time signatures, replay enforcement, ledger behavior, encryption wrapper, threat model, audit results, or implementation.
+
+        WaveLock is experimental research software and is not approved for production funds, secrets, identity, or critical infrastructure.
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options:
+        - CC-Core-v1-B path commitment
+        - Curvature-capacity audit
+        - WaveLock-OTS key generation, signing, or verification
+        - OTS one-time-use enforcement
+        - CurvaChain block acceptance or replay state
+        - Canonical serialization or transcript binding
+        - WaveLock-Encrypt context binding
+        - P2P or consensus prototype
+        - Tests, environment, or reproducibility
+        - Threat model or security claim
+        - Migration from deprecated SIGv2 or WLv2
+        - Comparison with established cryptography
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Exact reference
+      description: File, function, specification section, test, audit artifact, commit, CLI command, or protocol version.
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: State the exact implementation, cryptographic, protocol, or interpretation question.
+    validations:
+      required: true
+  - type: textarea
+    id: threat_model
+    attributes:
+      label: Threat model and attacker capability
+      description: State what the attacker knows, controls, observes, queries, replays, modifies, or computes.
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and minimal reproduction
+      description: Include repository commit, OS, Python and dependency versions, command, parameters, and minimal non-sensitive input.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed and expected behavior
+      description: Include test output, acceptance or rejection behavior, collision or forgery condition, traceback, or artifact path.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Security scope
+      options:
+        - label: I have not posted private keys, seeds, credentials, live endpoints, or sensitive third-party data.
+          required: true
+        - label: I understand that passing tests do not establish one-wayness, collision resistance, sequential hardness, or production security.
+          required: true

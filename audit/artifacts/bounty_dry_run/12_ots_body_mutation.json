@@ -1,0 +1,9 @@
+{
+  "target": "Critical 8 / OTS binding",
+  "attempt": "mutate body and recompute Merkle root/header",
+  "expected": "reject",
+  "observed": {
+    "accepted": false
+  },
+  "status": "PASS"
+}

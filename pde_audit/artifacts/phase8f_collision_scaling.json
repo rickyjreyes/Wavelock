@@ -1,0 +1,417 @@
+{
+  "by_T": {
+    "32": {
+      "12": {
+        "birthday_expected": 80.2112,
+        "collisions_found": 8,
+        "evals_mean": 90.875,
+        "evals_median": 73.0,
+        "evals_std": 40.94031478872628,
+        "example": {
+          "msg_a": "0000000036d61645",
+          "msg_b": "0000000036d61679",
+          "trunc_bits": 12
+        },
+        "ratio_observed_over_expected": 1.132946521184074,
+        "slice_len": 320,
+        "trials": 8
+      },
+      "16": {
+        "birthday_expected": 320.8448,
+        "collisions_found": 8,
+        "evals_mean": 317.125,
+        "evals_median": 282.5,
+        "evals_std": 165.06546996570785,
+        "example": {
+          "msg_a": "0000000036d61658",
+          "msg_b": "0000000036d6179c",
+          "trunc_bits": 16
+        },
+        "ratio_observed_over_expected": 0.9884062325460783,
+        "slice_len": 1283,
+        "trials": 8
+      },
+      "20": {
+        "birthday_expected": 1283.3792,
+        "collisions_found": 5,
+        "evals_mean": 1348.4,
+        "evals_median": 1476.0,
+        "evals_std": 692.398902367703,
+        "example": {
+          "msg_a": "0000000036d61ac4",
+          "msg_b": "0000000036d61df5",
+          "trunc_bits": 20
+        },
+        "ratio_observed_over_expected": 1.050663747706056,
+        "slice_len": 5133,
+        "trials": 5
+      },
+      "24": {
+        "birthday_expected": 5133.5168,
+        "collisions_found": 1,
+        "evals_mean": 6610.0,
+        "evals_median": 6610.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "0000000036d62640",
+          "msg_b": "0000000036d62fd1",
+          "trunc_bits": 24
+        },
+        "ratio_observed_over_expected": 1.2876163179206892,
+        "slice_len": 20534,
+        "trials": 1
+      },
+      "28": {
+        "birthday_expected": 20534.0672,
+        "collisions_found": 1,
+        "evals_mean": 25701.0,
+        "evals_median": 25701.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "0000000036d64e6d",
+          "msg_b": "0000000036d67a64",
+          "trunc_bits": 28
+        },
+        "ratio_observed_over_expected": 1.2516273444356898,
+        "slice_len": 30000,
+        "trials": 1
+      },
+      "32": {
+        "birthday_expected": 82136.2688,
+        "collisions_found": 0,
+        "note": "no collision within pool (birthday > available samples)",
+        "slice_len": 30000,
+        "trials": 1
+      },
+      "36": {
+        "birthday_expected": 328545.0752,
+        "collisions_found": 0,
+        "note": "no collision within pool (birthday > available samples)",
+        "slice_len": 30000,
+        "trials": 1
+      },
+      "40": {
+        "birthday_expected": 1314180.3008,
+        "collisions_found": 0,
+        "note": "no collision within pool (birthday > available samples)",
+        "slice_len": 30000,
+        "trials": 1
+      },
+      "8": {
+        "birthday_expected": 20.0528,
+        "collisions_found": 8,
+        "evals_mean": 15.125,
+        "evals_median": 15.5,
+        "evals_std": 6.565772993334448,
+        "example": {
+          "msg_a": "0000000036d61602",
+          "msg_b": "0000000036d61607",
+          "trunc_bits": 8
+        },
+        "ratio_observed_over_expected": 0.7542587568818319,
+        "slice_len": 80,
+        "trials": 8
+      },
+      "_pool_size": 30000
+    },
+    "4": {
+      "12": {
+        "birthday_expected": 80.2112,
+        "collisions_found": 8,
+        "evals_mean": 12.0,
+        "evals_median": 10.5,
+        "evals_std": 5.612486080160912,
+        "example": {
+          "msg_a": "000000002625a007",
+          "msg_b": "000000002625a008",
+          "trunc_bits": 12
+        },
+        "ratio_observed_over_expected": 0.1496050426873055,
+        "slice_len": 320,
+        "trials": 8
+      },
+      "16": {
+        "birthday_expected": 320.8448,
+        "collisions_found": 8,
+        "evals_mean": 29.625,
+        "evals_median": 29.0,
+        "evals_std": 18.946882989030147,
+        "example": {
+          "msg_a": "000000002625a007",
+          "msg_b": "000000002625a008",
+          "trunc_bits": 16
+        },
+        "ratio_observed_over_expected": 0.09233436228357136,
+        "slice_len": 1283,
+        "trials": 8
+      },
+      "20": {
+        "birthday_expected": 1283.3792,
+        "collisions_found": 8,
+        "evals_mean": 245.25,
+        "evals_median": 218.5,
+        "evals_std": 84.37972209008512,
+        "example": {
+          "msg_a": "000000002625a0c5",
+          "msg_b": "000000002625a0cd",
+          "trunc_bits": 20
+        },
+        "ratio_observed_over_expected": 0.19109706624511288,
+        "slice_len": 5133,
+        "trials": 8
+      },
+      "24": {
+        "birthday_expected": 5133.5168,
+        "collisions_found": 8,
+        "evals_mean": 612.0,
+        "evals_median": 448.5,
+        "evals_std": 398.2138244712255,
+        "example": {
+          "msg_a": "000000002625a0c5",
+          "msg_b": "000000002625a0cd",
+          "trunc_bits": 24
+        },
+        "ratio_observed_over_expected": 0.11921651839144658,
+        "slice_len": 20534,
+        "trials": 8
+      },
+      "28": {
+        "birthday_expected": 20534.0672,
+        "collisions_found": 2,
+        "evals_mean": 1317.5,
+        "evals_median": 1317.5,
+        "evals_std": 269.5,
+        "example": {
+          "msg_a": "000000002625a0c5",
+          "msg_b": "000000002625a417",
+          "trunc_bits": 28
+        },
+        "ratio_observed_over_expected": 0.06416166788428548,
+        "slice_len": 82136,
+        "trials": 2
+      },
+      "32": {
+        "birthday_expected": 82136.2688,
+        "collisions_found": 1,
+        "evals_mean": 3094.0,
+        "evals_median": 3094.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "000000002625a48b",
+          "msg_b": "000000002625ac15",
+          "trunc_bits": 32
+        },
+        "ratio_observed_over_expected": 0.0376691082417418,
+        "slice_len": 220000,
+        "trials": 1
+      },
+      "36": {
+        "birthday_expected": 328545.0752,
+        "collisions_found": 1,
+        "evals_mean": 6531.0,
+        "evals_median": 6531.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "000000002625b3a2",
+          "msg_b": "000000002625b982",
+          "trunc_bits": 36
+        },
+        "ratio_observed_over_expected": 0.01987855089906397,
+        "slice_len": 220000,
+        "trials": 1
+      },
+      "40": {
+        "birthday_expected": 1314180.3008,
+        "collisions_found": 1,
+        "evals_mean": 32920.0,
+        "evals_median": 32920.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "0000000026260ab2",
+          "msg_b": "0000000026262097",
+          "trunc_bits": 40
+        },
+        "ratio_observed_over_expected": 0.02504983523186288,
+        "slice_len": 220000,
+        "trials": 1
+      },
+      "8": {
+        "birthday_expected": 20.0528,
+        "collisions_found": 8,
+        "evals_mean": 10.25,
+        "evals_median": 10.5,
+        "evals_std": 3.7332961307670196,
+        "example": {
+          "msg_a": "000000002625a000",
+          "msg_b": "000000002625a003",
+          "trunc_bits": 8
+        },
+        "ratio_observed_over_expected": 0.5111505625149605,
+        "slice_len": 80,
+        "trials": 8
+      },
+      "_pool_size": 220000
+    },
+    "8": {
+      "12": {
+        "birthday_expected": 80.2112,
+        "collisions_found": 8,
+        "evals_mean": 77.625,
+        "evals_median": 72.5,
+        "evals_std": 47.52614412089413,
+        "example": {
+          "msg_a": "000000002887fa16",
+          "msg_b": "000000002887fa22",
+          "trunc_bits": 12
+        },
+        "ratio_observed_over_expected": 0.9677576198835075,
+        "slice_len": 320,
+        "trials": 8
+      },
+      "16": {
+        "birthday_expected": 320.8448,
+        "collisions_found": 8,
+        "evals_mean": 231.0,
+        "evals_median": 245.0,
+        "evals_std": 116.38943251000066,
+        "example": {
+          "msg_a": "000000002887fa1e",
+          "msg_b": "000000002887fa6e",
+          "trunc_bits": 16
+        },
+        "ratio_observed_over_expected": 0.7199742679326577,
+        "slice_len": 1283,
+        "trials": 8
+      },
+      "20": {
+        "birthday_expected": 1283.3792,
+        "collisions_found": 8,
+        "evals_mean": 1178.75,
+        "evals_median": 1097.5,
+        "evals_std": 691.2882448732945,
+        "example": {
+          "msg_a": "000000002887fa1e",
+          "msg_b": "000000002887fa6e",
+          "trunc_bits": 20
+        },
+        "ratio_observed_over_expected": 0.9184736670190696,
+        "slice_len": 5133,
+        "trials": 8
+      },
+      "24": {
+        "birthday_expected": 5133.5168,
+        "collisions_found": 4,
+        "evals_mean": 3520.0,
+        "evals_median": 3509.0,
+        "evals_std": 986.7578223657515,
+        "example": {
+          "msg_a": "00000000288801bb",
+          "msg_b": "000000002888030c",
+          "trunc_bits": 24
+        },
+        "ratio_observed_over_expected": 0.6856897789834836,
+        "slice_len": 20534,
+        "trials": 4
+      },
+      "28": {
+        "birthday_expected": 20534.0672,
+        "collisions_found": 1,
+        "evals_mean": 2317.0,
+        "evals_median": 2317.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "00000000288801bb",
+          "msg_b": "000000002888030c",
+          "trunc_bits": 28
+        },
+        "ratio_observed_over_expected": 0.11283687627164285,
+        "slice_len": 82136,
+        "trials": 1
+      },
+      "32": {
+        "birthday_expected": 82136.2688,
+        "collisions_found": 1,
+        "evals_mean": 45880.0,
+        "evals_median": 45880.0,
+        "evals_std": 0.0,
+        "example": {
+          "msg_a": "000000002888963a",
+          "msg_b": "000000002888ad37",
+          "trunc_bits": 32
+        },
+        "ratio_observed_over_expected": 0.5585839321690736,
+        "slice_len": 100000,
+        "trials": 1
+      },
+      "36": {
+        "birthday_expected": 328545.0752,
+        "collisions_found": 0,
+        "note": "no collision within pool (birthday > available samples)",
+        "slice_len": 100000,
+        "trials": 1
+      },
+      "40": {
+        "birthday_expected": 1314180.3008,
+        "collisions_found": 0,
+        "note": "no collision within pool (birthday > available samples)",
+        "slice_len": 100000,
+        "trials": 1
+      },
+      "8": {
+        "birthday_expected": 20.0528,
+        "collisions_found": 8,
+        "evals_mean": 17.125,
+        "evals_median": 16.5,
+        "evals_std": 8.506431390424542,
+        "example": {
+          "msg_a": "000000002887fa05",
+          "msg_b": "000000002887fa11",
+          "trunc_bits": 8
+        },
+        "ratio_observed_over_expected": 0.8539954520067022,
+        "slice_len": 80,
+        "trials": 8
+      },
+      "_pool_size": 100000
+    }
+  },
+  "chosen_prefix": {
+    "T": 8,
+    "evals": 3528,
+    "msg_a": "43484f53454e2d5052454649583a3a00000037ec338600",
+    "msg_b": "43484f53454e2d5052454649583a3a00000037ec339047",
+    "prefix": "43484f53454e2d5052454649583a3a",
+    "trunc_bits": 24
+  },
+  "metadata": {
+    "cpu_count": 4,
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "multicollision": {
+    "evals": 1816,
+    "messages": [
+      "000000827c0d631c",
+      "000000827c0d63bf",
+      "000000827c0d67d7"
+    ],
+    "multiplicity": 3,
+    "trunc_bits": 16
+  },
+  "phase": "8F_collision_scaling",
+  "runtime_s": 721.88,
+  "seed": 80060,
+  "truncation_bits": [
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32,
+    36,
+    40
+  ]
+}

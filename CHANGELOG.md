@@ -5,6 +5,110 @@ reference implementation are recorded here. Schema-bumping changes are
 deliberate protocol upgrades; pre-upgrade and post-upgrade commitments
 are not interchangeable.
 
+## [Unreleased] — RCA reference safety kernel and formalization (#42, #43)
+
+- **New, proposed functionality; no change to existing behaviour.** No RCA agent state, safety
+  memory, drift measurement or pre-action guard existed in this repository. `wavelock/rca_reference`
+  is a minimal reference safety kernel (`STATUS = "PROPOSED_REFERENCE"`): hash-chained, fail-closed
+  safety memory; guarded execution (lock, reload, guard, durable intent, effect); integer drift
+  metrics; monotone policy; operator-credential reset; optional external anchor. Nothing in the
+  chain, network or WaveLock-OTS code uses it.
+- Lean (`RCAAgentState`, `RCATransitions`, `RCASafetyInvariants`, `RCADriftMetrics`,
+  `RCACounterexamples`, `RCAConformance`): declarative specification and refinement lemma; an
+  inductive invariant over every interleaving with crashes, write failures and restarts; Theorems
+  A–D; `authorized_before_execution`, `pre_action_intervention`, `effect_blocked`, `safe_run`;
+  drift-metric properties and limits; twelve adversarial cases; rollback results; 25 Lean/Python
+  traces; bounded model checks (`lean/scripts/RCAModelCheck.lean`). See
+  `docs/RCA_FORMALIZATION.md`.
+
+## [Unreleased] — WaveLock-OTS signing guard claims the signing material
+
+- **Signer behaviour only (local state; no wire, signature, ledger or consensus change).**
+  `sign_ots` now atomically claims the signing material `(params_hash, seed)` in the host-local
+  registry, next to the key id, before revealing any slice. At `c3cb0d1` one seed under two key ids
+  (`generate_ots_keypair(seed=...)` twice, or a relabelled copy) signed twice on one host, making
+  both secret halves public at 122 of 256 positions in the reproduction. A second key file with
+  the same `(params_hash, seed)` is now refused on that host.
+- Migration: material that signed before this change has no material marker;
+  `wavelock_ots.claim_signing_material(secret_key)` records it. The new marker
+  `material-<_h("WL-OTS-SIGNER-MATERIAL-v1", params_hash, seed)>.used` is ignored by older code.
+- Lean `OTSSignerGuard`: `signer_single_use` (key id and material; any interleaving, claim
+  failures, crashes, restarts, POSIX power loss), `signer_values_distinct` (conditional on
+  collision resistance), boundaries (`allow_reuse`, second registry, wiped registry, Windows power
+  loss, migration). 14 Lean/Python traces. A strict declaration and axiom audit
+  (`lean/scripts/AxiomAudit.lean`) runs in CI. See `docs/WAVELOCK_OTS_SIGNER_GUARD.md`.
+
+## [Unreleased] — WaveLock-OTS key-material single use (#41, phase II)
+
+- **Consensus-affecting.** Acceptance now consumes the commitment table of every OTS key
+  (`wavelock_ots.ots_material_id`, the Merkle root recomputed from `pk_commitments`) as well as its
+  key id and fingerprint. A second signature over the same table is rejected whatever key id,
+  ψ-commitment or hex spelling it carries; this closes the reuse of copied key material under fresh
+  labels and third-party relabelling of consumed signatures on `verify_ots_payload`.
+- `verify_ots_chain` rejects a chain in which two blocks share a commitment table; a node refuses
+  to load such a chain. Honest chains (one fresh key per block) are unaffected. Nodes running older
+  code accept blocks this code rejects.
+- Replay records are `LEDGER_VERSION` 2 (adds `material_id`); version 1 records still load and keep
+  their labels consumed. Reconstruction folds tables back in from the chain and fails closed on an
+  OTS block whose table cannot be identified.
+- Lean: identities generalised to atoms; `wavelock_ots_material_single_use`,
+  `wavelock_ots_fresh_triple`, `distinct_material_distinct_tables`; 25 Lean/Python traces.
+
+## [Unreleased] — WaveLock-OTS acceptance formal verification (#41)
+
+- Add Lean proofs of same-host single use for OTS acceptance (any interleaving, crashes,
+  restarts, side-ledger loss), fail-closed verification, block transcript binding, and
+  kernel-checked counterexamples for rollback, independent hosts and key-material reuse. Twenty
+  acceptance traces are checked against both the Lean model and the implementation.
+- Fix: the replay ledger now rejects a `one_time_key_id` that is not a non-empty string (or a
+  non-string fingerprint). Previously `""`, `null` or an array key id was accepted once and then
+  made the replay ledger or chain permanently unloadable. Numeric key ids are now rejected too.
+- Fix: chain reconstruction no longer drops the key id string `"None"`, which allowed a second
+  block with that key id after the side ledger was lost.
+- No wire, record or protocol version changes.
+
+## [Unreleased] — Bounty contract hardening
+
+- Add `WL-Consensus-Commitment-v1` and a single NumPy reference producer/replay
+  API with explicit binary64 big-endian encoding, complete metadata binding,
+  nonfinite rejection, zero normalization, byte-input threshold and backend
+  enforcement. Historical WLv* encodings retain their meaning.
+- Close a reproduced NumPy CPU-dispatch mismatch with bound, fixed exp/log
+  rounding and reduction order. Keep the PDE, parameters and original reference
+  vector bodies; compare the same final profile vectors in separate SIMD modes.
+- Fix a demonstrated unframed block-header ambiguity using header v2. Bind
+  stable header context through existing OTS transcript-v1 metadata; retain
+  historical v1 reading and reject new header downgrades on the default node.
+- Flush and atomically publish signing state/artifacts, validate replay records,
+  and coordinate local chain writers. Add crash and multiprocess regressions.
+- Add the normative profile, reproducible thirteen-attempt dry run and target
+  matrix. Remote attestation, behavior-wide drift and full storage rollback
+  protection remain unresolved; this is not full-bounty readiness.
+
+## [0.2.0] — Supported OTS command-line workflow
+
+- The default `keygen`, `add`, `sign`, `mine`, `verify`, and `audit` commands
+  now use WaveLock-OTS. Historical SIGv2 commands are available under `legacy`.
+  Each signed block requires a fresh one-time key; verification uses public
+  material only. Signing marks the secret used before publishing its artifact
+  and preserves passphrase encryption at rest.
+- Node configuration now enforces `require_ots=true` by default, honors JSON
+  and environment overrides, and rejects unknown settings. Legacy chains must
+  be inspected explicitly; use a fresh data directory for the OTS workflow.
+- Blocks, peers, signer state, and replay state share a persistent data root
+  selected with `WAVELOCK_DATA_DIR`. Windows replay exclusion now uses a
+  SQLite lock; POSIX retains `flock`. Replay state is reconstructed from the
+  verified accepted chain on startup.
+- Acceptance checks the actual header hash, Merkle root, proof of work,
+  sequential index, and parent. Concurrent threads cannot append siblings to
+  one local tip. Deserializing malformed mining fields fails without mining.
+- Canonical block transcript version 1 is unchanged. Replay consumption and
+  block append remain separate durable writes; a crash between them can
+  consume a key without accepting its block. Cross-node consensus and a
+  reusable Merkle signing identity remain separate work.
+- Added the public-only end-to-end demo, migration instructions, and CI for
+  Python 3.9/3.12 on Linux, Python 3.12 on Windows, and the CPU container.
+
 ## [Unreleased] — WaveLock-OTS Mythos integration-layer fixes (M1/M2/M3)
 
 Claude Mythos found three integration-layer bounty blockers after the A/B/D
@@ -122,11 +226,10 @@ SHAKE-256 (NIST FIPS 202 XOF) with the `WL-PSI-INIT-v1` domain
 separation tag, replacing `numpy.random.seed(s); numpy.random.rand(...)`
 (Mersenne Twister).
 
-This matches the patent's Best Mode and Claim 9, which specify an
-extendable-output function for ψ₀ derivation. The pre-upgrade Mersenne
-Twister path produced backend- and library-version-bound bytes that
-were not byte-stable across implementations and therefore not a valid
-basis for cross-implementation consensus.
+This moves the canonical implementation to the byte-stable XOF initialization
+path. The pre-upgrade Mersenne Twister path produced backend- and
+library-version-bound bytes that were not byte-stable across implementations
+and therefore were not suitable for cross-implementation consensus.
 
 A new schema label `SCHEMA_V3_SHAKE = "WLv3.1"` distinguishes commitments
 produced under the SHAKE-256 regime from legacy `WLv2` commitments.
@@ -174,16 +277,14 @@ prefix in the commitment string is the authoritative discriminator.
   re-issued through the new canonical path before being treated as
   consensus-binding.
 
-### Patent-enablement effect
+### Implementation coverage
 
-- Claim 9 / Best Mode (SHAKE-256 ψ₀ derivation) is now exercised on
-  the actual canonical commitment path, not as an opt-in side branch.
+- SHAKE-256 ψ₀ derivation is now exercised on the actual canonical commitment
+  path, not only as an opt-in side branch.
 
-- Claim 8 Markush group (SHA-256, SHA3-256, BLAKE3 as disjoint hash
-  families) is now exercised end-to-end for BLAKE3 via two new tests
-  in `tests/test_blake3_strict.py`:
+- SHA-256, SHA3-256, and BLAKE3 hash-family paths are exercised end-to-end for
+  BLAKE3 via two tests in `tests/test_blake3_strict.py`:
   `test_blake3_end_to_end_through_keypair_commitment` and
   `test_blake3_dual_signature_through_keypair`. Both construct a
-  `CurvatureKeyPairV3` with `secondary_family=HashFamily.BLAKE3`,
-  generate a commitment, and round-trip it through `verify_commitment`
-  and `verify_strict`.
+  `CurvatureKeyPairV3` with `secondary_family=HashFamily.BLAKE3`, generate a
+  commitment, and round-trip it through `verify_commitment` and `verify_strict`.
